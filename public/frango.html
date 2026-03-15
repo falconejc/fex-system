@@ -152,6 +152,8 @@
 <script src="/jsqr.min.js"></script>
 <script>
   let tipoSelecionado = null;
+  let nivelUsuario = '';
+  let nivelUsuario = '';
   let vendaAtual = null;
   let usuarioAtual = null;
   let estoqueAtual = [];
@@ -163,6 +165,8 @@
     const res = await fetch('/api/auth/me');
     usuarioAtual = await res.json();
     document.getElementById('atendente-box').textContent = usuarioAtual.nome;
+    nivelUsuario = usuarioAtual.nivel;
+    nivelUsuario = usuarioAtual.nivel;
     if (usuarioAtual.nivel === 'dono') document.getElementById('btn-vender').disabled = true;
     await carregarEstoque();
     carregarPendentes();

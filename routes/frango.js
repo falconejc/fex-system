@@ -108,4 +108,14 @@ router.delete('/:id', exigirNivel('admin'), (req, res) => {
   res.json({ sucesso: true });
 });
 
+// Cancela venda pelo código (usado na tela de pendentes pelo admin)
+router.post('/:codigo/cancelar', exigirNivel('admin'), (req, res) => {
+  const venda = db.prepare('SELECT * FROM vendas WHERE codigo = ?').get(req.params.codigo);
+  if (!venda) return res.status(404).json({ erro: 'Venda não encontrada' });
+  if (venda.status === 'entregue') return res.status(400).json({ erro: 'Venda já entregue' });
+  if (venda.cancelado) return res.status(400).json({ erro: 'Venda já cancelada' });
+  db.prepare('UPDATE vendas SET cancelado=1, status="cancelado" WHERE codigo=?').run(req.params.codigo);
+  res.json({ sucesso: true });
+});
+
 module.exports = router;
