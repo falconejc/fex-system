@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entregas - Frango Expresso</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f5f5f5; }
+  header { background: #f59e0b; color: white; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  header a { color: white; text-decoration: none; font-size: 20px; }
+  header h1 { font-size: 20px; }
+  .btn-logoff { padding: 7px 14px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .container { max-width: 500px; margin: 30px auto; padding: 0 20px; }
+  .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+  .card-header h2 { font-size: 16px; color: #555; }
+  .btn-qr { padding: 10px 20px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold; }
+  .item { display: flex; justify-content: space-between; align-items: center; padding: 14px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 10px; }
+  .item .info .codigo { font-weight: bold; font-size: 18px; color: #333; }
+  .item .info .tipo-tag { font-size: 13px; color: #888; margin-top: 3px; }
+  .item .info .obs { font-size: 12px; color: #f59e0b; margin-top: 3px; }
+  .item .info .hora { font-size: 12px; color: #aaa; margin-top: 2px; }
+  .btn-entrega { padding: 12px 20px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold; }
+  .btn-entrega:hover { background: #059669; }
+  .vazio { text-align: center; color: #aaa; padding: 30px; font-size: 15px; }
+  .contador { text-align: center; font-size: 48px; font-weight: bold; color: #f59e0b; margin: 8px 0; }
+  .contador-desc { text-align: center; font-size: 13px; color: #888; margin-bottom: 16px; }
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
+  .modal.aberto { display: flex; }
+  .modal-box { background: white; border-radius: 16px; padding: 24px; max-width: 380px; width: 90%; text-align: center; }
+  .modal-box h3 { font-size: 17px; color: #333; margin-bottom: 12px; }
+  video { width: 100%; border-radius: 8px; background: #000; }
+  #scanner-status { font-size: 13px; color: #888; margin-top: 10px; }
+  .modal-codigo { font-size: 42px; font-weight: bold; color: #f59e0b; letter-spacing: 4px; margin: 12px 0; }
+  .modal-info { font-size: 14px; color: #555; margin-bottom: 16px; }
+  .btn-confirmar { width: 100%; padding: 14px; background: #10b981; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+  .btn-fechar { width: 100%; padding: 12px; background: #f3f4f6; color: #333; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; }
+  .sucesso-box { background: #d1fae5; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 16px; }
+  .sucesso-box .icon { font-size: 48px; }
+  .sucesso-box p { color: #065f46; font-weight: bold; font-size: 16px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-left">
+    <a href="/">&#8592;</a>
+    <h1>🔥 Entregas</h1>
+  </div>
+  <button class="btn-logoff" onclick="logoff()">Sair</button>
+</header>
+
+<div class="container">
+  <div class="card">
+    <div class="card-header">
+      <h2>Pendentes</h2>
+      <button class="btn-qr" onclick="abrirScanner()">📷 Ler QR Code</button>
+    </div>
+    <div id="contador" class="contador">0</div>
+    <div class="contador-desc">frangos aguardando entrega</div>
+    <div id="pendentes"><div class="vazio">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- Modal scanner -->
+<div class="modal" id="modal-scanner">
+  <div class="modal-box">
+    <h3>Ler QR Code</h3>
+    <video id="video-scanner" autoplay playsinline muted></video>
+    <div id="scanner-status">Iniciando câmera...</div>
+    <button class="btn-fechar" style="margin-top:12px" onclick="fecharScanner()">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal confirmar QR -->
+<div class="modal" id="modal-confirmar">
+  <div class="modal-box">
+    <div style="font-size:15px;color:#555">Confirmar entrega?</div>
+    <div class="modal-codigo" id="qr-codigo"></div>
+    <div class="modal-info" id="qr-info"></div>
+    <button class="btn-confirmar" onclick="confirmarEntrega()">Confirmar Entrega</button>
+    <button class="btn-fechar" onclick="fecharModal('modal-confirmar')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal sucesso -->
+<div class="modal" id="modal-sucesso">
+  <div class="modal-box">
+    <div class="sucesso-box">
+      <div class="icon">✅</div>
+      <p id="sucesso-texto">Entrega confirmada!</p>
+    </div>
+    <button class="btn-confirmar" onclick="fecharModal('modal-sucesso'); abrirScanner()">Próxima entrega</button>
+    <button class="btn-fechar" onclick="fecharModal('modal-sucesso')">Fechar</button>
+  </div>
+</div>
+
+<script src="/jsqr.min.js"></script>
+<script>
+  let scannerStream = null;
+  let codigoQRLido = null;
+
+  async function carregarPendentes() {
+    const res = await fetch('/api/frango/pendentes');
+    const lista = await res.json();
+    document.getElementById('contador').textContent = lista.length;
+    const el = document.getElementById('pendentes');
+    if (!lista.length) { el.innerHTML = '<div class="vazio">Nenhuma entrega pendente 🎉</div>'; return; }
+    el.innerHTML = lista.map(v => {
+      const hora = new Date(v.horario_compra).toLocaleTimeString('pt-BR');
+      return `<div class="item">
+        <div class="info">
+          <div class="codigo">${v.codigo}</div>
+          <div class="tipo-tag">${v.tipo === 'simples' ? '🍗 Simples' : '🥓 Com Bacon'}</div>
+          ${v.observacao ? `<div class="obs">📝 ${v.observacao}</div>` : ''}
+          <div class="hora">Comprado às ${hora}</div>
+        </div>
+        <button class="btn-entrega" onclick="darBaixaManual('${v.codigo}')">Entregar</button>
+      </div>`;
+    }).join('');
+  }
+
+  async function darBaixaManual(codigo) {
+    if (!confirm('Confirmar entrega do código ' + codigo + '?')) return;
+    const res = await fetch('/api/frango/entrega/' + codigo, { method: 'POST' });
+    const data = await res.json();
+    if (data.sucesso) {
+      document.getElementById('sucesso-texto').textContent = 'Frango ' + codigo + ' entregue!';
+      document.getElementById('modal-sucesso').classList.add('aberto');
+      carregarPendentes();
+    } else alert(data.erro);
+  }
+
+  function abrirScanner() {
+    document.getElementById('modal-scanner').classList.add('aberto');
+    document.getElementById('scanner-status').textContent = 'Iniciando câmera...';
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } })
+      .then(stream => {
+        scannerStream = stream;
+        const video = document.getElementById('video-scanner');
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+          video.play();
+          document.getElementById('scanner-status').textContent = 'Aponte para o QR code';
+          setTimeout(() => tickScanner(video), 500);
+        };
+      })
+      .catch(err => { document.getElementById('scanner-status').textContent = 'Erro: ' + err.message; });
+  }
+
+  function tickScanner(video) {
+    if (!scannerStream) return;
+    if (video.readyState < 2 || video.videoWidth === 0) { setTimeout(() => tickScanner(video), 300); return; }
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    try {
+      const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' })
+                || jsQR(img.data, img.width, img.height, { inversionAttempts: 'invertFirst' });
+      if (code && code.data) { fecharScanner(); abrirConfirmarQR(code.data); return; }
+    } catch(e) {}
+    setTimeout(() => tickScanner(video), 200);
+  }
+
+  function fecharScanner() {
+    if (scannerStream) { scannerStream.getTracks().forEach(t => t.stop()); scannerStream = null; }
+    document.getElementById('modal-scanner').classList.remove('aberto');
+  }
+
+  async function abrirConfirmarQR(codigo) {
+    codigoQRLido = codigo;
+    const res = await fetch('/api/frango/qrcode/' + codigo);
+    if (!res.ok) { alert('QR code inválido!'); return; }
+    const venda = await res.json();
+    if (venda.status === 'entregue') { alert('Este frango já foi entregue!'); return; }
+    if (venda.cancelado) { alert('Esta venda foi cancelada!'); return; }
+    document.getElementById('qr-codigo').textContent = venda.codigo;
+    document.getElementById('qr-info').textContent =
+      (venda.tipo === 'simples' ? '🍗 Frango Simples' : '🥓 Frango com Bacon') +
+      (venda.observacao ? ' • ' + venda.observacao : '');
+    document.getElementById('modal-confirmar').classList.add('aberto');
+  }
+
+  async function confirmarEntrega() {
+    const res = await fetch('/api/frango/entrega/' + codigoQRLido, { method: 'POST' });
+    const data = await res.json();
+    fecharModal('modal-confirmar');
+    if (data.sucesso) {
+      document.getElementById('sucesso-texto').textContent = 'Frango ' + codigoQRLido + ' entregue!';
+      document.getElementById('modal-sucesso').classList.add('aberto');
+      carregarPendentes();
+    } else alert(data.erro);
+  }
+
+  function fecharModal(id) { document.getElementById(id).classList.remove('aberto'); }
+
+  async function logoff() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/login.html';
+  }
+
+  carregarPendentes();
+  setInterval(carregarPendentes, 10000);
+</script>
+</body>
+</html>

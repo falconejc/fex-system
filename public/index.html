@@ -24,6 +24,7 @@
   .card h2 { font-size: 16px; color: #333; margin-bottom: 6px; }
   .card p { font-size: 12px; color: #888; }
   .card.frango { border-top: 4px solid #f59e0b; }
+  .card.entrega { border-top: 4px solid #f59e0b; }
   .card.delivery { border-top: 4px solid #3b82f6; }
   .card.relatorio { border-top: 4px solid #10b981; }
   .card.dashboard { border-top: 4px solid #f59e0b; }
@@ -54,15 +55,16 @@
     if (!res.ok) { window.location.href = '/login.html'; return; }
     const user = await res.json();
     document.getElementById('header-nome').textContent = user.nome;
-    const niveis = { admin: 'Administrador', operador: 'Operador', dono: 'Dono' };
+    const niveis = { admin: 'Administrador', caixa: 'Caixa', assador: 'Assador', dono: 'Dono' };
     document.getElementById('header-nivel').textContent = niveis[user.nivel] || user.nivel;
 
     const cards = [
-      { href: '/frango.html',    classe: 'frango',    icon: '🍗', titulo: 'Frango',      desc: 'Registrar venda e dar baixa',   niveis: ['admin','operador'] },
-      { href: '/delivery.html',  classe: 'delivery',  icon: '🛵', titulo: 'Delivery',    desc: 'Registrar pedido e imprimir',   niveis: ['admin','operador'] },
-      { href: '/relatorio.html', classe: 'relatorio', icon: '📊', titulo: 'Relatórios',  desc: 'Vendas e entregas do dia',      niveis: ['admin','operador','dono'] },
-      { href: '/dashboard.html', classe: 'dashboard', icon: '📈', titulo: 'Dashboard',   desc: 'Gráficos e indicadores',        niveis: ['admin','dono'] },
-      { href: '/usuarios.html',  classe: 'usuarios',  icon: '👥', titulo: 'Usuários',    desc: 'Gerenciar acessos',             niveis: ['admin'] },
+      { href: '/frango.html',    classe: 'frango',    icon: '🍗', titulo: 'Frango',       desc: 'Registrar venda e entregar',    niveis: ['admin','caixa'] },
+      { href: '/entrega.html',   classe: 'entrega',   icon: '🔥', titulo: 'Entregas',     desc: 'Dar baixa nas entregas',        niveis: ['assador'] },
+      { href: '/delivery.html',  classe: 'delivery',  icon: '🛵', titulo: 'Delivery',     desc: 'Registrar pedido e imprimir',   niveis: ['admin','caixa'] },
+      { href: '/relatorio.html', classe: 'relatorio', icon: '📊', titulo: 'Relatórios',   desc: 'Vendas e entregas do dia',      niveis: ['admin','caixa','dono'] },
+      { href: '/dashboard.html', classe: 'dashboard', icon: '📈', titulo: 'Dashboard',    desc: 'Gráficos e indicadores',        niveis: ['admin','dono'] },
+      { href: '/usuarios.html',  classe: 'usuarios',  icon: '👥', titulo: 'Usuários',     desc: 'Gerenciar acessos',             niveis: ['admin'] },
     ];
 
     document.getElementById('cards').innerHTML = cards

@@ -26,7 +26,7 @@ router.get('/hoje', (req, res) => {
   });
 });
 
-router.post('/', exigirNivel('admin', 'operador'), (req, res) => {
+router.post('/', exigirNivel('admin', 'caixa'), (req, res) => {
   const { simples_total, bacon_total } = req.body;
   const data = hoje();
   const existe = db.prepare('SELECT id FROM estoque WHERE data = ?').get(data);
