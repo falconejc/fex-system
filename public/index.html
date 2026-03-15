@@ -11,24 +11,21 @@
   header { background: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
   .header-left img { height: 48px; width: auto; }
   .header-right { display: flex; align-items: center; gap: 12px; }
-  .usuario-info { text-align: right; }
   .usuario-info .nome { font-size: 14px; color: #333; font-weight: bold; }
   .usuario-info .nivel { font-size: 12px; color: #888; }
   .btn-logoff { padding: 8px 16px; background: #fee2e2; color: #991b1b; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
-  .btn-logoff:hover { background: #fecaca; }
-  .container { max-width: 760px; margin: 40px auto; padding: 0 20px; text-align: center; }
-  .cards { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-top: 30px; }
-  .card { background: white; border-radius: 16px; padding: 36px 28px; width: 200px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; }
+  .container { max-width: 800px; margin: 40px auto; padding: 0 20px; text-align: center; }
+  .cards { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin-top: 30px; }
+  .card { background: white; border-radius: 16px; padding: 30px 24px; width: 180px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; }
   .card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
-  .card .icon { font-size: 48px; margin-bottom: 14px; }
-  .card h2 { font-size: 16px; color: #333; margin-bottom: 6px; }
-  .card p { font-size: 12px; color: #888; }
-  .card.frango { border-top: 4px solid #f59e0b; }
-  .card.entrega { border-top: 4px solid #f59e0b; }
-  .card.delivery { border-top: 4px solid #3b82f6; }
-  .card.relatorio { border-top: 4px solid #10b981; }
-  .card.dashboard { border-top: 4px solid #f59e0b; }
-  .card.usuarios { border-top: 4px solid #8b5cf6; }
+  .card .icon { font-size: 42px; margin-bottom: 12px; }
+  .card h2 { font-size: 15px; color: #333; margin-bottom: 5px; }
+  .card p { font-size: 11px; color: #888; }
+  .card.amarelo  { border-top: 4px solid #f59e0b; }
+  .card.verde    { border-top: 4px solid #10b981; }
+  .card.azul     { border-top: 4px solid #3b82f6; }
+  .card.roxo     { border-top: 4px solid #8b5cf6; }
+  .card.vermelho { border-top: 4px solid #ef4444; }
 </style>
 </head>
 <body class="oculto">
@@ -58,23 +55,22 @@
     const niveis = { admin: 'Administrador', caixa: 'Caixa', assador: 'Assador', dono: 'Dono' };
     document.getElementById('header-nivel').textContent = niveis[user.nivel] || user.nivel;
 
-    const cards = [
-      { href: '/frango.html',    classe: 'frango',    icon: '🍗', titulo: 'Frango',       desc: 'Registrar venda e entregar',    niveis: ['admin','caixa'] },
-      { href: '/entrega.html',   classe: 'entrega',   icon: '🔥', titulo: 'Entregas',     desc: 'Dar baixa nas entregas',        niveis: ['assador'] },
-      { href: '/delivery.html',  classe: 'delivery',  icon: '🛵', titulo: 'Delivery',     desc: 'Registrar pedido e imprimir',   niveis: ['admin','caixa'] },
-      { href: '/relatorio.html', classe: 'relatorio', icon: '📊', titulo: 'Relatórios',   desc: 'Vendas e entregas do dia',      niveis: ['admin','caixa','dono'] },
-      { href: '/estoque.html',   classe: 'relatorio', icon: '📦', titulo: 'Estoque',       desc: 'Insumos e histórico',           niveis: ['admin','caixa','dono'] },
-      { href: '/dashboard.html', classe: 'dashboard', icon: '📈', titulo: 'Dashboard',    desc: 'Gráficos e indicadores',        niveis: ['admin','dono'] },
-      { href: '/usuarios.html',  classe: 'usuarios',  icon: '👥', titulo: 'Usuários',     desc: 'Gerenciar acessos',             niveis: ['admin'] },
+    const todos = [
+      { href: '/frango.html',    cor: 'amarelo',  icon: '🍗', titulo: 'Frango Assado', desc: 'Registrar vendas',          niveis: ['admin','caixa'] },
+      { href: '/forno.html',     cor: 'vermelho', icon: '🔥', titulo: 'Forno',         desc: 'Lotes e controle',          niveis: ['admin','caixa','assador'] },
+      { href: '/entrega.html',   cor: 'verde',    icon: '✅', titulo: 'Entrega',        desc: 'Dar baixa nas retiradas',   niveis: ['admin','caixa','assador'] },
+      { href: '/delivery.html',  cor: 'azul',     icon: '🛵', titulo: 'Delivery',       desc: 'Pedidos e comandas',        niveis: ['admin','caixa'] },
+      { href: '/estoque.html',   cor: 'verde',    icon: '📦', titulo: 'Estoque',        desc: 'Insumos e historico',       niveis: ['admin','caixa','dono'] },
+      { href: '/relatorio.html', cor: 'verde',    icon: '📊', titulo: 'Relatorios',     desc: 'Vendas do dia',             niveis: ['admin','caixa','dono'] },
+      { href: '/dashboard.html', cor: 'amarelo',  icon: '📈', titulo: 'Dashboard',      desc: 'Graficos e indicadores',    niveis: ['admin','dono'] },
+      { href: '/usuarios.html',  cor: 'roxo',     icon: '👥', titulo: 'Usuarios',       desc: 'Gerenciar acessos',         niveis: ['admin'] },
+      { href: '/tipos.html',     cor: 'amarelo',  icon: '🍗', titulo: 'Tipos',          desc: 'Tipos de frango',           niveis: ['admin'] },
     ];
 
-    document.getElementById('cards').innerHTML = cards
+    document.getElementById('cards').innerHTML = todos
       .filter(c => c.niveis.includes(user.nivel))
-      .map(c => `<a href="${c.href}" class="card ${c.classe}">
-        <div class="icon">${c.icon}</div>
-        <h2>${c.titulo}</h2>
-        <p>${c.desc}</p>
-      </a>`).join('');
+      .map(c => '<a href="' + c.href + '" class="card ' + c.cor + '"><div class="icon">' + c.icon + '</div><h2>' + c.titulo + '</h2><p>' + c.desc + '</p></a>')
+      .join('');
 
     document.body.classList.remove('oculto');
   }
