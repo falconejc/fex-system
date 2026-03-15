@@ -3,81 +3,235 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Frango - Venda</title>
+<title>Frango - Fex System</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: Arial, sans-serif; background: #f5f5f5; }
-  header { background: #f59e0b; color: white; padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+  header { background: #f59e0b; color: white; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
   header a { color: white; text-decoration: none; font-size: 20px; }
   header h1 { font-size: 20px; }
+  .btn-logoff { padding: 7px 14px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
   .container { max-width: 600px; margin: 30px auto; padding: 0 20px; }
   .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-  .card h2 { font-size: 16px; color: #555; margin-bottom: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+  .card-header h2 { font-size: 16px; color: #555; }
   label { display: block; font-size: 14px; color: #555; margin-bottom: 6px; margin-top: 14px; }
-  input, select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
+  input, textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; font-family: Arial; }
+  textarea { resize: vertical; min-height: 70px; }
+  .atendente-box { background: #f9fafb; border: 1px solid #eee; border-radius: 8px; padding: 10px 12px; font-size: 15px; color: #333; }
   .tipos { display: flex; gap: 12px; margin-top: 6px; }
   .tipo-btn { flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; cursor: pointer; font-size: 15px; text-align: center; transition: all 0.2s; }
   .tipo-btn.ativo { border-color: #f59e0b; background: #fef3c7; color: #92400e; font-weight: bold; }
+  .tipo-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .estoque-bar { margin-top: 8px; }
+  .estoque-info { display: flex; justify-content: space-between; font-size: 12px; color: #888; margin-bottom: 4px; }
+  .bar-bg { background: #f3f4f6; border-radius: 99px; height: 8px; }
+  .bar-fill { height: 8px; border-radius: 99px; background: #10b981; transition: width 0.3s; }
+  .bar-fill.baixo { background: #f59e0b; }
+  .bar-fill.esgotado { background: #ef4444; }
+  .badge-estoque { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: bold; margin-left: 8px; }
+  .badge-ok { background: #d1fae5; color: #065f46; }
+  .badge-baixo { background: #fef3c7; color: #92400e; }
+  .badge-esgotado { background: #fee2e2; color: #991b1b; }
+  .btn-estoque { padding: 6px 14px; background: #eff6ff; color: #1e40af; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
   .btn { width: 100%; padding: 14px; background: #f59e0b; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
   .btn:hover { background: #d97706; }
   .btn:disabled { background: #ccc; cursor: not-allowed; }
-  .pendentes { margin-top: 10px; }
   .item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px; }
-  .item .info { font-size: 14px; }
-  .item .codigo { font-weight: bold; font-size: 16px; color: #333; }
-  .item .tipo-tag { font-size: 12px; color: #888; }
-  .item .hora { font-size: 12px; color: #aaa; }
+  .item .info .codigo { font-weight: bold; font-size: 16px; color: #333; }
+  .item .info .tipo-tag { font-size: 12px; color: #888; }
+  .item .info .obs { font-size: 12px; color: #f59e0b; margin-top: 2px; }
   .btn-entrega { padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
-  .btn-entrega:hover { background: #059669; }
   .vazio { text-align: center; color: #aaa; padding: 20px; font-size: 14px; }
   .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
   .modal.aberto { display: flex; }
-  .modal-box { background: white; border-radius: 16px; padding: 30px; max-width: 340px; width: 90%; text-align: center; }
-  .modal-codigo { font-size: 48px; font-weight: bold; color: #f59e0b; letter-spacing: 4px; margin: 16px 0; }
-  .modal-info { font-size: 14px; color: #666; margin-bottom: 20px; }
+  .modal-box { background: white; border-radius: 16px; padding: 30px; max-width: 360px; width: 90%; text-align: center; }
+  .modal-codigo { font-size: 48px; font-weight: bold; color: #f59e0b; letter-spacing: 4px; margin: 12px 0; }
+  .modal-info { font-size: 14px; color: #666; margin-bottom: 8px; }
+  .modal-obs { font-size: 13px; color: #f59e0b; margin-bottom: 16px; }
   .btn-imprimir { width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; margin-bottom: 10px; }
   .btn-fechar { width: 100%; padding: 12px; background: #f3f4f6; color: #333; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
+  .modal-estoque-box { max-width: 320px; }
+  .modal-estoque-box input { margin-top: 8px; }
+  .modal-acoes { display: flex; gap: 10px; margin-top: 16px; }
+  .btn-salvar { flex: 1; padding: 12px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
+  .btn-cancelar { flex: 1; padding: 12px; background: #f3f4f6; color: #333; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  #qr-canvas { margin: 16px auto 0; display: block; }
 </style>
 </head>
 <body>
 <header>
-  <a href="/">&#8592;</a>
-  <h1>🍗 Venda de Frango</h1>
+  <div class="header-left">
+    <a href="/">&#8592;</a>
+    <h1>🍗 Venda de Frango</h1>
+  </div>
+  <button class="btn-logoff" onclick="logoff()">Sair</button>
 </header>
+
 <div class="container">
   <div class="card">
-    <h2>Nova Venda</h2>
-    <label>Atendente</label>
-    <input type="text" id="atendente" placeholder="Nome do atendente">
-    <label>Tipo de frango</label>
-    <div class="tipos">
-      <button class="tipo-btn ativo" onclick="selecionarTipo('simples', this)">🍗 Simples</button>
-      <button class="tipo-btn" onclick="selecionarTipo('bacon', this)">🥓 Com Bacon</button>
+    <div class="card-header">
+      <h2>Estoque do dia</h2>
+      <button class="btn-estoque" id="btn-config-estoque" onclick="abrirEstoque()">Configurar</button>
     </div>
-    <button class="btn" onclick="registrarVenda()">Registrar Venda e Imprimir</button>
+    <div id="estoque-display"></div>
   </div>
 
   <div class="card">
-    <h2>Aguardando Entrega</h2>
-    <div class="pendentes" id="pendentes">
-      <div class="vazio">Carregando...</div>
+    <h2 style="font-size:16px;color:#555;margin-bottom:16px;border-bottom:1px solid #eee;padding-bottom:10px">Nova Venda</h2>
+    <label>Atendente</label>
+    <div class="atendente-box" id="atendente-box">Carregando...</div>
+    <label>Tipo de frango</label>
+    <div class="tipos">
+      <button class="tipo-btn ativo" id="btn-simples" onclick="selecionarTipo('simples', this)">🍗 Simples</button>
+      <button class="tipo-btn" id="btn-bacon" onclick="selecionarTipo('bacon', this)">🥓 Com Bacon</button>
+    </div>
+    <label>Observações <span style="color:#aaa;font-weight:normal">(opcional)</span></label>
+    <textarea id="observacao" placeholder="Ex: sem sal, bem passado..."></textarea>
+    <button class="btn" id="btn-vender" onclick="registrarVenda()">Registrar Venda e Imprimir</button>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Aguardando Entrega</h2>
+      <button class="btn-estoque" onclick="abrirScanner()">📷 Ler QR Code</button>
+    </div>
+    <div id="pendentes"><div class="vazio">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- Modal venda registrada -->
+<div class="modal" id="modal-venda">
+  <div class="modal-box">
+    <div style="font-size:16px;color:#555">Venda registrada!</div>
+    <div class="modal-codigo" id="modal-codigo"></div>
+    <div class="modal-info" id="modal-info"></div>
+    <div class="modal-obs" id="modal-obs"></div>
+    <canvas id="qr-canvas"></canvas>
+    <button class="btn-imprimir" onclick="imprimir()">🖨️ Imprimir Comprovante</button>
+    <button class="btn-fechar" onclick="fecharModal('modal-venda')">Fechar</button>
+  </div>
+</div>
+
+<!-- Modal estoque -->
+<div class="modal" id="modal-estoque">
+  <div class="modal-box modal-estoque-box" style="text-align:left">
+    <h3 style="font-size:17px;color:#333;margin-bottom:4px">Estoque do dia</h3>
+    <p style="font-size:13px;color:#888;margin-bottom:8px">Defina quantos frangos foram colocados hoje</p>
+    <label>🍗 Frango Simples</label>
+    <input type="number" id="est-simples" min="0" placeholder="Quantidade">
+    <label>🥓 Frango com Bacon</label>
+    <input type="number" id="est-bacon" min="0" placeholder="Quantidade">
+    <div class="modal-acoes">
+      <button class="btn-cancelar" onclick="fecharModal('modal-estoque')">Cancelar</button>
+      <button class="btn-salvar" onclick="salvarEstoque()">Salvar</button>
     </div>
   </div>
 </div>
 
-<div class="modal" id="modal">
+<!-- Modal scanner QR -->
+<div class="modal" id="modal-scanner">
   <div class="modal-box">
-    <div style="font-size:16px;color:#555;">Venda registrada!</div>
-    <div class="modal-codigo" id="modal-codigo"></div>
-    <div class="modal-info" id="modal-info"></div>
-    <button class="btn-imprimir" onclick="imprimir()">🖨️ Imprimir Comprovante</button>
-    <button class="btn-fechar" onclick="fecharModal()">Fechar</button>
+    <h3 style="font-size:17px;color:#333;margin-bottom:12px">Ler QR Code</h3>
+    <video id="video-scanner" style="width:100%;border-radius:8px;background:#000" autoplay playsinline></video>
+    <div id="scanner-status" style="font-size:13px;color:#888;margin-top:10px">Aponte a câmera para o QR code</div>
+    <button class="btn-fechar" style="margin-top:12px" onclick="fecharScanner()">Fechar</button>
   </div>
 </div>
 
+<!-- Modal confirmar entrega QR -->
+<div class="modal" id="modal-confirmar-qr">
+  <div class="modal-box">
+    <div style="font-size:16px;color:#555;margin-bottom:8px">Confirmar entrega?</div>
+    <div class="modal-codigo" id="qr-codigo" style="font-size:36px"></div>
+    <div class="modal-info" id="qr-info"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn-fechar" style="flex:1" onclick="fecharModal('modal-confirmar-qr')">Cancelar</button>
+      <button class="btn-entrega" style="flex:1;padding:12px;border-radius:8px;font-size:15px" onclick="confirmarEntregaQR()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 <script>
   let tipoSelecionado = 'simples';
   let vendaAtual = null;
+  let usuarioAtual = null;
+  let estoqueAtual = null;
+  let scannerStream = null;
+  let scannerInterval = null;
+  let codigoQRLido = null;
+
+  async function init() {
+    const res = await fetch('/api/auth/me');
+    usuarioAtual = await res.json();
+    document.getElementById('atendente-box').textContent = usuarioAtual.nome;
+    if (usuarioAtual.nivel === 'dono') {
+      document.getElementById('btn-vender').disabled = true;
+      document.getElementById('btn-config-estoque').style.display = 'none';
+    }
+    carregarEstoque();
+    carregarPendentes();
+    setInterval(carregarPendentes, 15000);
+  }
+
+  async function carregarEstoque() {
+    const res = await fetch('/api/estoque/hoje');
+    estoqueAtual = await res.json();
+    renderEstoque();
+    atualizarBotoesTipo();
+  }
+
+  function renderEstoque() {
+    const e = estoqueAtual;
+    if (!e || (e.simples_total === 0 && e.bacon_total === 0)) {
+      document.getElementById('estoque-display').innerHTML = '<div class="vazio" style="padding:10px">Estoque não configurado para hoje</div>';
+      return;
+    }
+    function barInfo(total, vendidos) {
+      if (total === 0) return { pct: 0, cls: '', badge: '' };
+      const restantes = total - vendidos;
+      const pct = Math.max(0, Math.round((restantes / total) * 100));
+      const cls = restantes === 0 ? 'esgotado' : restantes <= Math.ceil(total * 0.2) ? 'baixo' : '';
+      const badge = restantes === 0 ? 'esgotado' : restantes <= Math.ceil(total * 0.2) ? 'baixo' : 'ok';
+      return { pct, cls, badge, restantes };
+    }
+    const s = barInfo(e.simples_total, e.simples_vendidos);
+    const b = barInfo(e.bacon_total, e.bacon_vendidos);
+    document.getElementById('estoque-display').innerHTML = `
+      <div style="margin-bottom:12px">
+        <div class="estoque-info">
+          <span>🍗 Simples <span class="badge-estoque badge-${s.badge || 'ok'}">${s.restantes ?? e.simples_total} restantes</span></span>
+          <span>${e.simples_vendidos}/${e.simples_total} vendidos</span>
+        </div>
+        <div class="bar-bg"><div class="bar-fill ${s.cls}" style="width:${s.pct}%"></div></div>
+      </div>
+      <div>
+        <div class="estoque-info">
+          <span>🥓 Bacon <span class="badge-estoque badge-${b.badge || 'ok'}">${b.restantes ?? e.bacon_total} restantes</span></span>
+          <span>${e.bacon_vendidos}/${e.bacon_total} vendidos</span>
+        </div>
+        <div class="bar-bg"><div class="bar-fill ${b.cls}" style="width:${b.pct}%"></div></div>
+      </div>
+    `;
+  }
+
+  function atualizarBotoesTipo() {
+    if (!estoqueAtual || (estoqueAtual.simples_total === 0 && estoqueAtual.bacon_total === 0)) return;
+    const btnS = document.getElementById('btn-simples');
+    const btnB = document.getElementById('btn-bacon');
+    const sEsgotado = estoqueAtual.simples_restantes <= 0 && estoqueAtual.simples_total > 0;
+    const bEsgotado = estoqueAtual.bacon_restantes <= 0 && estoqueAtual.bacon_total > 0;
+    btnS.disabled = sEsgotado;
+    btnB.disabled = bEsgotado;
+    if (sEsgotado && tipoSelecionado === 'simples' && !bEsgotado) {
+      tipoSelecionado = 'bacon';
+      btnB.classList.add('ativo');
+      btnS.classList.remove('ativo');
+    }
+  }
 
   function selecionarTipo(tipo, btn) {
     tipoSelecionado = tipo;
@@ -86,34 +240,36 @@
   }
 
   async function registrarVenda() {
-    const atendente = document.getElementById('atendente').value.trim();
-    if (!atendente) { alert('Informe o nome do atendente'); return; }
-    const btn = document.querySelector('.btn');
-    btn.disabled = true;
-    btn.textContent = 'Registrando...';
+    const btn = document.getElementById('btn-vender');
+    btn.disabled = true; btn.textContent = 'Registrando...';
     try {
       const res = await fetch('/api/frango/venda', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipo: tipoSelecionado, atendente })
+        body: JSON.stringify({ tipo: tipoSelecionado, observacao: document.getElementById('observacao').value.trim() })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro);
       vendaAtual = data;
       document.getElementById('modal-codigo').textContent = data.codigo;
-      document.getElementById('modal-info').textContent =
-        (data.tipo === 'simples' ? '🍗 Frango Simples' : '🥓 Frango com Bacon') +
-        ' • Atendente: ' + data.atendente;
-      document.getElementById('modal').classList.add('aberto');
+      document.getElementById('modal-info').textContent = (data.tipo === 'simples' ? '🍗 Frango Simples' : '🥓 Frango com Bacon') + ' • ' + data.atendente;
+      document.getElementById('modal-obs').textContent = data.observacao ? '📝 ' + data.observacao : '';
+      const canvas = document.getElementById('qr-canvas');
+      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+      QRCode.toCanvas(canvas, data.codigo, { width: 160, margin: 1 }, () => {});
+      document.getElementById('modal-venda').classList.add('aberto');
+      document.getElementById('observacao').value = '';
+      carregarEstoque();
       carregarPendentes();
-    } catch(e) { alert('Erro: ' + e.message); }
-    btn.disabled = false;
-    btn.textContent = 'Registrar Venda e Imprimir';
+    } catch(e) { alert(e.message); }
+    btn.disabled = false; btn.textContent = 'Registrar Venda e Imprimir';
   }
 
   function imprimir() {
     if (!vendaAtual) return;
-    const w = window.open('', '_blank', 'width=400,height=500');
+    const canvas = document.getElementById('qr-canvas');
+    const qrDataUrl = canvas.toDataURL();
+    const w = window.open('', '_blank', 'width=400,height=600');
     const hora = new Date(vendaAtual.horario_compra).toLocaleTimeString('pt-BR');
     const data = new Date(vendaAtual.horario_compra).toLocaleDateString('pt-BR');
     w.document.write(`
@@ -122,38 +278,28 @@
         body { font-family: monospace; font-size: 14px; padding: 10px; width: 280px; }
         h2 { text-align: center; font-size: 16px; }
         .linha { border-top: 1px dashed #000; margin: 8px 0; }
-        .codigo { text-align: center; font-size: 36px; font-weight: bold; letter-spacing: 4px; margin: 10px 0; }
-        .info { margin: 4px 0; }
-        .rodape { text-align: center; font-size: 12px; margin-top: 10px; }
+        .codigo { text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 4px; margin: 8px 0; }
+        .info { margin: 3px 0; }
+        .obs { font-style: italic; font-size: 12px; margin-top: 4px; }
+        .qr { text-align: center; margin: 8px 0; }
+        .rodape { text-align: center; font-size: 11px; margin-top: 10px; }
       </style></head><body>
-      <h2>FRANGO ASSADO</h2>
+      <h2>FRANGO EXPRESSO</h2>
       <div class="linha"></div>
-      <div class="info">Data: ${data}</div>
-      <div class="info">Hora: ${hora}</div>
+      <div class="info">Data: ${data}  Hora: ${hora}</div>
       <div class="info">Atendente: ${vendaAtual.atendente}</div>
       <div class="info">Produto: ${vendaAtual.tipo === 'simples' ? 'Frango Simples' : 'Frango com Bacon'}</div>
+      ${vendaAtual.observacao ? `<div class="obs">Obs: ${vendaAtual.observacao}</div>` : ''}
       <div class="linha"></div>
-      <div style="text-align:center;font-size:13px;">Seu código:</div>
+      <div style="text-align:center;font-size:13px">Seu código:</div>
       <div class="codigo">${vendaAtual.codigo}</div>
+      <div class="qr"><img src="${qrDataUrl}" width="120"></div>
       <div class="linha"></div>
       <div class="rodape">Guarde este comprovante<br>Apresente na retirada</div>
       <script>window.onload=()=>{window.print();}<\/script>
       </body></html>
     `);
     w.document.close();
-  }
-
-  function fecharModal() {
-    document.getElementById('modal').classList.remove('aberto');
-    vendaAtual = null;
-  }
-
-  async function darBaixa(codigo) {
-    if (!confirm('Confirmar entrega do código ' + codigo + '?')) return;
-    const res = await fetch('/api/frango/entrega/' + codigo, { method: 'POST' });
-    const data = await res.json();
-    if (data.sucesso) carregarPendentes();
-    else alert(data.erro);
   }
 
   async function carregarPendentes() {
@@ -167,15 +313,108 @@
         <div class="info">
           <div class="codigo">${v.codigo}</div>
           <div class="tipo-tag">${v.tipo === 'simples' ? '🍗 Simples' : '🥓 Com Bacon'} • ${v.atendente}</div>
-          <div class="hora">Comprado às ${hora}</div>
+          ${v.observacao ? `<div class="obs">📝 ${v.observacao}</div>` : ''}
+          <div class="tipo-tag" style="margin-top:2px">Comprado às ${hora}</div>
         </div>
         <button class="btn-entrega" onclick="darBaixa('${v.codigo}')">Entregar</button>
       </div>`;
     }).join('');
   }
 
-  carregarPendentes();
-  setInterval(carregarPendentes, 15000);
+  async function darBaixa(codigo) {
+    if (!confirm('Confirmar entrega do código ' + codigo + '?')) return;
+    const res = await fetch('/api/frango/entrega/' + codigo, { method: 'POST' });
+    const data = await res.json();
+    if (data.sucesso) { carregarPendentes(); carregarEstoque(); }
+    else alert(data.erro);
+  }
+
+  function abrirEstoque() {
+    if (estoqueAtual) {
+      document.getElementById('est-simples').value = estoqueAtual.simples_total || '';
+      document.getElementById('est-bacon').value = estoqueAtual.bacon_total || '';
+    }
+    document.getElementById('modal-estoque').classList.add('aberto');
+  }
+
+  async function salvarEstoque() {
+    const simples = parseInt(document.getElementById('est-simples').value) || 0;
+    const bacon = parseInt(document.getElementById('est-bacon').value) || 0;
+    const res = await fetch('/api/estoque', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ simples_total: simples, bacon_total: bacon })
+    });
+    const data = await res.json();
+    if (data.sucesso) { fecharModal('modal-estoque'); carregarEstoque(); }
+    else alert(data.erro);
+  }
+
+  function abrirScanner() {
+    document.getElementById('modal-scanner').classList.add('aberto');
+    document.getElementById('scanner-status').textContent = 'Iniciando câmera...';
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      .then(stream => {
+        scannerStream = stream;
+        const video = document.getElementById('video-scanner');
+        video.srcObject = stream;
+        video.play();
+        video.addEventListener('loadeddata', () => {
+          document.getElementById('scanner-status').textContent = 'Aponte para o QR code';
+          scannerInterval = setInterval(() => lerFrame(video), 300);
+        });
+      })
+      .catch(() => { document.getElementById('scanner-status').textContent = 'Erro ao acessar câmera'; });
+  }
+
+  function lerFrame(video) {
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(img.data, img.width, img.height);
+    if (code && code.data) {
+      fecharScanner();
+      abrirConfirmarQR(code.data);
+    }
+  }
+
+  function fecharScanner() {
+    if (scannerStream) { scannerStream.getTracks().forEach(t => t.stop()); scannerStream = null; }
+    if (scannerInterval) { clearInterval(scannerInterval); scannerInterval = null; }
+    document.getElementById('modal-scanner').classList.remove('aberto');
+  }
+
+  async function abrirConfirmarQR(codigo) {
+    codigoQRLido = codigo;
+    const res = await fetch('/api/frango/qrcode/' + codigo);
+    if (!res.ok) { alert('QR code inválido ou não encontrado'); return; }
+    const venda = await res.json();
+    if (venda.status === 'entregue') { alert('Este frango já foi entregue!'); return; }
+    if (venda.cancelado) { alert('Esta venda foi cancelada!'); return; }
+    document.getElementById('qr-codigo').textContent = venda.codigo;
+    document.getElementById('qr-info').textContent = (venda.tipo === 'simples' ? '🍗 Frango Simples' : '🥓 Frango com Bacon') + ' • ' + venda.atendente + (venda.observacao ? ' • ' + venda.observacao : '');
+    document.getElementById('modal-confirmar-qr').classList.add('aberto');
+  }
+
+  async function confirmarEntregaQR() {
+    const res = await fetch('/api/frango/entrega/' + codigoQRLido, { method: 'POST' });
+    const data = await res.json();
+    fecharModal('modal-confirmar-qr');
+    if (data.sucesso) { alert('Entrega confirmada!'); carregarPendentes(); carregarEstoque(); }
+    else alert(data.erro);
+  }
+
+  function fecharModal(id) { document.getElementById(id).classList.remove('aberto'); }
+
+  async function logoff() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/login.html';
+  }
+
+  init();
 </script>
 </body>
 </html>

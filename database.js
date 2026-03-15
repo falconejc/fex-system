@@ -21,6 +21,7 @@ db.exec(`
     tipo TEXT NOT NULL,
     atendente TEXT NOT NULL,
     usuario_id INTEGER,
+    observacao TEXT,
     horario_compra DATETIME DEFAULT CURRENT_TIMESTAMP,
     horario_entrega DATETIME,
     status TEXT DEFAULT 'pendente',
@@ -45,7 +46,22 @@ db.exec(`
     status TEXT DEFAULT 'pendente',
     cancelado INTEGER DEFAULT 0
   );
+
+  CREATE TABLE IF NOT EXISTS estoque (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    data TEXT NOT NULL,
+    simples_total INTEGER DEFAULT 0,
+    bacon_total INTEGER DEFAULT 0,
+    usuario_id INTEGER,
+    atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
+
+db.exec(`
+  ALTER TABLE vendas ADD COLUMN observacao TEXT;
+`).catch?.(() => {});
+
+try { db.exec('ALTER TABLE vendas ADD COLUMN observacao TEXT;'); } catch(e) {}
 
 const adminExiste = db.prepare("SELECT id FROM usuarios WHERE usuario = 'admin'").get();
 if (!adminExiste) {
@@ -55,7 +71,6 @@ if (!adminExiste) {
   db.prepare("INSERT INTO usuarios (nome, usuario, senha, nivel) VALUES (?, ?, ?, ?)").run('Operador', 'operador', senhaOp, 'operador');
   const senhaDono = bcrypt.hashSync('dono123', 10);
   db.prepare("INSERT INTO usuarios (nome, usuario, senha, nivel) VALUES (?, ?, ?, ?)").run('Dono', 'dono', senhaDono, 'dono');
-  console.log('Usuários padrão criados!');
 }
 
 module.exports = db;

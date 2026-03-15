@@ -12,16 +12,12 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 
-app.get('/login.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
+app.get('/login.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
 
 app.post('/api/auth/login', (req, res) => {
   const { usuario, senha } = req.body;
   const user = db.prepare('SELECT * FROM usuarios WHERE usuario = ? AND ativo = 1').get(usuario);
-  if (!user || !bcrypt.compareSync(senha, user.senha)) {
-    return res.status(401).json({ erro: 'Usuário ou senha inválidos' });
-  }
+  if (!user || !bcrypt.compareSync(senha, user.senha)) return res.status(401).json({ erro: 'Usuário ou senha inválidos' });
   const token = gerarToken(user);
   res.cookie('token', token, { httpOnly: true, maxAge: 12 * 60 * 60 * 1000, sameSite: 'lax', path: '/' });
   res.json({ sucesso: true, nivel: user.nivel, nome: user.nome });
@@ -32,30 +28,22 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ sucesso: true });
 });
 
-app.get('/api/auth/me', verificarToken, (req, res) => {
-  res.json(req.usuario);
-});
+app.get('/api/auth/me', verificarToken, (req, res) => res.json(req.usuario));
 
-app.use('/api/frango', verificarToken, require('./routes/frango'));
+app.use('/api/frango',   verificarToken, require('./routes/frango'));
 app.use('/api/delivery', verificarToken, require('./routes/delivery'));
-app.use('/api/relatorio', verificarToken, require('./routes/relatorio'));
+app.use('/api/relatorio',verificarToken, require('./routes/relatorio'));
 app.use('/api/usuarios', verificarToken, require('./routes/usuarios'));
 app.use('/api/exportar', verificarToken, require('./routes/exportar'));
+app.use('/api/estoque',  verificarToken, require('./routes/estoque'));
 
 app.get('/', (req, res) => {
   const token = req.cookies?.token;
   if (!token) return res.redirect('/login.html');
-  try {
-    jwt.verify(token, SECRET);
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-  } catch {
-    res.redirect('/login.html');
-  }
+  try { jwt.verify(token, SECRET); res.sendFile(path.join(__dirname, 'public', 'index.html')); }
+  catch { res.redirect('/login.html'); }
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-const PORT = 3000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Sistema rodando em http://0.0.0.0:${PORT}`);
-});
+app.listen(3000, '0.0.0.0', () => console.log('Sistema rodando em http://0.0.0.0:3000'));
