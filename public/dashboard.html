@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard - Frango Expresso</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f5f5f5; }
+  header { background: #f59e0b; color: white; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  header a { color: white; text-decoration: none; font-size: 20px; }
+  header h1 { font-size: 20px; }
+  .btn-logoff { padding: 7px 14px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+  .filtro { background: white; border-radius: 12px; padding: 16px 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .filtro label { font-size: 14px; color: #555; }
+  .filtro input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+  .filtro button { padding: 8px 20px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .kpi { background: white; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-top: 4px solid #eee; }
+  .kpi.amarelo { border-top-color: #f59e0b; }
+  .kpi.verde { border-top-color: #10b981; }
+  .kpi.azul { border-top-color: #3b82f6; }
+  .kpi.roxo { border-top-color: #8b5cf6; }
+  .kpi .num { font-size: 36px; font-weight: bold; color: #333; }
+  .kpi .desc { font-size: 12px; color: #888; margin-top: 6px; }
+  .graficos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .grafico-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .grafico-card h3 { font-size: 15px; color: #555; margin-bottom: 16px; }
+  .grafico-card.full { grid-column: 1 / -1; }
+  canvas { max-width: 100%; }
+  @media (max-width: 640px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .graficos { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-left">
+    <a href="/">&#8592;</a>
+    <h1>📈 Dashboard</h1>
+  </div>
+  <button class="btn-logoff" onclick="logoff()">Sair</button>
+</header>
+<div class="container">
+  <div class="filtro">
+    <label>De:</label>
+    <input type="date" id="data-ini">
+    <label>Até:</label>
+    <input type="date" id="data-fim">
+    <button onclick="carregar()">Buscar</button>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="graficos">
+    <div class="grafico-card">
+      <h3>Vendas de frango por tipo</h3>
+      <canvas id="grafico-tipo"></canvas>
+    </div>
+    <div class="grafico-card">
+      <h3>Delivery por forma de pagamento</h3>
+      <canvas id="grafico-pagamento"></canvas>
+    </div>
+    <div class="grafico-card full">
+      <h3>Vendas por hora do dia</h3>
+      <canvas id="grafico-hora"></canvas>
+    </div>
+    <div class="grafico-card full">
+      <h3>Pedidos dos últimos dias</h3>
+      <canvas id="grafico-dias"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+  let charts = {};
+  const hoje = new Date().toISOString().split('T')[0];
+  const seteDias = new Date(Date.now() - 6 * 86400000).toISOString().split('T')[0];
+  document.getElementById('data-ini').value = seteDias;
+  document.getElementById('data-fim').value = hoje;
+
+  async function carregar() {
+    const ini = document.getElementById('data-ini').value;
+    const fim = document.getElementById('data-fim').value;
+    const res = await fetch(`/api/relatorio/periodo?ini=${ini}&fim=${fim}`);
+    const json = await res.json();
+    renderKPIs(json);
+    renderGraficoTipo(json.vendas);
+    renderGraficoPagamento(json.delivery);
+    renderGraficoHora(json.vendas, json.delivery);
+    renderGraficoDias(json.porDia);
+  }
+
+  function destruir(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+  function renderKPIs(json) {
+    const totalVendas = json.vendas.length;
+    const totalDelivery = json.delivery.length;
+    const entregues = json.vendas.filter(v => v.status === 'entregue').length + json.delivery.filter(d => d.status === 'entregue').length;
+    const cancelados = json.vendas.filter(v => v.cancelado).length + json.delivery.filter(d => d.cancelado).length;
+    document.getElementById('kpis').innerHTML = `
+      <div class="kpi amarelo"><div class="num">${totalVendas}</div><div class="desc">Frangos vendidos</div></div>
+      <div class="kpi azul"><div class="num">${totalDelivery}</div><div class="desc">Pedidos delivery</div></div>
+      <div class="kpi verde"><div class="num">${entregues}</div><div class="desc">Entregas realizadas</div></div>
+      <div class="kpi roxo"><div class="num">${cancelados}</div><div class="desc">Cancelamentos</div></div>
+    `;
+  }
+
+  function renderGraficoTipo(vendas) {
+    destruir('tipo');
+    const simples = vendas.filter(v => v.tipo === 'simples').length;
+    const bacon = vendas.filter(v => v.tipo === 'bacon').length;
+    charts['tipo'] = new Chart(document.getElementById('grafico-tipo'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Simples', 'Com Bacon'],
+        datasets: [{ data: [simples, bacon], backgroundColor: ['#f59e0b', '#ef4444'], borderWidth: 0 }]
+      },
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  function renderGraficoPagamento(delivery) {
+    destruir('pagamento');
+    const pix = delivery.filter(d => d.pagamento === 'pix').length;
+    const cartao = delivery.filter(d => d.pagamento === 'cartao').length;
+    const dinheiro = delivery.filter(d => d.pagamento === 'dinheiro').length;
+    charts['pagamento'] = new Chart(document.getElementById('grafico-pagamento'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Pix', 'Cartão', 'Dinheiro'],
+        datasets: [{ data: [pix, cartao, dinheiro], backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981'], borderWidth: 0 }]
+      },
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  function renderGraficoHora(vendas, delivery) {
+    destruir('hora');
+    const horas = Array(24).fill(0);
+    vendas.forEach(v => { const h = new Date(v.horario_compra).getHours(); horas[h]++; });
+    delivery.forEach(d => { const h = new Date(d.horario_pedido).getHours(); horas[h]++; });
+    const labels = horas.map((_, i) => `${String(i).padStart(2,'0')}h`);
+    charts['hora'] = new Chart(document.getElementById('grafico-hora'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{ label: 'Pedidos', data: horas, backgroundColor: '#f59e0b', borderRadius: 6 }]
+      },
+      options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    });
+  }
+
+  function renderGraficoDias(porDia) {
+    destruir('dias');
+    const labels = porDia.map(d => new Date(d.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
+    charts['dias'] = new Chart(document.getElementById('grafico-dias'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Frangos', data: porDia.map(d => d.vendas), borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.3, fill: true },
+          { label: 'Delivery', data: porDia.map(d => d.delivery), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', tension: 0.3, fill: true }
+        ]
+      },
+      options: { plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    });
+  }
+
+  async function logoff() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/login.html';
+  }
+
+  carregar();
+</script>
+</body>
+</html>
