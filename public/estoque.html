@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estoque - Frango Expresso</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f5f5f5; }
+  header { background: #10b981; color: white; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  header a { color: white; text-decoration: none; font-size: 20px; }
+  header h1 { font-size: 20px; }
+  .btn-logoff { padding: 7px 14px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .container { max-width: 900px; margin: 24px auto; padding: 0 16px; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: white; padding: 6px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .tab { flex: 1; padding: 10px; border: none; background: transparent; cursor: pointer; border-radius: 8px; font-size: 14px; color: #666; font-family: Arial; transition: all 0.2s; }
+  .tab.ativo { background: #10b981; color: white; font-weight: bold; }
+  .painel { display: none; }
+  .painel.ativo { display: block; }
+  .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+  .card-header h2 { font-size: 16px; color: #555; }
+  .alerta { background: #fee2e2; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .alerta .icon { font-size: 20px; }
+  .alerta .texto { font-size: 14px; color: #991b1b; }
+  .alerta .texto strong { display: block; font-size: 15px; margin-bottom: 2px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+  .kpi { background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .kpi .num { font-size: 32px; font-weight: bold; color: #333; }
+  .kpi .desc { font-size: 12px; color: #888; margin-top: 4px; }
+  .kpi.verde .num { color: #10b981; }
+  .kpi.amarelo .num { color: #f59e0b; }
+  .kpi.vermelho .num { color: #ef4444; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px 10px; background: #f9fafb; color: #666; font-weight: 600; border-bottom: 1px solid #eee; }
+  td { padding: 8px 10px; border-bottom: 1px solid #f3f4f6; color: #333; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+  .badge-ok { background: #d1fae5; color: #065f46; }
+  .badge-baixo { background: #fee2e2; color: #991b1b; }
+  .badge-entrada { background: #dbeafe; color: #1e40af; }
+  .badge-saida { background: #fee2e2; color: #991b1b; }
+  .btn { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; }
+  .btn-verde { background: #10b981; color: white; }
+  .btn-azul { background: #3b82f6; color: white; }
+  .btn-amarelo { background: #f59e0b; color: white; }
+  .btn-vermelho { background: #ef4444; color: white; }
+  .btn-ghost { background: #f3f4f6; color: #333; }
+  .filtro { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .filtro label { font-size: 13px; color: #555; }
+  .filtro input, .filtro select { padding: 7px 10px; border: 1px solid #ddd; border-radius: 7px; font-size: 13px; }
+  .filtro button { padding: 7px 16px; background: #10b981; color: white; border: none; border-radius: 7px; cursor: pointer; font-size: 13px; }
+  .bar-bg { background: #f3f4f6; border-radius: 99px; height: 8px; margin-top: 4px; }
+  .bar-fill { height: 8px; border-radius: 99px; transition: width 0.3s; }
+  .vazio { text-align: center; color: #aaa; padding: 24px; font-size: 14px; }
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
+  .modal.aberto { display: flex; }
+  .modal-box { background: white; border-radius: 16px; padding: vw(24px); max-width: 420px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 24px; }
+  .modal-box h3 { font-size: 17px; color: #333; margin-bottom: 14px; }
+  label { display: block; font-size: 14px; color: #555; margin-bottom: 5px; margin-top: 12px; }
+  input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: Arial; }
+  .modal-acoes { display: flex; gap: 10px; margin-top: 18px; }
+  .btn-salvar { flex: 1; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
+  .btn-cancelar { flex: 1; padding: 12px; background: #f3f4f6; color: #333; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 600px) { .grid3 { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-left">
+    <a href="/">&#8592;</a>
+    <h1>📦 Estoque</h1>
+  </div>
+  <button class="btn-logoff" onclick="logoff()">Sair</button>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab ativo" onclick="mudarTab('resumo', this)">📊 Resumo</button>
+    <button class="tab" onclick="mudarTab('insumos', this)">🧂 Insumos</button>
+    <button class="tab" onclick="mudarTab('historico', this)">📅 Histórico</button>
+    <button class="tab" onclick="mudarTab('consumo', this)">📈 Consumo</button>
+  </div>
+
+  <!-- RESUMO -->
+  <div class="painel ativo" id="painel-resumo">
+    <div id="alertas-resumo"></div>
+    <div class="grid3" id="kpis-resumo"></div>
+    <div class="card">
+      <div class="card-header"><h2>🍗 Frangos hoje</h2></div>
+      <div id="frangos-resumo"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>🧂 Insumos críticos</h2></div>
+      <div id="insumos-criticos"></div>
+    </div>
+  </div>
+
+  <!-- INSUMOS -->
+  <div class="painel" id="painel-insumos">
+    <div class="card">
+      <div class="card-header">
+        <h2>Insumos cadastrados</h2>
+        <button class="btn btn-verde" id="btn-novo-insumo" onclick="abrirModalInsumo()">+ Novo insumo</button>
+      </div>
+      <div id="lista-insumos"></div>
+    </div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div class="painel" id="painel-historico">
+    <div class="card">
+      <div class="card-header"><h2>Histórico por dia</h2></div>
+      <div class="filtro">
+        <label>De:</label><input type="date" id="hist-ini">
+        <label>Até:</label><input type="date" id="hist-fim">
+        <button onclick="carregarHistorico()">Buscar</button>
+      </div>
+      <div id="tabela-historico"></div>
+    </div>
+  </div>
+
+  <!-- CONSUMO -->
+  <div class="painel" id="painel-consumo">
+    <div class="card">
+      <div class="card-header"><h2>Análise de consumo</h2></div>
+      <div class="filtro">
+        <label>Período:</label>
+        <select id="consumo-dias" onchange="carregarConsumo()">
+          <option value="7">Últimos 7 dias</option>
+          <option value="15">Últimos 15 dias</option>
+          <option value="30" selected>Últimos 30 dias</option>
+          <option value="60">Últimos 60 dias</option>
+          <option value="90">Últimos 90 dias</option>
+        </select>
+      </div>
+      <div id="tabela-consumo"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal insumo -->
+<div class="modal" id="modal-insumo">
+  <div class="modal-box">
+    <h3 id="modal-insumo-titulo">Novo insumo</h3>
+    <input type="hidden" id="insumo-id">
+    <label>Nome</label>
+    <input type="text" id="insumo-nome" placeholder="Ex: Bacon">
+    <div class="grid2">
+      <div>
+        <label>Unidade</label>
+        <select id="insumo-unidade">
+          <option value="un">Unidade (un)</option>
+          <option value="kg">Quilograma (kg)</option>
+          <option value="g">Grama (g)</option>
+          <option value="l">Litro (l)</option>
+          <option value="ml">Mililitro (ml)</option>
+          <option value="cx">Caixa (cx)</option>
+          <option value="pct">Pacote (pct)</option>
+        </select>
+      </div>
+      <div>
+        <label>Qtd mínima (alerta)</label>
+        <input type="number" id="insumo-minimo" min="0" step="0.01" placeholder="0">
+      </div>
+    </div>
+    <label>Quantidade atual</label>
+    <input type="number" id="insumo-qtd" min="0" step="0.01" placeholder="0">
+    <label>Descrição (opcional)</label>
+    <input type="text" id="insumo-desc" placeholder="Ex: Bacon fatiado">
+    <label>Status</label>
+    <select id="insumo-ativo">
+      <option value="1">Ativo</option>
+      <option value="0">Inativo</option>
+    </select>
+    <div class="modal-acoes">
+      <button class="btn-cancelar" onclick="fecharModal('modal-insumo')">Cancelar</button>
+      <button class="btn-salvar" onclick="salvarInsumo()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal movimentação -->
+<div class="modal" id="modal-mov">
+  <div class="modal-box">
+    <h3 id="modal-mov-titulo">Movimentar estoque</h3>
+    <input type="hidden" id="mov-insumo-id">
+    <label>Tipo</label>
+    <select id="mov-tipo">
+      <option value="entrada">Entrada (compra/recebimento)</option>
+      <option value="saida">Saída (uso/perda)</option>
+    </select>
+    <label>Quantidade</label>
+    <input type="number" id="mov-qtd" min="0.01" step="0.01" placeholder="0">
+    <label>Observação (opcional)</label>
+    <input type="text" id="mov-obs" placeholder="Ex: compra semanal">
+    <div class="modal-acoes">
+      <button class="btn-cancelar" onclick="fecharModal('modal-mov')">Cancelar</button>
+      <button class="btn-salvar" onclick="salvarMovimentacao()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal histórico insumo -->
+<div class="modal" id="modal-hist-insumo">
+  <div class="modal-box">
+    <h3 id="modal-hist-titulo">Histórico</h3>
+    <div id="hist-insumo-lista"></div>
+    <button class="btn-cancelar" style="width:100%;margin-top:14px" onclick="fecharModal('modal-hist-insumo')">Fechar</button>
+  </div>
+</div>
+
+<script>
+  let nivelUsuario = '';
+  const hoje = new Date().toISOString().split('T')[0];
+  const seteDias = new Date(Date.now() - 6 * 86400000).toISOString().split('T')[0];
+
+  async function init() {
+    const res = await fetch('/api/auth/me');
+    const user = await res.json();
+    nivelUsuario = user.nivel;
+    if (nivelUsuario === 'dono') {
+      document.getElementById('btn-novo-insumo').style.display = 'none';
+    }
+    document.getElementById('hist-ini').value = seteDias;
+    document.getElementById('hist-fim').value = hoje;
+    carregarResumo();
+  }
+
+  function mudarTab(tab, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativo'));
+    document.querySelectorAll('.painel').forEach(p => p.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    document.getElementById('painel-' + tab).classList.add('ativo');
+    if (tab === 'resumo') carregarResumo();
+    if (tab === 'insumos') carregarInsumos();
+    if (tab === 'historico') carregarHistorico();
+    if (tab === 'consumo') carregarConsumo();
+  }
+
+  async function carregarResumo() {
+    const res = await fetch('/api/estoque_modulo/resumo');
+    const json = await res.json();
+
+    const alertasEl = document.getElementById('alertas-resumo');
+    if (json.alertas.length) {
+      alertasEl.innerHTML = json.alertas.map(a => `
+        <div class="alerta">
+          <div class="icon">⚠️</div>
+          <div class="texto"><strong>Estoque baixo: ${a.nome}</strong>${a.quantidade_atual} ${a.unidade} restantes (mínimo: ${a.quantidade_minima} ${a.unidade})</div>
+        </div>
+      `).join('');
+    } else {
+      alertasEl.innerHTML = '';
+    }
+
+    const totalVendidos = json.estoques.reduce((s, e) => s + e.vendidos, 0);
+    const totalRestantes = json.estoques.reduce((s, e) => s + e.restantes, 0);
+    const totalAssando = json.estoques.reduce((s, e) => s + e.assando, 0);
+    document.getElementById('kpis-resumo').innerHTML = `
+      <div class="kpi verde"><div class="num">${totalVendidos}</div><div class="desc">Vendidos hoje</div></div>
+      <div class="kpi amarelo"><div class="num">${totalRestantes}</div><div class="desc">Restantes</div></div>
+      <div class="kpi"><div class="num">${totalAssando}</div><div class="desc">Assando agora</div></div>
+    `;
+
+    document.getElementById('frangos-resumo').innerHTML = json.estoques.map(e => {
+      const pct = e.total > 0 ? Math.max(0, Math.round(((e.total - e.vendidos) / e.total) * 100)) : 0;
+      const cor = e.restantes === 0 ? '#ef4444' : e.restantes <= Math.ceil(e.total * 0.2) ? '#f59e0b' : '#10b981';
+      return `<div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+          <span><strong>${e.tipo_nome}</strong>
+            ${e.assando > 0 ? `<span style="font-size:11px;color:#f59e0b;margin-left:6px">🔥 ${e.assando} assando</span>` : ''}
+            ${e.prontos > 0 ? `<span style="font-size:11px;color:#10b981;margin-left:6px">✅ ${e.prontos} prontos</span>` : ''}
+          </span>
+          <span style="color:#888">${e.vendidos}/${e.total} • ${e.restantes} restantes</span>
+        </div>
+        <div class="bar-bg"><div class="bar-fill" style="background:${cor};width:${pct}%"></div></div>
+      </div>`;
+    }).join('');
+
+    const criticos = json.insumos.filter(i => i.quantidade_atual <= i.quantidade_minima);
+    document.getElementById('insumos-criticos').innerHTML = criticos.length
+      ? criticos.map(i => `<div style="display:flex;justify-content:space-between;padding:10px;border:1px solid #fee2e2;border-radius:8px;margin-bottom:8px">
+          <span style="font-size:14px;color:#333"><strong>${i.nome}</strong></span>
+          <span class="badge badge-baixo">${i.quantidade_atual} ${i.unidade} restantes</span>
+        </div>`).join('')
+      : '<div class="vazio">Nenhum insumo em nível crítico ✅</div>';
+  }
+
+  async function carregarInsumos() {
+    const res = await fetch('/api/estoque_modulo/insumos');
+    const lista = await res.json();
+    const el = document.getElementById('lista-insumos');
+    if (!lista.length) { el.innerHTML = '<div class="vazio">Nenhum insumo cadastrado</div>'; return; }
+    el.innerHTML = `<table>
+      <thead><tr><th>Nome</th><th>Qtd atual</th><th>Mínimo</th><th>Status</th><th>Ações</th></tr></thead>
+      <tbody>${lista.map(i => {
+        const baixo = i.quantidade_atual <= i.quantidade_minima;
+        return `<tr>
+          <td><strong>${i.nome}</strong><br><span style="font-size:11px;color:#888">${i.descricao || ''}</span></td>
+          <td><strong>${i.quantidade_atual} ${i.unidade}</strong></td>
+          <td>${i.quantidade_minima} ${i.unidade}</td>
+          <td><span class="badge badge-${baixo ? 'baixo' : 'ok'}">${baixo ? 'Baixo' : 'Ok'}</span></td>
+          <td style="white-space:nowrap">
+            ${nivelUsuario !== 'dono' ? `
+              <button class="btn btn-verde" style="margin-right:4px;font-size:12px;padding:5px 10px" onclick="abrirMovimentacao(${i.id}, '${i.nome}')">Movimentar</button>
+              <button class="btn btn-ghost" style="margin-right:4px;font-size:12px;padding:5px 10px" onclick="abrirEditarInsumo(${i.id}, '${i.nome}', '${i.unidade}', ${i.quantidade_atual}, ${i.quantidade_minima}, '${i.descricao||''}', ${i.ativo})">Editar</button>
+            ` : ''}
+            <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px" onclick="verHistoricoInsumo(${i.id}, '${i.nome}')">Histórico</button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
+
+  async function carregarHistorico() {
+    const ini = document.getElementById('hist-ini').value;
+    const fim = document.getElementById('hist-fim').value;
+    const res = await fetch(`/api/estoque_modulo/historico?ini=${ini}&fim=${fim}`);
+    const json = await res.json();
+    const el = document.getElementById('tabela-historico');
+    if (!json.historico.length) { el.innerHTML = '<div class="vazio">Sem dados</div>'; return; }
+    const tiposCols = json.tipos.map(t => `<th colspan="3" style="text-align:center">${t.nome}</th>`).join('');
+    const tiposSubCols = json.tipos.map(() => '<th>Total</th><th>Vendidos</th><th>Sobra</th>').join('');
+    el.innerHTML = `<div style="overflow-x:auto"><table>
+      <thead>
+        <tr><th rowspan="2">Data</th>${tiposCols}</tr>
+        <tr>${tiposSubCols}</tr>
+      </thead>
+      <tbody>${json.historico.map(d => {
+        const data = new Date(d.data + 'T12:00:00').toLocaleDateString('pt-BR');
+        const cols = json.tipos.map(t => {
+          const e = d.tipos[t.id] || { total: 0, vendidos: 0, sobra: 0 };
+          return `<td>${e.total}</td><td>${e.vendidos}</td><td style="color:${e.sobra > 0 ? '#f59e0b' : '#10b981'}">${e.sobra}</td>`;
+        }).join('');
+        return `<tr><td><strong>${data}</strong></td>${cols}</tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  }
+
+  async function carregarConsumo() {
+    const dias = document.getElementById('consumo-dias').value;
+    const res = await fetch(`/api/estoque_modulo/consumo?dias=${dias}`);
+    const json = await res.json();
+    const el = document.getElementById('tabela-consumo');
+    el.innerHTML = `
+      <p style="font-size:13px;color:#888;margin-bottom:14px">Período: ${new Date(json.periodo.ini+'T12:00:00').toLocaleDateString('pt-BR')} a ${new Date(json.periodo.fim+'T12:00:00').toLocaleDateString('pt-BR')} (${json.periodo.dias} dias)</p>
+      <table>
+        <thead><tr><th>Tipo</th><th>Total vendido</th><th>Dias com venda</th><th>Média/dia</th><th>Previsão semana</th><th>Previsão mês</th></tr></thead>
+        <tbody>${json.consumo.map(c => `<tr>
+          <td><strong>${c.tipo_nome}</strong></td>
+          <td>${c.total_vendido}</td>
+          <td>${c.dias_com_venda}</td>
+          <td><strong>${c.media_dia}</strong>/dia</td>
+          <td>${c.previsao_semana}</td>
+          <td>${c.media_dia * 30}</td>
+        </tr>`).join('')}</tbody>
+      </table>`;
+  }
+
+  function abrirModalInsumo() {
+    document.getElementById('modal-insumo-titulo').textContent = 'Novo insumo';
+    document.getElementById('insumo-id').value = '';
+    document.getElementById('insumo-nome').value = '';
+    document.getElementById('insumo-unidade').value = 'un';
+    document.getElementById('insumo-minimo').value = '';
+    document.getElementById('insumo-qtd').value = '';
+    document.getElementById('insumo-desc').value = '';
+    document.getElementById('insumo-ativo').value = '1';
+    document.getElementById('modal-insumo').classList.add('aberto');
+  }
+
+  function abrirEditarInsumo(id, nome, unidade, qtd, minimo, desc, ativo) {
+    document.getElementById('modal-insumo-titulo').textContent = 'Editar insumo';
+    document.getElementById('insumo-id').value = id;
+    document.getElementById('insumo-nome').value = nome;
+    document.getElementById('insumo-unidade').value = unidade;
+    document.getElementById('insumo-minimo').value = minimo;
+    document.getElementById('insumo-qtd').value = qtd;
+    document.getElementById('insumo-desc').value = desc;
+    document.getElementById('insumo-ativo').value = ativo;
+    document.getElementById('modal-insumo').classList.add('aberto');
+  }
+
+  async function salvarInsumo() {
+    const id = document.getElementById('insumo-id').value;
+    const body = {
+      nome: document.getElementById('insumo-nome').value.trim(),
+      unidade: document.getElementById('insumo-unidade').value,
+      quantidade_atual: parseFloat(document.getElementById('insumo-qtd').value) || 0,
+      quantidade_minima: parseFloat(document.getElementById('insumo-minimo').value) || 0,
+      descricao: document.getElementById('insumo-desc').value.trim(),
+      ativo: parseInt(document.getElementById('insumo-ativo').value)
+    };
+    if (!body.nome) { alert('Informe o nome'); return; }
+    const url = id ? `/api/estoque_modulo/insumos/${id}` : '/api/estoque_modulo/insumos';
+    const method = id ? 'PUT' : 'POST';
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) { alert(data.erro); return; }
+    fecharModal('modal-insumo');
+    carregarInsumos();
+  }
+
+  function abrirMovimentacao(id, nome) {
+    document.getElementById('modal-mov-titulo').textContent = 'Movimentar: ' + nome;
+    document.getElementById('mov-insumo-id').value = id;
+    document.getElementById('mov-tipo').value = 'entrada';
+    document.getElementById('mov-qtd').value = '';
+    document.getElementById('mov-obs').value = '';
+    document.getElementById('modal-mov').classList.add('aberto');
+  }
+
+  async function salvarMovimentacao() {
+    const id = document.getElementById('mov-insumo-id').value;
+    const quantidade = parseFloat(document.getElementById('mov-qtd').value);
+    if (!quantidade || quantidade <= 0) { alert('Informe a quantidade'); return; }
+    const res = await fetch(`/api/estoque_modulo/insumos/${id}/movimentar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo: document.getElementById('mov-tipo').value, quantidade, observacao: document.getElementById('mov-obs').value.trim() })
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.erro); return; }
+    fecharModal('modal-mov');
+    carregarInsumos();
+    alert(`Estoque atualizado! Quantidade atual: ${data.quantidade_atual}`);
+  }
+
+  async function verHistoricoInsumo(id, nome) {
+    document.getElementById('modal-hist-titulo').textContent = 'Histórico: ' + nome;
+    document.getElementById('hist-insumo-lista').innerHTML = '<div style="text-align:center;padding:16px;color:#888">Carregando...</div>';
+    document.getElementById('modal-hist-insumo').classList.add('aberto');
+    const res = await fetch(`/api/estoque_modulo/insumos/${id}/movimentacoes`);
+    const lista = await res.json();
+    const el = document.getElementById('hist-insumo-lista');
+    if (!lista.length) { el.innerHTML = '<div class="vazio">Sem movimentações</div>'; return; }
+    el.innerHTML = `<table style="font-size:13px">
+      <thead><tr><th>Data</th><th>Tipo</th><th>Qtd</th><th>Usuário</th><th>Obs</th></tr></thead>
+      <tbody>${lista.map(m => {
+        const dt = new Date(m.criado_em.replace(' ','T')).toLocaleString('pt-BR');
+        return `<tr>
+          <td style="white-space:nowrap">${dt}</td>
+          <td><span class="badge badge-${m.tipo === 'entrada' ? 'entrada' : 'saida'}">${m.tipo}</span></td>
+          <td>${m.quantidade}</td>
+          <td>${m.usuario_nome || '-'}</td>
+          <td>${m.observacao || '-'}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
+
+  function fecharModal(id) { document.getElementById(id).classList.remove('aberto'); }
+
+  async function logoff() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/login.html';
+  }
+
+  init();
+</script>
+</body>
+</html>
