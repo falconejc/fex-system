@@ -201,8 +201,9 @@
       const esgotado = e.total > 0 && e.restantes <= 0;
       const assando = e.assando > 0 && e.restantes <= e.prontos;
       const ativo = tipoSelecionado === e.tipo_id;
+      const icone = e.tipo_icone || '🍗';
       return `<button class="tipo-btn ${ativo ? 'ativo' : ''}" ${esgotado ? 'disabled' : ''} onclick="selecionarTipo(${e.tipo_id}, this)">
-        <div class="tipo-nome">🍗 ${e.tipo_nome}</div>
+        <div class="tipo-nome">${icone} ${e.tipo_nome}</div>
         <div class="tipo-est" style="color:${esgotado ? '#ef4444' : '#888'}">${esgotado ? 'Esgotado' : e.restantes + ' disponíveis'}</div>
         ${assando ? `<div class="tipo-aviso">🔥 últimos, alguns assando</div>` : ''}
       </button>`;
