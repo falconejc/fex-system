@@ -1,3 +1,10 @@
+/**
+ * @file database.js
+ * @description Configuração e inicialização do banco de dados SQLite.
+ * Cria as tabelas necessárias se não existirem e insere
+ * usuários padrão na primeira execução.
+ */
+
 const Database = require('better-sqlite3');
 const path = require('path');
 const bcrypt = require('bcryptjs');

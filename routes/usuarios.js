@@ -1,3 +1,10 @@
+/**
+ * @file usuarios.js
+ * @description Rotas para gerenciamento de usuários.
+ * Permite ao admin criar, editar, ativar/desativar e excluir usuários.
+ * Níveis: admin, caixa, assador, dono.
+ */
+
 const express = require('express');
 const router = express.Router();
 const db = require('../database');

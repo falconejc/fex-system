@@ -1,3 +1,10 @@
+/**
+ * @file relatorio.js
+ * @description Rotas para geração de relatórios.
+ * Fornece dados de vendas e deliveries por dia e por período,
+ * usados nas telas de relatório e dashboard.
+ */
+
 const express = require('express');
 const router = express.Router();
 const db = require('../database');

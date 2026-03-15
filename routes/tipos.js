@@ -1,3 +1,10 @@
+/**
+ * @file tipos.js
+ * @description Rotas para gerenciamento de tipos de frango.
+ * Admin pode cadastrar novos tipos (ex: simples, bacon, catupiry)
+ * com nome, descrição e preço.
+ */
+
 const express = require('express');
 const router = express.Router();
 const db = require('../database');

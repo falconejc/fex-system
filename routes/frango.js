@@ -1,3 +1,10 @@
+/**
+ * @file frango.js
+ * @description Rotas para vendas de frango assado.
+ * Gerencia registro de vendas, validação de estoque, geração de código único,
+ * baixa de entregas e consulta por QR code.
+ */
+
 const express = require('express');
 const router = express.Router();
 const db = require('../database');

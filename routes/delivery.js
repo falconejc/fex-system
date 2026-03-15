@@ -1,3 +1,10 @@
+/**
+ * @file delivery.js
+ * @description Rotas para pedidos de delivery.
+ * Gerencia registro de pedidos (entrega/retirada), baixa de entregas
+ * e edição/cancelamento por administradores.
+ */
+
 const express = require('express');
 const router = express.Router();
 const db = require('../database');

@@ -1,3 +1,10 @@
+/**
+ * @file exportar.js
+ * @description Rotas para exportação de relatórios em Excel.
+ * Gera planilha com abas de vendas, delivery e resumo,
+ * com formatação colorida por status.
+ */
+
 const express = require('express');
 const router = express.Router();
 const db = require('../database');

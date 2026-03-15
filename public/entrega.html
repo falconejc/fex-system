@@ -231,14 +231,59 @@
     }).join('');
   }
 
+  // Estoque disponível por tipo (frangos crus - já em lotes)
+  let estoqueDisponivel = {};
+
   async function abrirModalLote() {
     document.getElementById('lote-qtd').value = '';
     document.getElementById('lote-obs').value = '';
-    const res = await fetch('/api/tipos');
-    const tipos = await res.json();
+
+    // Carrega tipos ativos
+    const resT = await fetch('/api/tipos');
+    const tipos = await resT.json();
+
+    // Carrega estoque de frangos crus do dia
+    const resE = await fetch('/api/estoque_modulo/frangos-crus');
+    const crus = await resE.json();
+
+    // Monta mapa de disponível por tipo
+    estoqueDisponivel = {};
+    crus.forEach(c => {
+      estoqueDisponivel[c.tipo_id] = Math.max(0, c.total_crus - c.total_assados);
+    });
+
     const sel = document.getElementById('lote-tipo');
-    sel.innerHTML = tipos.map(t => `<option value="${t.id}">${t.nome}</option>`).join('');
+    sel.innerHTML = tipos.map(t => {
+      const disp = estoqueDisponivel[t.id] ?? 0;
+      return `<option value="${t.id}">${t.nome} (${disp} disponíveis)</option>`;
+    }).join('');
+
+    // Atualiza aviso ao trocar tipo
+    sel.onchange = atualizarAvisoDisponivel;
+    atualizarAvisoDisponivel();
+
     document.getElementById('modal-lote').classList.add('aberto');
+  }
+
+  function atualizarAvisoDisponivel() {
+    const tipo_id = parseInt(document.getElementById('lote-tipo').value);
+    const disp = estoqueDisponivel[tipo_id] ?? 0;
+    let el = document.getElementById('aviso-disponivel');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'aviso-disponivel';
+      el.style.cssText = 'font-size:13px;padding:8px 10px;border-radius:7px;margin-top:8px';
+      document.getElementById('lote-qtd').parentNode.insertBefore(el, document.getElementById('lote-qtd'));
+    }
+    if (disp <= 0) {
+      el.style.background = '#fee2e2';
+      el.style.color = '#991b1b';
+      el.textContent = '⚠️ Nenhum frango cru disponível para este tipo. Registre frangos crus no módulo de estoque.';
+    } else {
+      el.style.background = '#f0fdf4';
+      el.style.color = '#065f46';
+      el.textContent = '✅ Disponível para assar: ' + disp + ' frango(s)';
+    }
   }
 
   async function salvarLote() {
@@ -246,18 +291,42 @@
     const tipo_id = parseInt(document.getElementById('lote-tipo').value);
     if (!quantidade || quantidade <= 0) { alert('Informe a quantidade'); return; }
     if (!tipo_id) { alert('Selecione o tipo'); return; }
+
     const res = await fetch('/api/lotes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ quantidade, tipo_id, observacao: document.getElementById('lote-obs').value.trim() })
     });
     const data = await res.json();
-    if (data.sucesso) {
-      fecharModal('modal-lote');
-      const hora = formatarHora(data.horario_previsto);
-      alert(`Lote registrado! Previsão de ficar pronto às ${hora}`);
-      carregarLotes();
-    } else alert(data.erro);
+
+    if (res.status === 409 && data.requer_confirmacao) {
+      // Admin recebe confirmação para ultrapassar
+      if (confirm(data.detalhe + '\n\nClique OK para prosseguir mesmo assim.')) {
+        const res2 = await fetch('/api/lotes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quantidade, tipo_id, observacao: document.getElementById('lote-obs').value.trim(), forcar: true })
+        });
+        const data2 = await res2.json();
+        if (data2.sucesso) {
+          fecharModal('modal-lote');
+          alert('Lote registrado! Previsão: ' + formatarHora(data2.horario_previsto));
+          carregarLotes();
+        } else alert(data2.erro);
+      }
+      return;
+    }
+
+    if (!data.sucesso) {
+      // Assador bloqueado
+      alert('❌ ' + data.erro + '\n\n' + (data.detalhe || ''));
+      return;
+    }
+
+    fecharModal('modal-lote');
+    alert('Lote registrado! Previsão: ' + formatarHora(data.horario_previsto) +
+      (data.disponivel_restante > 0 ? '\nRestam ' + data.disponivel_restante + ' frangos crus disponíveis.' : ''));
+    carregarLotes();
   }
 
   async function marcarPronto(id) {

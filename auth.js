@@ -1,3 +1,10 @@
+/**
+ * @file auth.js
+ * @description Módulo de autenticação JWT.
+ * Gera tokens de acesso, middleware de verificação
+ * e middleware de controle de nível de acesso por perfil.
+ */
+
 const jwt = require('jsonwebtoken');
 const SECRET = 'fex-system-secret-2024';
 

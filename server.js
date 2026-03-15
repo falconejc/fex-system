@@ -1,3 +1,11 @@
+/**
+ * @file server.js
+ * @description Ponto de entrada da aplicação Fex System.
+ * Configura o servidor Express com middlewares, rotas da API
+ * e serve os arquivos estáticos do frontend.
+ * Porta padrão: 3000
+ */
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');

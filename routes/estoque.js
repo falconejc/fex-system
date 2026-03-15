@@ -1,3 +1,9 @@
+/**
+ * @file estoque.js
+ * @description Rotas para controle do estoque diário de frangos por tipo.
+ * Permite configurar quantos frangos de cada tipo estão disponíveis para venda no dia.
+ */
+
 const express = require('express');
 const router = express.Router();
 const db = require('../database');
