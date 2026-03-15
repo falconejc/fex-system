@@ -26,6 +26,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     codigo TEXT UNIQUE NOT NULL,
     tipo TEXT NOT NULL,
+    tipo_id INTEGER DEFAULT 1,
     atendente TEXT NOT NULL,
     usuario_id INTEGER,
     observacao TEXT,
@@ -57,18 +58,87 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS estoque (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     data TEXT NOT NULL,
-    simples_total INTEGER DEFAULT 0,
-    bacon_total INTEGER DEFAULT 0,
+    tipo_id INTEGER DEFAULT 1,
+    quantidade INTEGER DEFAULT 0,
     usuario_id INTEGER,
     atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS lotes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    quantidade INTEGER NOT NULL,
+    tipo_id INTEGER DEFAULT 1,
+    horario_entrada TEXT NOT NULL,
+    horario_previsto TEXT NOT NULL,
+    status TEXT DEFAULT 'assando',
+    usuario_id INTEGER,
+    observacao TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS tipos_frango (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    descricao TEXT,
+    preco REAL DEFAULT 0,
+    ativo INTEGER DEFAULT 1,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS insumos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    unidade TEXT NOT NULL DEFAULT 'un',
+    quantidade_atual REAL DEFAULT 0,
+    quantidade_minima REAL DEFAULT 0,
+    descricao TEXT,
+    ativo INTEGER DEFAULT 1,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS movimentacoes_insumos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    insumo_id INTEGER NOT NULL,
+    tipo TEXT NOT NULL,
+    quantidade REAL NOT NULL,
+    observacao TEXT,
+    usuario_id INTEGER,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS historico_estoque (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    data TEXT NOT NULL,
+    tipo_id INTEGER NOT NULL,
+    quantidade_inicial INTEGER DEFAULT 0,
+    quantidade_vendida INTEGER DEFAULT 0,
+    quantidade_sobra INTEGER DEFAULT 0,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS frangos_crus (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    data TEXT NOT NULL,
+    tipo_id INTEGER NOT NULL,
+    quantidade INTEGER NOT NULL,
+    observacao TEXT,
+    usuario_id INTEGER,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS tipo_insumos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tipo_id INTEGER NOT NULL,
+    insumo_id INTEGER NOT NULL,
+    quantidade REAL NOT NULL DEFAULT 1,
+    UNIQUE(tipo_id, insumo_id)
   );
 `);
 
 const adminExiste = db.prepare("SELECT id FROM usuarios WHERE usuario = 'admin'").get();
 if (!adminExiste) {
-  const bcrypt = require('bcryptjs');
   db.prepare("INSERT INTO usuarios (nome, usuario, senha, nivel) VALUES (?, ?, ?, ?)").run('Administrador', 'admin', bcrypt.hashSync('admin123', 10), 'admin');
-  db.prepare("INSERT INTO usuarios (nome, usuario, senha, nivel) VALUES (?, ?, ?, ?)").run('Operador', 'operador', bcrypt.hashSync('operador123', 10), 'operador');
+  db.prepare("INSERT INTO usuarios (nome, usuario, senha, nivel) VALUES (?, ?, ?, ?)").run('Caixa', 'caixa', bcrypt.hashSync('caixa123', 10), 'caixa');
+  db.prepare("INSERT INTO usuarios (nome, usuario, senha, nivel) VALUES (?, ?, ?, ?)").run('Assador', 'assador', bcrypt.hashSync('assador123', 10), 'assador');
   db.prepare("INSERT INTO usuarios (nome, usuario, senha, nivel) VALUES (?, ?, ?, ?)").run('Dono', 'dono', bcrypt.hashSync('dono123', 10), 'dono');
 }
 
