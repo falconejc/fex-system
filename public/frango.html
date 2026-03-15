@@ -274,9 +274,10 @@
     const canvas = document.getElementById('qr-canvas');
     const qrDataUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(vendaAtual.codigo);
     const w = window.open('', '_blank', 'width=400,height=600');
-    const dataCompra = new Date(vendaAtual.horario_compra);
-    const hora = dataCompra.toLocaleTimeString('pt-BR', {timeZone:'America/Sao_Paulo'});
-    const data = dataCompra.toLocaleDateString('pt-BR', {timeZone:'America/Sao_Paulo'});
+    const partes = vendaAtual.horario_compra.replace('T',' ').split(/[- :]/);
+    const dataCompra = new Date(partes[0], partes[1]-1, partes[2], partes[3], partes[4], partes[5]);
+    const hora = dataCompra.toLocaleTimeString('pt-BR');
+    const data = dataCompra.toLocaleDateString('pt-BR');
     const diaSemana = new Date(new Date().toLocaleString('en-US', {timeZone:'America/Sao_Paulo'})).getDay();
     const isDomingo = diaSemana === 0;
     const horarioLimite = isDomingo ? '13:45' : '18:30';

@@ -8,7 +8,11 @@ function gerarCodigo() {
 }
 
 function hoje() {
-  return new Date().toISOString().split('T')[0];
+  return new Date().toLocaleDateString('pt-BR', {timeZone:'America/Sao_Paulo'}).split('/').reverse().join('-');
+}
+
+function agora() {
+  return new Date().toLocaleString('sv-SE', {timeZone:'America/Sao_Paulo'}).replace('T', ' ');
 }
 
 router.post('/venda', (req, res) => {
@@ -33,8 +37,8 @@ router.post('/venda', (req, res) => {
     if (++tentativas > 10) return res.status(500).json({ erro: 'Erro ao gerar código' });
   } while (db.prepare('SELECT id FROM vendas WHERE codigo = ?').get(codigo));
 
-  db.prepare('INSERT INTO vendas (codigo, tipo, atendente, usuario_id, observacao) VALUES (?, ?, ?, ?, ?)')
-    .run(codigo, tipo, atendente, req.usuario.id, observacao || '');
+  db.prepare('INSERT INTO vendas (codigo, tipo, atendente, usuario_id, observacao, horario_compra) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(codigo, tipo, atendente, req.usuario.id, observacao || '', agora());
 
   res.json(db.prepare('SELECT * FROM vendas WHERE codigo = ?').get(codigo));
 });
@@ -54,7 +58,7 @@ router.post('/entrega/:codigo', (req, res) => {
   if (!venda) return res.status(404).json({ erro: 'Código não encontrado' });
   if (venda.status === 'entregue') return res.status(400).json({ erro: 'Já entregue' });
   if (venda.cancelado) return res.status(400).json({ erro: 'Venda cancelada' });
-  db.prepare("UPDATE vendas SET status='entregue', horario_entrega=CURRENT_TIMESTAMP WHERE codigo=?").run(req.params.codigo);
+  db.prepare("UPDATE vendas SET status='entregue', horario_entrega=? WHERE codigo=?").run(agora(), req.params.codigo);
   res.json({ sucesso: true });
 });
 
