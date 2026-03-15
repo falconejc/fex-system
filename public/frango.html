@@ -153,7 +153,7 @@
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 <script>
   let tipoSelecionado = 'simples';
@@ -255,8 +255,12 @@
       document.getElementById('modal-info').textContent = (data.tipo === 'simples' ? '🍗 Frango Simples' : '🥓 Frango com Bacon') + ' • ' + data.atendente;
       document.getElementById('modal-obs').textContent = data.observacao ? '📝 ' + data.observacao : '';
       const canvas = document.getElementById('qr-canvas');
-      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-      QRCode.toCanvas(canvas, data.codigo, { width: 160, margin: 1 }, () => {});
+      canvas.width = 160; canvas.height = 160;
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => ctx.drawImage(img, 0, 0, 160, 160);
+      img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(data.codigo);
       document.getElementById('modal-venda').classList.add('aberto');
       document.getElementById('observacao').value = '';
       carregarEstoque();
@@ -268,7 +272,7 @@
   function imprimir() {
     if (!vendaAtual) return;
     const canvas = document.getElementById('qr-canvas');
-    const qrDataUrl = canvas.toDataURL();
+    const qrDataUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(vendaAtual.codigo);
     const w = window.open('', '_blank', 'width=400,height=600');
     const hora = new Date(vendaAtual.horario_compra).toLocaleTimeString('pt-BR');
     const data = new Date(vendaAtual.horario_compra).toLocaleDateString('pt-BR');
@@ -353,32 +357,46 @@
   function abrirScanner() {
     document.getElementById('modal-scanner').classList.add('aberto');
     document.getElementById('scanner-status').textContent = 'Iniciando câmera...';
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    const constraints = {
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      }
+    };
+    navigator.mediaDevices.getUserMedia(constraints)
       .then(stream => {
         scannerStream = stream;
         const video = document.getElementById('video-scanner');
         video.srcObject = stream;
         video.play();
-        video.addEventListener('loadeddata', () => {
+        video.addEventListener('loadedmetadata', () => {
           document.getElementById('scanner-status').textContent = 'Aponte para o QR code';
-          scannerInterval = setInterval(() => lerFrame(video), 300);
+          requestAnimationFrame(() => tickScanner(video));
         });
       })
-      .catch(() => { document.getElementById('scanner-status').textContent = 'Erro ao acessar câmera'; });
+      .catch(err => {
+        document.getElementById('scanner-status').textContent = 'Erro: ' + err.message;
+      });
   }
 
-  function lerFrame(video) {
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0);
-    const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const code = jsQR(img.data, img.width, img.height);
-    if (code && code.data) {
-      fecharScanner();
-      abrirConfirmarQR(code.data);
+  function tickScanner(video) {
+    if (!scannerStream) return;
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+      const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+      if (code && code.data) {
+        fecharScanner();
+        abrirConfirmarQR(code.data);
+        return;
+      }
     }
+    setTimeout(() => requestAnimationFrame(() => tickScanner(video)), 150);
   }
 
   function fecharScanner() {

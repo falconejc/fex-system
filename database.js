@@ -57,20 +57,12 @@ db.exec(`
   );
 `);
 
-db.exec(`
-  ALTER TABLE vendas ADD COLUMN observacao TEXT;
-`).catch?.(() => {});
-
-try { db.exec('ALTER TABLE vendas ADD COLUMN observacao TEXT;'); } catch(e) {}
-
 const adminExiste = db.prepare("SELECT id FROM usuarios WHERE usuario = 'admin'").get();
 if (!adminExiste) {
-  const senha = bcrypt.hashSync('admin123', 10);
-  db.prepare("INSERT INTO usuarios (nome, usuario, senha, nivel) VALUES (?, ?, ?, ?)").run('Administrador', 'admin', senha, 'admin');
-  const senhaOp = bcrypt.hashSync('operador123', 10);
-  db.prepare("INSERT INTO usuarios (nome, usuario, senha, nivel) VALUES (?, ?, ?, ?)").run('Operador', 'operador', senhaOp, 'operador');
-  const senhaDono = bcrypt.hashSync('dono123', 10);
-  db.prepare("INSERT INTO usuarios (nome, usuario, senha, nivel) VALUES (?, ?, ?, ?)").run('Dono', 'dono', senhaDono, 'dono');
+  const bcrypt = require('bcryptjs');
+  db.prepare("INSERT INTO usuarios (nome, usuario, senha, nivel) VALUES (?, ?, ?, ?)").run('Administrador', 'admin', bcrypt.hashSync('admin123', 10), 'admin');
+  db.prepare("INSERT INTO usuarios (nome, usuario, senha, nivel) VALUES (?, ?, ?, ?)").run('Operador', 'operador', bcrypt.hashSync('operador123', 10), 'operador');
+  db.prepare("INSERT INTO usuarios (nome, usuario, senha, nivel) VALUES (?, ?, ?, ?)").run('Dono', 'dono', bcrypt.hashSync('dono123', 10), 'dono');
 }
 
 module.exports = db;
