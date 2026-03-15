@@ -114,4 +114,30 @@ router.get('/insumos/:id/movimentacoes', (req, res) => {
   res.json(movs);
 });
 
+router.get('/frangos-crus', (req, res) => {
+  const data = req.query.data || hoje();
+  const tipos = db.prepare('SELECT * FROM tipos_frango WHERE ativo = 1').all();
+  const resultado = tipos.map(tipo => {
+    const registros = db.prepare('SELECT * FROM frangos_crus WHERE data = ? AND tipo_id = ? ORDER BY criado_em DESC').all(data, tipo.id);
+    const total = registros.reduce((s, r) => s + r.quantidade, 0);
+    const assados = db.prepare("SELECT COALESCE(SUM(quantidade),0) as t FROM lotes WHERE date(horario_entrada)=? AND tipo_id=?").get(data, tipo.id).t;
+    return { tipo_id: tipo.id, tipo_nome: tipo.nome, total_crus: total, total_assados: assados, aproveitamento: total > 0 ? Math.round((assados/total)*100) : 0, registros };
+  });
+  res.json(resultado);
+});
+
+router.post('/frangos-crus', exigirNivel('admin', 'caixa', 'assador'), (req, res) => {
+  const { tipo_id, quantidade, observacao } = req.body;
+  if (!tipo_id || !quantidade || quantidade <= 0) return res.status(400).json({ erro: 'Tipo e quantidade obrigatórios' });
+  const data = hoje();
+  db.prepare('INSERT INTO frangos_crus (data, tipo_id, quantidade, observacao, usuario_id) VALUES (?,?,?,?,?)')
+    .run(data, tipo_id, quantidade, observacao || '', req.usuario.id);
+  res.json({ sucesso: true });
+});
+
+router.delete('/frangos-crus/:id', exigirNivel('admin'), (req, res) => {
+  db.prepare('DELETE FROM frangos_crus WHERE id = ?').run(req.params.id);
+  res.json({ sucesso: true });
+});
+
 module.exports = router;

@@ -82,6 +82,7 @@
     <button class="tab" onclick="mudarTab('insumos', this)">🧂 Insumos</button>
     <button class="tab" onclick="mudarTab('historico', this)">📅 Histórico</button>
     <button class="tab" onclick="mudarTab('consumo', this)">📈 Consumo</button>
+    <button class="tab" onclick="mudarTab('crus', this)">🐔 Frangos Crus</button>
   </div>
 
   <!-- RESUMO -->
@@ -122,6 +123,22 @@
     </div>
   </div>
 
+  <!-- FRANGOS CRUS -->
+  <div class="painel" id="painel-crus">
+    <div class="card">
+      <div class="card-header">
+        <h2>🐔 Frangos crus do dia</h2>
+        <button class="btn btn-amarelo" id="btn-novo-cru" onclick="abrirModalCru()">+ Registrar entrada</button>
+      </div>
+      <div class="filtro">
+        <label>Data:</label>
+        <input type="date" id="crus-data">
+        <button onclick="carregarCrus()">Buscar</button>
+      </div>
+      <div id="lista-crus"></div>
+    </div>
+  </div>
+
   <!-- CONSUMO -->
   <div class="painel" id="painel-consumo">
     <div class="card">
@@ -137,6 +154,23 @@
         </select>
       </div>
       <div id="tabela-consumo"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal frangos crus -->
+<div class="modal" id="modal-cru">
+  <div class="modal-box">
+    <h3>Registrar frangos crus</h3>
+    <label>Tipo</label>
+    <select id="cru-tipo" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px"></select>
+    <label>Quantidade</label>
+    <input type="number" id="cru-qtd" min="1" placeholder="Ex: 30">
+    <label>Observação (opcional)</label>
+    <input type="text" id="cru-obs" placeholder="Ex: compra da manhã">
+    <div class="modal-acoes">
+      <button class="btn-cancelar" onclick="fecharModal('modal-cru')">Cancelar</button>
+      <button class="btn-salvar" style="background:#f59e0b" onclick="salvarCru()">Registrar</button>
     </div>
   </div>
 </div>
@@ -226,6 +260,7 @@
     }
     document.getElementById('hist-ini').value = seteDias;
     document.getElementById('hist-fim').value = hoje;
+    document.getElementById('crus-data').value = hoje;
     carregarResumo();
   }
 
@@ -238,6 +273,7 @@
     if (tab === 'insumos') carregarInsumos();
     if (tab === 'historico') carregarHistorico();
     if (tab === 'consumo') carregarConsumo();
+    if (tab === 'crus') carregarCrus();
   }
 
   async function carregarResumo() {
@@ -450,6 +486,74 @@
         </tr>`;
       }).join('')}</tbody>
     </table>`;
+  }
+
+  async function carregarCrus() {
+    const data = document.getElementById('crus-data').value;
+    const res = await fetch('/api/estoque_modulo/frangos-crus?data=' + data);
+    const lista = await res.json();
+    const el = document.getElementById('lista-crus');
+    const total = lista.reduce((s, t) => s + t.total_crus, 0);
+    if (total === 0 && lista.every(t => t.registros.length === 0)) {
+      el.innerHTML = '<div class="vazio">Nenhuma entrada registrada para esta data</div>';
+      return;
+    }
+    el.innerHTML = lista.filter(t => t.total_crus > 0 || t.registros.length > 0).map(t => `
+      <div style="margin-bottom:16px;padding:14px;border:1px solid #eee;border-radius:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <strong style="font-size:15px">🍗 ${t.tipo_nome}</strong>
+          <div style="text-align:right;font-size:13px;color:#555">
+            <span style="margin-right:12px">Crus: <strong>${t.total_crus}</strong></span>
+            <span style="margin-right:12px">Assados: <strong>${t.total_assados}</strong></span>
+            <span class="badge badge-${t.aproveitamento >= 80 ? 'ok' : 'baixo'}">Aproveitamento: ${t.aproveitamento}%</span>
+          </div>
+        </div>
+        ${t.registros.length ? `<table style="font-size:12px;width:100%">
+          <thead><tr><th>Horário</th><th>Quantidade</th><th>Observação</th>${nivelUsuario === 'admin' ? '<th></th>' : ''}</tr></thead>
+          <tbody>${t.registros.map(r => {
+            const dt = new Date(r.criado_em.replace(' ','T')).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+            return `<tr>
+              <td>${dt}</td>
+              <td><strong>${r.quantidade}</strong></td>
+              <td>${r.observacao || '-'}</td>
+              ${nivelUsuario === 'admin' ? `<td><button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" onclick="excluirCru(${r.id})">Excluir</button></td>` : ''}
+            </tr>`;
+          }).join('')}</tbody>
+        </table>` : '<div style="font-size:12px;color:#aaa">Sem registros</div>'}
+      </div>
+    `).join('');
+  }
+
+  async function abrirModalCru() {
+    const res = await fetch('/api/tipos');
+    const tipos = await res.json();
+    document.getElementById('cru-tipo').innerHTML = tipos.map(t => `<option value="${t.id}">${t.nome}</option>`).join('');
+    document.getElementById('cru-qtd').value = '';
+    document.getElementById('cru-obs').value = '';
+    document.getElementById('modal-cru').classList.add('aberto');
+  }
+
+  async function salvarCru() {
+    const tipo_id = parseInt(document.getElementById('cru-tipo').value);
+    const quantidade = parseInt(document.getElementById('cru-qtd').value);
+    if (!quantidade || quantidade <= 0) { alert('Informe a quantidade'); return; }
+    const res = await fetch('/api/estoque_modulo/frangos-crus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo_id, quantidade, observacao: document.getElementById('cru-obs').value.trim() })
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.erro); return; }
+    fecharModal('modal-cru');
+    carregarCrus();
+  }
+
+  async function excluirCru(id) {
+    if (!confirm('Excluir este registro?')) return;
+    const res = await fetch('/api/estoque_modulo/frangos-crus/' + id, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.sucesso) carregarCrus();
+    else alert(data.erro);
   }
 
   function fecharModal(id) { document.getElementById(id).classList.remove('aberto'); }
