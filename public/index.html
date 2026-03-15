@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fex System</title>
+<title>Frango Expresso</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: Arial, sans-serif; background: #f5f5f5; min-height: 100vh; }
-  header { background: white; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-  .header-left h1 { font-size: 20px; color: #333; }
-  .header-left p { font-size: 13px; color: #888; margin-top: 2px; }
+  body.oculto { visibility: hidden; }
+  header { background: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .header-left img { height: 48px; width: auto; }
   .header-right { display: flex; align-items: center; gap: 12px; }
   .usuario-info { text-align: right; }
   .usuario-info .nome { font-size: 14px; color: #333; font-weight: bold; }
@@ -27,47 +27,24 @@
   .card.delivery { border-top: 4px solid #3b82f6; }
   .card.relatorio { border-top: 4px solid #10b981; }
   .card.usuarios { border-top: 4px solid #8b5cf6; }
-  .card.hidden { display: none; }
 </style>
 </head>
-<body>
+<body class="oculto">
 <header>
   <div class="header-left">
-    <h1>🍗 Fex System</h1>
-    <p>Sistema de Vendas</p>
+    <img src="/logo.jfif" alt="Frango Expresso">
   </div>
   <div class="header-right">
     <div class="usuario-info">
-      <div class="nome" id="header-nome">...</div>
-      <div class="nivel" id="header-nivel">...</div>
+      <div class="nome" id="header-nome"></div>
+      <div class="nivel" id="header-nivel"></div>
     </div>
     <button class="btn-logoff" onclick="logoff()">Sair</button>
   </div>
 </header>
 
 <div class="container">
-  <div class="cards">
-    <a href="/frango.html" class="card frango">
-      <div class="icon">🍗</div>
-      <h2>Frango</h2>
-      <p>Registrar venda e dar baixa</p>
-    </a>
-    <a href="/delivery.html" class="card delivery">
-      <div class="icon">🛵</div>
-      <h2>Delivery</h2>
-      <p>Registrar pedido e imprimir</p>
-    </a>
-    <a href="/relatorio.html" class="card relatorio">
-      <div class="icon">📊</div>
-      <h2>Relatórios</h2>
-      <p>Vendas e entregas do dia</p>
-    </a>
-    <a href="/usuarios.html" class="card usuarios" id="card-usuarios">
-      <div class="icon">👥</div>
-      <h2>Usuários</h2>
-      <p>Gerenciar acessos</p>
-    </a>
-  </div>
+  <div class="cards" id="cards"></div>
 </div>
 
 <script>
@@ -78,9 +55,23 @@
     document.getElementById('header-nome').textContent = user.nome;
     const niveis = { admin: 'Administrador', operador: 'Operador', dono: 'Dono' };
     document.getElementById('header-nivel').textContent = niveis[user.nivel] || user.nivel;
-    if (user.nivel !== 'admin') {
-      document.getElementById('card-usuarios').classList.add('hidden');
-    }
+
+    const cards = [
+      { href: '/frango.html', classe: 'frango', icon: '🍗', titulo: 'Frango', desc: 'Registrar venda e dar baixa', niveis: ['admin','operador'] },
+      { href: '/delivery.html', classe: 'delivery', icon: '🛵', titulo: 'Delivery', desc: 'Registrar pedido e imprimir', niveis: ['admin','operador'] },
+      { href: '/relatorio.html', classe: 'relatorio', icon: '📊', titulo: 'Relatórios', desc: 'Vendas e entregas do dia', niveis: ['admin','operador','dono'] },
+      { href: '/usuarios.html', classe: 'usuarios', icon: '👥', titulo: 'Usuários', desc: 'Gerenciar acessos', niveis: ['admin'] },
+    ];
+
+    document.getElementById('cards').innerHTML = cards
+      .filter(c => c.niveis.includes(user.nivel))
+      .map(c => `<a href="${c.href}" class="card ${c.classe}">
+        <div class="icon">${c.icon}</div>
+        <h2>${c.titulo}</h2>
+        <p>${c.desc}</p>
+      </a>`).join('');
+
+    document.body.classList.remove('oculto');
   }
 
   async function logoff() {

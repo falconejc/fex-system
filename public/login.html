@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login - Fex System</title>
+<title>Login - Frango Expresso</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: Arial, sans-serif; background: #f5f5f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
   .card { background: white; border-radius: 16px; padding: 40px; width: 100%; max-width: 360px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-  .logo { text-align: center; margin-bottom: 30px; }
-  .logo h1 { font-size: 28px; color: #333; }
-  .logo p { color: #888; font-size: 14px; margin-top: 4px; }
+  .logo { text-align: center; margin-bottom: 28px; }
+  .logo img { width: 140px; height: auto; }
   label { display: block; font-size: 14px; color: #555; margin-bottom: 6px; margin-top: 16px; }
   input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
   input:focus { outline: none; border-color: #f59e0b; }
@@ -23,8 +22,7 @@
 <body>
 <div class="card">
   <div class="logo">
-    <h1>🍗 Fex System</h1>
-    <p>Sistema de Vendas</p>
+    <img src="/logo.jfif" alt="Frango Expresso">
   </div>
   <label>Usuário</label>
   <input type="text" id="usuario" placeholder="Seu usuário" autocomplete="username">
@@ -35,14 +33,12 @@
 </div>
 <script>
   document.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
-
   async function login() {
     const usuario = document.getElementById('usuario').value.trim();
     const senha = document.getElementById('senha').value;
     if (!usuario || !senha) { mostrarErro('Preencha todos os campos'); return; }
     const btn = document.querySelector('.btn');
-    btn.disabled = true;
-    btn.textContent = 'Entrando...';
+    btn.disabled = true; btn.textContent = 'Entrando...';
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -54,15 +50,12 @@
       window.location.href = '/';
     } catch(e) {
       mostrarErro(e.message);
-      btn.disabled = false;
-      btn.textContent = 'Entrar';
+      btn.disabled = false; btn.textContent = 'Entrar';
     }
   }
-
   function mostrarErro(msg) {
     const el = document.getElementById('erro');
-    el.textContent = msg;
-    el.style.display = 'block';
+    el.textContent = msg; el.style.display = 'block';
   }
 </script>
 </body>
