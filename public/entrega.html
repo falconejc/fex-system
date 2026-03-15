@@ -97,9 +97,12 @@
 
 <!-- Modal novo lote -->
 <div class="modal" id="modal-lote">
-  <div class="modal-box">
-    <h3>Novo lote no forno</h3>
-    <label>Quantidade de frangos</label>
+  <div class="modal-box" style="text-align:left">
+    <h3 style="font-size:17px;color:#333;margin-bottom:4px">Novo lote no forno</h3>
+    <p style="font-size:13px;color:#888;margin-bottom:8px">Informe o tipo e quantidade</p>
+    <label>Tipo de frango</label>
+    <select id="lote-tipo" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;margin-top:4px"></select>
+    <label>Quantidade</label>
     <input type="number" id="lote-qtd" min="1" placeholder="Ex: 10">
     <label>Observação (opcional)</label>
     <input type="text" id="lote-obs" placeholder="Ex: forno 2, com tempero especial">
@@ -228,19 +231,25 @@
     }).join('');
   }
 
-  function abrirModalLote() {
+  async function abrirModalLote() {
     document.getElementById('lote-qtd').value = '';
     document.getElementById('lote-obs').value = '';
+    const res = await fetch('/api/tipos');
+    const tipos = await res.json();
+    const sel = document.getElementById('lote-tipo');
+    sel.innerHTML = tipos.map(t => `<option value="${t.id}">${t.nome}</option>`).join('');
     document.getElementById('modal-lote').classList.add('aberto');
   }
 
   async function salvarLote() {
     const quantidade = parseInt(document.getElementById('lote-qtd').value);
+    const tipo_id = parseInt(document.getElementById('lote-tipo').value);
     if (!quantidade || quantidade <= 0) { alert('Informe a quantidade'); return; }
+    if (!tipo_id) { alert('Selecione o tipo'); return; }
     const res = await fetch('/api/lotes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ quantidade, observacao: document.getElementById('lote-obs').value.trim() })
+      body: JSON.stringify({ quantidade, tipo_id, observacao: document.getElementById('lote-obs').value.trim() })
     });
     const data = await res.json();
     if (data.sucesso) {
