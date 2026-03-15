@@ -12,54 +12,121 @@
   header a { color: white; text-decoration: none; font-size: 20px; }
   header h1 { font-size: 20px; }
   .btn-logoff { padding: 7px 14px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
-  .container { max-width: 500px; margin: 30px auto; padding: 0 20px; }
-  .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+  .container { max-width: 540px; margin: 24px auto; padding: 0 16px; }
+  .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
   .card-header h2 { font-size: 16px; color: #555; }
-  .btn-qr { padding: 10px 20px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold; }
-  .item { display: flex; justify-content: space-between; align-items: center; padding: 14px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 10px; }
-  .item .info .codigo { font-weight: bold; font-size: 18px; color: #333; }
-  .item .info .tipo-tag { font-size: 13px; color: #888; margin-top: 3px; }
-  .item .info .obs { font-size: 12px; color: #f59e0b; margin-top: 3px; }
-  .item .info .hora { font-size: 12px; color: #aaa; margin-top: 2px; }
-  .btn-entrega { padding: 12px 20px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold; }
-  .btn-entrega:hover { background: #059669; }
-  .vazio { text-align: center; color: #aaa; padding: 30px; font-size: 15px; }
-  .contador { text-align: center; font-size: 48px; font-weight: bold; color: #f59e0b; margin: 8px 0; }
-  .contador-desc { text-align: center; font-size: 13px; color: #888; margin-bottom: 16px; }
+  .btn-primary { padding: 9px 18px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
+  .btn-green { padding: 9px 18px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
+  .btn-qr { padding: 9px 18px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
+  .lote-item { border: 1px solid #eee; border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+  .lote-item.assando { border-left: 4px solid #f59e0b; }
+  .lote-item.pronto { border-left: 4px solid #10b981; background: #f0fdf4; }
+  .lote-topo { display: flex; justify-content: space-between; align-items: flex-start; }
+  .lote-qtd { font-size: 28px; font-weight: bold; color: #333; }
+  .lote-qtd span { font-size: 13px; color: #888; font-weight: normal; }
+  .lote-status { padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: bold; }
+  .status-assando { background: #fef3c7; color: #92400e; }
+  .status-pronto { background: #d1fae5; color: #065f46; }
+  .lote-tempo { font-size: 13px; color: #555; margin-top: 6px; }
+  .lote-tempo strong { color: #f59e0b; }
+  .lote-tempo.pronto-txt { color: #10b981; font-weight: bold; }
+  .lote-acoes { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .btn-pronto { padding: 7px 14px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .btn-atraso { padding: 7px 14px; background: #fee2e2; color: #991b1b; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .item-entrega { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px; }
+  .item-entrega .info .codigo { font-weight: bold; font-size: 17px; color: #333; }
+  .item-entrega .info .detalhe { font-size: 12px; color: #888; margin-top: 2px; }
+  .item-entrega .info .obs { font-size: 12px; color: #f59e0b; margin-top: 2px; }
+  .btn-entregar { padding: 10px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; }
+  .contador { font-size: 42px; font-weight: bold; color: #f59e0b; text-align: center; }
+  .contador-desc { text-align: center; font-size: 13px; color: #888; margin-bottom: 12px; }
+  .vazio { text-align: center; color: #aaa; padding: 20px; font-size: 14px; }
   .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
   .modal.aberto { display: flex; }
-  .modal-box { background: white; border-radius: 16px; padding: 24px; max-width: 380px; width: 90%; text-align: center; }
-  .modal-box h3 { font-size: 17px; color: #333; margin-bottom: 12px; }
+  .modal-box { background: white; border-radius: 16px; padding: 24px; max-width: 360px; width: 90%; text-align: center; }
+  .modal-box h3 { font-size: 17px; color: #333; margin-bottom: 14px; }
+  .modal-box input, .modal-box select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-top: 6px; }
+  label { display: block; font-size: 14px; color: #555; margin-top: 12px; text-align: left; }
+  .modal-acoes { display: flex; gap: 10px; margin-top: 16px; }
+  .btn-salvar { flex: 1; padding: 12px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
+  .btn-cancelar { flex: 1; padding: 12px; background: #f3f4f6; color: #333; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
   video { width: 100%; border-radius: 8px; background: #000; }
-  #scanner-status { font-size: 13px; color: #888; margin-top: 10px; }
-  .modal-codigo { font-size: 42px; font-weight: bold; color: #f59e0b; letter-spacing: 4px; margin: 12px 0; }
-  .modal-info { font-size: 14px; color: #555; margin-bottom: 16px; }
-  .btn-confirmar { width: 100%; padding: 14px; background: #10b981; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
-  .btn-fechar { width: 100%; padding: 12px; background: #f3f4f6; color: #333; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; }
-  .sucesso-box { background: #d1fae5; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 16px; }
-  .sucesso-box .icon { font-size: 48px; }
-  .sucesso-box p { color: #065f46; font-weight: bold; font-size: 16px; margin-top: 8px; }
+  #scanner-status { font-size: 13px; color: #888; margin-top: 8px; }
+  .modal-codigo { font-size: 38px; font-weight: bold; color: #f59e0b; letter-spacing: 4px; margin: 10px 0; }
+  .modal-info { font-size: 14px; color: #555; margin-bottom: 14px; }
+  .btn-confirmar { width: 100%; padding: 13px; background: #10b981; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; margin-bottom: 8px; }
+  .btn-fechar { width: 100%; padding: 11px; background: #f3f4f6; color: #333; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; }
+  .sucesso-box { background: #d1fae5; border-radius: 12px; padding: 18px; text-align: center; margin-bottom: 14px; }
+  .sucesso-box .icon { font-size: 44px; }
+  .sucesso-box p { color: #065f46; font-weight: bold; font-size: 15px; margin-top: 6px; }
 </style>
 </head>
 <body>
 <header>
   <div class="header-left">
     <a href="/">&#8592;</a>
-    <h1>🔥 Entregas</h1>
+    <h1>🔥 Painel do Assador</h1>
   </div>
   <button class="btn-logoff" onclick="logoff()">Sair</button>
 </header>
 
 <div class="container">
+
+  <!-- Lotes no forno -->
   <div class="card">
     <div class="card-header">
-      <h2>Pendentes</h2>
-      <button class="btn-qr" onclick="abrirScanner()">📷 Ler QR Code</button>
+      <h2>🔥 Fornos</h2>
+      <button class="btn-primary" onclick="abrirModalLote()">+ Novo lote</button>
     </div>
-    <div id="contador" class="contador">0</div>
-    <div class="contador-desc">frangos aguardando entrega</div>
+    <div id="lista-lotes"><div class="vazio">Nenhum lote hoje</div></div>
+  </div>
+
+  <!-- Entregas pendentes -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Entregas pendentes</h2>
+      <button class="btn-qr" onclick="abrirScanner()">📷 QR Code</button>
+    </div>
+    <div class="contador" id="contador">0</div>
+    <div class="contador-desc">aguardando retirada</div>
     <div id="pendentes"><div class="vazio">Carregando...</div></div>
+  </div>
+
+</div>
+
+<!-- Modal novo lote -->
+<div class="modal" id="modal-lote">
+  <div class="modal-box">
+    <h3>Novo lote no forno</h3>
+    <label>Quantidade de frangos</label>
+    <input type="number" id="lote-qtd" min="1" placeholder="Ex: 10">
+    <label>Observação (opcional)</label>
+    <input type="text" id="lote-obs" placeholder="Ex: forno 2, com tempero especial">
+    <div class="modal-acoes">
+      <button class="btn-cancelar" onclick="fecharModal('modal-lote')">Cancelar</button>
+      <button class="btn-salvar" onclick="salvarLote()">Colocar no forno</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal atraso -->
+<div class="modal" id="modal-atraso">
+  <div class="modal-box">
+    <h3>Adicionar tempo ao lote</h3>
+    <label>Quantos minutos a mais?</label>
+    <select id="atraso-minutos">
+      <option value="10">+10 minutos</option>
+      <option value="15">+15 minutos</option>
+      <option value="20">+20 minutos</option>
+      <option value="30">+30 minutos</option>
+      <option value="45">+45 minutos</option>
+    </select>
+    <input type="hidden" id="atraso-lote-id">
+    <div class="modal-acoes">
+      <button class="btn-cancelar" onclick="fecharModal('modal-atraso')">Cancelar</button>
+      <button class="btn-salvar" onclick="salvarAtraso()">Confirmar</button>
+    </div>
   </div>
 </div>
 
@@ -76,7 +143,7 @@
 <!-- Modal confirmar QR -->
 <div class="modal" id="modal-confirmar">
   <div class="modal-box">
-    <div style="font-size:15px;color:#555">Confirmar entrega?</div>
+    <div style="font-size:14px;color:#555">Confirmar entrega?</div>
     <div class="modal-codigo" id="qr-codigo"></div>
     <div class="modal-info" id="qr-info"></div>
     <button class="btn-confirmar" onclick="confirmarEntrega()">Confirmar Entrega</button>
@@ -101,6 +168,47 @@
   let scannerStream = null;
   let codigoQRLido = null;
 
+  function formatarHora(str) {
+    const p = str.replace('T',' ').split(/[- :]/);
+    const d = new Date(p[0], p[1]-1, p[2], p[3], p[4], p[5]||0);
+    return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function minutosRestantes(str) {
+    const p = str.replace('T',' ').split(/[- :]/);
+    const d = new Date(p[0], p[1]-1, p[2], p[3], p[4], p[5]||0);
+    return Math.ceil((d - new Date()) / 60000);
+  }
+
+  async function carregarLotes() {
+    const res = await fetch('/api/lotes/ativos');
+    const lotes = await res.json();
+    const el = document.getElementById('lista-lotes');
+    if (!lotes.length) { el.innerHTML = '<div class="vazio">Nenhum lote hoje</div>'; return; }
+    el.innerHTML = lotes.map(l => {
+      const pronto = l.status === 'pronto';
+      const min = minutosRestantes(l.horario_previsto);
+      const hora = formatarHora(l.horario_previsto);
+      const tempoTxt = pronto
+        ? '<div class="lote-tempo pronto-txt">✅ Pronto para retirada!</div>'
+        : min <= 0
+          ? '<div class="lote-tempo pronto-txt">✅ Deve estar pronto agora!</div>'
+          : `<div class="lote-tempo">Previsto: <strong>${hora}</strong> (em ~${min} min)</div>`;
+      return `<div class="lote-item ${l.status}">
+        <div class="lote-topo">
+          <div class="lote-qtd">${l.quantidade} <span>frangos</span></div>
+          <span class="lote-status status-${l.status}">${pronto ? 'Pronto' : 'Assando'}</span>
+        </div>
+        ${l.observacao ? `<div style="font-size:12px;color:#888;margin-top:4px">📝 ${l.observacao}</div>` : ''}
+        ${tempoTxt}
+        ${!pronto ? `<div class="lote-acoes">
+          <button class="btn-pronto" onclick="marcarPronto(${l.id})">Marcar como pronto</button>
+          <button class="btn-atraso" onclick="abrirAtraso(${l.id})">+ Tempo</button>
+        </div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
   async function carregarPendentes() {
     const res = await fetch('/api/frango/pendentes');
     const lista = await res.json();
@@ -108,17 +216,65 @@
     const el = document.getElementById('pendentes');
     if (!lista.length) { el.innerHTML = '<div class="vazio">Nenhuma entrega pendente 🎉</div>'; return; }
     el.innerHTML = lista.map(v => {
-      const hora = new Date(v.horario_compra).toLocaleTimeString('pt-BR');
-      return `<div class="item">
+      const hora = formatarHora(v.horario_compra);
+      return `<div class="item-entrega">
         <div class="info">
           <div class="codigo">${v.codigo}</div>
-          <div class="tipo-tag">${v.tipo === 'simples' ? '🍗 Simples' : '🥓 Com Bacon'}</div>
+          <div class="detalhe">${v.tipo === 'simples' ? '🍗 Simples' : '🥓 Com Bacon'} • ${hora}</div>
           ${v.observacao ? `<div class="obs">📝 ${v.observacao}</div>` : ''}
-          <div class="hora">Comprado às ${hora}</div>
         </div>
-        <button class="btn-entrega" onclick="darBaixaManual('${v.codigo}')">Entregar</button>
+        <button class="btn-entregar" onclick="darBaixaManual('${v.codigo}')">Entregar</button>
       </div>`;
     }).join('');
+  }
+
+  function abrirModalLote() {
+    document.getElementById('lote-qtd').value = '';
+    document.getElementById('lote-obs').value = '';
+    document.getElementById('modal-lote').classList.add('aberto');
+  }
+
+  async function salvarLote() {
+    const quantidade = parseInt(document.getElementById('lote-qtd').value);
+    if (!quantidade || quantidade <= 0) { alert('Informe a quantidade'); return; }
+    const res = await fetch('/api/lotes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantidade, observacao: document.getElementById('lote-obs').value.trim() })
+    });
+    const data = await res.json();
+    if (data.sucesso) {
+      fecharModal('modal-lote');
+      const hora = formatarHora(data.horario_previsto);
+      alert(`Lote registrado! Previsão de ficar pronto às ${hora}`);
+      carregarLotes();
+    } else alert(data.erro);
+  }
+
+  async function marcarPronto(id) {
+    if (!confirm('Confirmar que este lote está pronto?')) return;
+    const res = await fetch(`/api/lotes/${id}/pronto`, { method: 'PUT' });
+    const data = await res.json();
+    if (data.sucesso) carregarLotes();
+    else alert(data.erro);
+  }
+
+  function abrirAtraso(id) {
+    document.getElementById('atraso-lote-id').value = id;
+    document.getElementById('modal-atraso').classList.add('aberto');
+  }
+
+  async function salvarAtraso() {
+    const id = document.getElementById('atraso-lote-id').value;
+    const minutos = parseInt(document.getElementById('atraso-minutos').value);
+    const res = await fetch(`/api/lotes/${id}/tempo`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ minutos_extras: minutos })
+    });
+    const data = await res.json();
+    if (data.sucesso) { fecharModal('modal-atraso'); carregarLotes(); }
+    else alert(data.erro);
   }
 
   async function darBaixaManual(codigo) {
@@ -153,8 +309,7 @@
     if (!scannerStream) return;
     if (video.readyState < 2 || video.videoWidth === 0) { setTimeout(() => tickScanner(video), 300); return; }
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0);
     try {
@@ -180,7 +335,7 @@
     if (venda.cancelado) { alert('Esta venda foi cancelada!'); return; }
     document.getElementById('qr-codigo').textContent = venda.codigo;
     document.getElementById('qr-info').textContent =
-      (venda.tipo === 'simples' ? '🍗 Frango Simples' : '🥓 Frango com Bacon') +
+      (venda.tipo === 'simples' ? '🍗 Frango Simples' : '🥓 Com Bacon') +
       (venda.observacao ? ' • ' + venda.observacao : '');
     document.getElementById('modal-confirmar').classList.add('aberto');
   }
@@ -203,8 +358,9 @@
     window.location.href = '/login.html';
   }
 
+  carregarLotes();
   carregarPendentes();
-  setInterval(carregarPendentes, 10000);
+  setInterval(() => { carregarLotes(); carregarPendentes(); }, 30000);
 </script>
 </body>
 </html>

@@ -36,6 +36,7 @@ app.use('/api/relatorio',verificarToken, require('./routes/relatorio'));
 app.use('/api/usuarios', verificarToken, require('./routes/usuarios'));
 app.use('/api/exportar', verificarToken, require('./routes/exportar'));
 app.use('/api/estoque',  verificarToken, require('./routes/estoque'));
+app.use('/api/lotes',    verificarToken, require('./routes/lotes'));
 
 app.get('/', (req, res) => {
   const token = req.cookies?.token;
@@ -45,5 +46,4 @@ app.get('/', (req, res) => {
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
-
 app.listen(3000, '0.0.0.0', () => console.log('Sistema rodando em http://0.0.0.0:3000'));
