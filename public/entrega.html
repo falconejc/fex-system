@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Entregas - Frango Expresso</title>
+<title>Entrega - Frango Expresso</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: Arial, sans-serif; background: #f5f5f5; }
-  header { background: #f59e0b; color: white; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+  header { background: #10b981; color: white; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
   .header-left { display: flex; align-items: center; gap: 12px; }
   header a { color: white; text-decoration: none; font-size: 20px; }
   header h1 { font-size: 20px; }
@@ -16,48 +16,26 @@
   .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
   .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
   .card-header h2 { font-size: 16px; color: #555; }
-  .btn-primary { padding: 9px 18px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
-  .btn-green { padding: 9px 18px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
   .btn-qr { padding: 9px 18px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
-  .lote-item { border: 1px solid #eee; border-radius: 10px; padding: 14px; margin-bottom: 10px; }
-  .lote-item.assando { border-left: 4px solid #f59e0b; }
-  .lote-item.pronto { border-left: 4px solid #10b981; background: #f0fdf4; }
-  .lote-topo { display: flex; justify-content: space-between; align-items: flex-start; }
-  .lote-qtd { font-size: 28px; font-weight: bold; color: #333; }
-  .lote-qtd span { font-size: 13px; color: #888; font-weight: normal; }
-  .lote-status { padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: bold; }
-  .status-assando { background: #fef3c7; color: #92400e; }
-  .status-pronto { background: #d1fae5; color: #065f46; }
-  .lote-tempo { font-size: 13px; color: #555; margin-top: 6px; }
-  .lote-tempo strong { color: #f59e0b; }
-  .lote-tempo.pronto-txt { color: #10b981; font-weight: bold; }
-  .lote-acoes { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-  .btn-pronto { padding: 7px 14px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
-  .btn-atraso { padding: 7px 14px; background: #fee2e2; color: #991b1b; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
-  .item-entrega { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px; }
-  .item-entrega .info .codigo { font-weight: bold; font-size: 17px; color: #333; }
-  .item-entrega .info .detalhe { font-size: 12px; color: #888; margin-top: 2px; }
-  .item-entrega .info .obs { font-size: 12px; color: #f59e0b; margin-top: 2px; }
+  .contador { font-size: 48px; font-weight: bold; color: #10b981; text-align: center; }
+  .contador-desc { text-align: center; font-size: 13px; color: #888; margin-bottom: 14px; }
+  .item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px; }
+  .item .info .codigo { font-weight: bold; font-size: 17px; color: #333; }
+  .item .info .detalhe { font-size: 12px; color: #888; margin-top: 2px; }
+  .item .info .obs { font-size: 12px; color: #f59e0b; margin-top: 2px; }
   .btn-entregar { padding: 10px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; }
-  .contador { font-size: 42px; font-weight: bold; color: #f59e0b; text-align: center; }
-  .contador-desc { text-align: center; font-size: 13px; color: #888; margin-bottom: 12px; }
-  .vazio { text-align: center; color: #aaa; padding: 20px; font-size: 14px; }
+  .vazio { text-align: center; color: #aaa; padding: 24px; font-size: 14px; }
   .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
   .modal.aberto { display: flex; }
   .modal-box { background: white; border-radius: 16px; padding: 24px; max-width: 360px; width: 90%; text-align: center; }
-  .modal-box h3 { font-size: 17px; color: #333; margin-bottom: 14px; }
-  .modal-box input, .modal-box select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-top: 6px; }
-  label { display: block; font-size: 14px; color: #555; margin-top: 12px; text-align: left; }
-  .modal-acoes { display: flex; gap: 10px; margin-top: 16px; }
-  .btn-salvar { flex: 1; padding: 12px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
-  .btn-cancelar { flex: 1; padding: 12px; background: #f3f4f6; color: #333; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .modal-box h3 { font-size: 17px; color: #333; margin-bottom: 12px; }
   video { width: 100%; border-radius: 8px; background: #000; }
   #scanner-status { font-size: 13px; color: #888; margin-top: 8px; }
-  .modal-codigo { font-size: 38px; font-weight: bold; color: #f59e0b; letter-spacing: 4px; margin: 10px 0; }
+  .modal-codigo { font-size: 38px; font-weight: bold; color: #10b981; letter-spacing: 4px; margin: 10px 0; }
   .modal-info { font-size: 14px; color: #555; margin-bottom: 14px; }
   .btn-confirmar { width: 100%; padding: 13px; background: #10b981; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; margin-bottom: 8px; }
   .btn-fechar { width: 100%; padding: 11px; background: #f3f4f6; color: #333; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; }
-  .sucesso-box { background: #d1fae5; border-radius: 12px; padding: 18px; text-align: center; margin-bottom: 14px; }
+  .sucesso-box { background: #d1fae5; border-radius: 12px; padding: 18px; margin-bottom: 14px; }
   .sucesso-box .icon { font-size: 44px; }
   .sucesso-box p { color: #065f46; font-weight: bold; font-size: 15px; margin-top: 6px; }
 </style>
@@ -66,70 +44,20 @@
 <header>
   <div class="header-left">
     <a href="/">&#8592;</a>
-    <h1>🔥 Painel do Assador</h1>
+    <h1>✅ Entrega</h1>
   </div>
   <button class="btn-logoff" onclick="logoff()">Sair</button>
 </header>
 
 <div class="container">
-
-  <!-- Lotes no forno -->
   <div class="card">
     <div class="card-header">
-      <h2>🔥 Fornos</h2>
-      <button class="btn-primary" onclick="abrirModalLote()">+ Novo lote</button>
-    </div>
-    <div id="lista-lotes"><div class="vazio">Nenhum lote hoje</div></div>
-  </div>
-
-  <!-- Entregas pendentes -->
-  <div class="card">
-    <div class="card-header">
-      <h2>Entregas pendentes</h2>
-      <button class="btn-qr" onclick="abrirScanner()">📷 QR Code</button>
+      <h2>Aguardando retirada</h2>
+      <button class="btn-qr" onclick="abrirScanner()">📷 Ler QR Code</button>
     </div>
     <div class="contador" id="contador">0</div>
-    <div class="contador-desc">aguardando retirada</div>
+    <div class="contador-desc">frangos aguardando</div>
     <div id="pendentes"><div class="vazio">Carregando...</div></div>
-  </div>
-
-</div>
-
-<!-- Modal novo lote -->
-<div class="modal" id="modal-lote">
-  <div class="modal-box" style="text-align:left">
-    <h3 style="font-size:17px;color:#333;margin-bottom:4px">Novo lote no forno</h3>
-    <p style="font-size:13px;color:#888;margin-bottom:8px">Informe o tipo e quantidade</p>
-    <label>Tipo de frango</label>
-    <select id="lote-tipo" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;margin-top:4px"></select>
-    <label>Quantidade</label>
-    <input type="number" id="lote-qtd" min="1" placeholder="Ex: 10">
-    <label>Observação (opcional)</label>
-    <input type="text" id="lote-obs" placeholder="Ex: forno 2, com tempero especial">
-    <div class="modal-acoes">
-      <button class="btn-cancelar" onclick="fecharModal('modal-lote')">Cancelar</button>
-      <button class="btn-salvar" onclick="salvarLote()">Colocar no forno</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal atraso -->
-<div class="modal" id="modal-atraso">
-  <div class="modal-box">
-    <h3>Adicionar tempo ao lote</h3>
-    <label>Quantos minutos a mais?</label>
-    <select id="atraso-minutos">
-      <option value="10">+10 minutos</option>
-      <option value="15">+15 minutos</option>
-      <option value="20">+20 minutos</option>
-      <option value="30">+30 minutos</option>
-      <option value="45">+45 minutos</option>
-    </select>
-    <input type="hidden" id="atraso-lote-id">
-    <div class="modal-acoes">
-      <button class="btn-cancelar" onclick="fecharModal('modal-atraso')">Cancelar</button>
-      <button class="btn-salvar" onclick="salvarAtraso()">Confirmar</button>
-    </div>
   </div>
 </div>
 
@@ -143,7 +71,7 @@
   </div>
 </div>
 
-<!-- Modal confirmar QR -->
+<!-- Modal confirmar -->
 <div class="modal" id="modal-confirmar">
   <div class="modal-box">
     <div style="font-size:14px;color:#555">Confirmar entrega?</div>
@@ -172,44 +100,9 @@
   let codigoQRLido = null;
 
   function formatarHora(str) {
-    const p = str.replace('T',' ').split(/[- :]/);
+    const p = str.replace('T', ' ').split(/[- :]/);
     const d = new Date(p[0], p[1]-1, p[2], p[3], p[4], p[5]||0);
     return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  }
-
-  function minutosRestantes(str) {
-    const p = str.replace('T',' ').split(/[- :]/);
-    const d = new Date(p[0], p[1]-1, p[2], p[3], p[4], p[5]||0);
-    return Math.ceil((d - new Date()) / 60000);
-  }
-
-  async function carregarLotes() {
-    const res = await fetch('/api/lotes/ativos');
-    const lotes = await res.json();
-    const el = document.getElementById('lista-lotes');
-    if (!lotes.length) { el.innerHTML = '<div class="vazio">Nenhum lote hoje</div>'; return; }
-    el.innerHTML = lotes.map(l => {
-      const pronto = l.status === 'pronto';
-      const min = minutosRestantes(l.horario_previsto);
-      const hora = formatarHora(l.horario_previsto);
-      const tempoTxt = pronto
-        ? '<div class="lote-tempo pronto-txt">✅ Pronto para retirada!</div>'
-        : min <= 0
-          ? '<div class="lote-tempo pronto-txt">✅ Deve estar pronto agora!</div>'
-          : `<div class="lote-tempo">Previsto: <strong>${hora}</strong> (em ~${min} min)</div>`;
-      return `<div class="lote-item ${l.status}">
-        <div class="lote-topo">
-          <div class="lote-qtd">${l.quantidade} <span>frangos</span></div>
-          <span class="lote-status status-${l.status}">${pronto ? 'Pronto' : 'Assando'}</span>
-        </div>
-        ${l.observacao ? `<div style="font-size:12px;color:#888;margin-top:4px">📝 ${l.observacao}</div>` : ''}
-        ${tempoTxt}
-        ${!pronto ? `<div class="lote-acoes">
-          <button class="btn-pronto" onclick="marcarPronto(${l.id})">Marcar como pronto</button>
-          <button class="btn-atraso" onclick="abrirAtraso(${l.id})">+ Tempo</button>
-        </div>` : ''}
-      </div>`;
-    }).join('');
   }
 
   async function carregarPendentes() {
@@ -218,141 +111,15 @@
     document.getElementById('contador').textContent = lista.length;
     const el = document.getElementById('pendentes');
     if (!lista.length) { el.innerHTML = '<div class="vazio">Nenhuma entrega pendente 🎉</div>'; return; }
-    el.innerHTML = lista.map(v => {
-      const hora = formatarHora(v.horario_compra);
-      return `<div class="item-entrega">
+    el.innerHTML = lista.map(v => `
+      <div class="item">
         <div class="info">
           <div class="codigo">${v.codigo}</div>
-          <div class="detalhe">${v.tipo === 'simples' ? '🍗 Simples' : '🥓 Com Bacon'} • ${hora}</div>
+          <div class="detalhe">🍗 ${v.tipo_nome || v.tipo} • ${formatarHora(v.horario_compra)}</div>
           ${v.observacao ? `<div class="obs">📝 ${v.observacao}</div>` : ''}
         </div>
         <button class="btn-entregar" onclick="darBaixaManual('${v.codigo}')">Entregar</button>
-      </div>`;
-    }).join('');
-  }
-
-  // Estoque disponível por tipo (frangos crus - já em lotes)
-  let estoqueDisponivel = {};
-
-  async function abrirModalLote() {
-    document.getElementById('lote-qtd').value = '';
-    document.getElementById('lote-obs').value = '';
-
-    // Carrega tipos ativos
-    const resT = await fetch('/api/tipos');
-    const tipos = await resT.json();
-
-    // Carrega estoque de frangos crus do dia
-    const resE = await fetch('/api/estoque_modulo/frangos-crus');
-    const crus = await resE.json();
-
-    // Monta mapa de disponível por tipo
-    estoqueDisponivel = {};
-    crus.forEach(c => {
-      estoqueDisponivel[c.tipo_id] = Math.max(0, c.total_crus - c.total_assados);
-    });
-
-    const sel = document.getElementById('lote-tipo');
-    sel.innerHTML = tipos.map(t => {
-      const disp = estoqueDisponivel[t.id] ?? 0;
-      return `<option value="${t.id}">${t.nome} (${disp} disponíveis)</option>`;
-    }).join('');
-
-    // Atualiza aviso ao trocar tipo
-    sel.onchange = atualizarAvisoDisponivel;
-    atualizarAvisoDisponivel();
-
-    document.getElementById('modal-lote').classList.add('aberto');
-  }
-
-  function atualizarAvisoDisponivel() {
-    const tipo_id = parseInt(document.getElementById('lote-tipo').value);
-    const disp = estoqueDisponivel[tipo_id] ?? 0;
-    let el = document.getElementById('aviso-disponivel');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'aviso-disponivel';
-      el.style.cssText = 'font-size:13px;padding:8px 10px;border-radius:7px;margin-top:8px';
-      document.getElementById('lote-qtd').parentNode.insertBefore(el, document.getElementById('lote-qtd'));
-    }
-    if (disp <= 0) {
-      el.style.background = '#fee2e2';
-      el.style.color = '#991b1b';
-      el.textContent = '⚠️ Nenhum frango cru disponível para este tipo. Registre frangos crus no módulo de estoque.';
-    } else {
-      el.style.background = '#f0fdf4';
-      el.style.color = '#065f46';
-      el.textContent = '✅ Disponível para assar: ' + disp + ' frango(s)';
-    }
-  }
-
-  async function salvarLote() {
-    const quantidade = parseInt(document.getElementById('lote-qtd').value);
-    const tipo_id = parseInt(document.getElementById('lote-tipo').value);
-    if (!quantidade || quantidade <= 0) { alert('Informe a quantidade'); return; }
-    if (!tipo_id) { alert('Selecione o tipo'); return; }
-
-    const res = await fetch('/api/lotes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ quantidade, tipo_id, observacao: document.getElementById('lote-obs').value.trim() })
-    });
-    const data = await res.json();
-
-    if (res.status === 409 && data.requer_confirmacao) {
-      // Admin recebe confirmação para ultrapassar
-      if (confirm(data.detalhe + '\n\nClique OK para prosseguir mesmo assim.')) {
-        const res2 = await fetch('/api/lotes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ quantidade, tipo_id, observacao: document.getElementById('lote-obs').value.trim(), forcar: true })
-        });
-        const data2 = await res2.json();
-        if (data2.sucesso) {
-          fecharModal('modal-lote');
-          alert('Lote registrado! Previsão: ' + formatarHora(data2.horario_previsto));
-          carregarLotes();
-        } else alert(data2.erro);
-      }
-      return;
-    }
-
-    if (!data.sucesso) {
-      // Assador bloqueado
-      alert('❌ ' + data.erro + '\n\n' + (data.detalhe || ''));
-      return;
-    }
-
-    fecharModal('modal-lote');
-    alert('Lote registrado! Previsão: ' + formatarHora(data.horario_previsto) +
-      (data.disponivel_restante > 0 ? '\nRestam ' + data.disponivel_restante + ' frangos crus disponíveis.' : ''));
-    carregarLotes();
-  }
-
-  async function marcarPronto(id) {
-    if (!confirm('Confirmar que este lote está pronto?')) return;
-    const res = await fetch(`/api/lotes/${id}/pronto`, { method: 'PUT' });
-    const data = await res.json();
-    if (data.sucesso) carregarLotes();
-    else alert(data.erro);
-  }
-
-  function abrirAtraso(id) {
-    document.getElementById('atraso-lote-id').value = id;
-    document.getElementById('modal-atraso').classList.add('aberto');
-  }
-
-  async function salvarAtraso() {
-    const id = document.getElementById('atraso-lote-id').value;
-    const minutos = parseInt(document.getElementById('atraso-minutos').value);
-    const res = await fetch(`/api/lotes/${id}/tempo`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ minutos_extras: minutos })
-    });
-    const data = await res.json();
-    if (data.sucesso) { fecharModal('modal-atraso'); carregarLotes(); }
-    else alert(data.erro);
+      </div>`).join('');
   }
 
   async function darBaixaManual(codigo) {
@@ -413,8 +180,7 @@
     if (venda.cancelado) { alert('Esta venda foi cancelada!'); return; }
     document.getElementById('qr-codigo').textContent = venda.codigo;
     document.getElementById('qr-info').textContent =
-      (venda.tipo === 'simples' ? '🍗 Frango Simples' : '🥓 Com Bacon') +
-      (venda.observacao ? ' • ' + venda.observacao : '');
+      '🍗 ' + (venda.tipo_nome || venda.tipo) + (venda.observacao ? ' • ' + venda.observacao : '');
     document.getElementById('modal-confirmar').classList.add('aberto');
   }
 
@@ -436,9 +202,8 @@
     window.location.href = '/login.html';
   }
 
-  carregarLotes();
   carregarPendentes();
-  setInterval(() => { carregarLotes(); carregarPendentes(); }, 30000);
+  setInterval(carregarPendentes, 15000);
 </script>
 </body>
 </html>
