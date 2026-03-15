@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Usuários - Fex System</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f5f5f5; }
+  header { background: #8b5cf6; color: white; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  header a { color: white; text-decoration: none; font-size: 20px; }
+  header h1 { font-size: 20px; }
+  .btn-logoff { padding: 7px 14px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .btn-logoff:hover { background: rgba(255,255,255,0.3); }
+  .container { max-width: 700px; margin: 30px auto; padding: 0 20px; }
+  .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 12px; }
+  .card-header h2 { font-size: 16px; color: #555; }
+  .btn-novo { padding: 8px 16px; background: #8b5cf6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .btn-novo:hover { background: #7c3aed; }
+  label { display: block; font-size: 14px; color: #555; margin-bottom: 6px; margin-top: 14px; }
+  input, select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .btn { width: 100%; padding: 12px; background: #8b5cf6; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+  .btn:hover { background: #7c3aed; }
+  .usuario-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 10px; }
+  .usuario-item .info .nome { font-weight: bold; font-size: 15px; color: #333; }
+  .usuario-item .info .detalhe { font-size: 12px; color: #888; margin-top: 3px; }
+  .acoes { display: flex; gap: 8px; }
+  .btn-editar { padding: 7px 14px; background: #eff6ff; color: #1e40af; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .btn-editar:hover { background: #dbeafe; }
+  .btn-excluir { padding: 7px 14px; background: #fee2e2; color: #991b1b; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .btn-excluir:hover { background: #fecaca; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 8px; }
+  .badge-admin { background: #ede9fe; color: #5b21b6; }
+  .badge-operador { background: #fef3c7; color: #92400e; }
+  .badge-dono { background: #d1fae5; color: #065f46; }
+  .badge-inativo { background: #f3f4f6; color: #6b7280; }
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
+  .modal.aberto { display: flex; }
+  .modal-box { background: white; border-radius: 16px; padding: 28px; max-width: 400px; width: 90%; }
+  .modal-box h3 { font-size: 18px; color: #333; margin-bottom: 4px; }
+  .modal-box p { font-size: 13px; color: #888; margin-bottom: 16px; }
+  .modal-acoes { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-cancelar { flex: 1; padding: 12px; background: #f3f4f6; color: #333; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .hint { font-size: 12px; color: #aaa; margin-top: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-left">
+    <a href="/">&#8592;</a>
+    <h1>👥 Usuários</h1>
+  </div>
+  <button class="btn-logoff" onclick="logoff()">Sair</button>
+</header>
+
+<div class="container">
+  <div class="card">
+    <div class="card-header">
+      <h2>Usuários cadastrados</h2>
+      <button class="btn-novo" onclick="abrirModalNovo()">+ Novo usuário</button>
+    </div>
+    <div id="lista-usuarios"></div>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="modal-titulo">Novo usuário</h3>
+    <p id="modal-subtitulo">Preencha os dados do novo usuário</p>
+    <input type="hidden" id="edit-id">
+    <label>Nome completo</label>
+    <input type="text" id="edit-nome" placeholder="Nome do usuário">
+    <label>Login</label>
+    <input type="text" id="edit-usuario" placeholder="Nome de usuário para login">
+    <label>Senha</label>
+    <input type="password" id="edit-senha" placeholder="Deixe em branco para não alterar">
+    <p class="hint" id="hint-senha"></p>
+    <div class="grid2">
+      <div>
+        <label>Nível</label>
+        <select id="edit-nivel">
+          <option value="operador">Operador</option>
+          <option value="admin">Administrador</option>
+          <option value="dono">Dono</option>
+        </select>
+      </div>
+      <div>
+        <label>Status</label>
+        <select id="edit-ativo">
+          <option value="1">Ativo</option>
+          <option value="0">Inativo</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-acoes">
+      <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+      <button class="btn" onclick="salvar()" style="margin-top:0">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let editando = false;
+
+  async function carregar() {
+    const res = await fetch('/api/usuarios');
+    if (res.status === 403) { window.location.href = '/'; return; }
+    const lista = await res.json();
+    const el = document.getElementById('lista-usuarios');
+    if (!lista.length) { el.innerHTML = '<p style="color:#aaa;text-align:center;padding:20px">Nenhum usuário</p>'; return; }
+    const niveis = { admin: 'Administrador', operador: 'Operador', dono: 'Dono' };
+    el.innerHTML = lista.map(u => `
+      <div class="usuario-item">
+        <div class="info">
+          <div class="nome">${u.nome}
+            <span class="badge badge-${u.nivel}">${niveis[u.nivel]}</span>
+            ${!u.ativo ? '<span class="badge badge-inativo">Inativo</span>' : ''}
+          </div>
+          <div class="detalhe">@${u.usuario} • cadastrado em ${new Date(u.criado_em).toLocaleDateString('pt-BR')}</div>
+        </div>
+        <div class="acoes">
+          <button class="btn-editar" onclick="abrirModalEditar(${u.id}, '${u.nome}', '${u.usuario}', '${u.nivel}', ${u.ativo})">Editar</button>
+          ${u.usuario !== 'admin' ? `<button class="btn-excluir" onclick="excluir(${u.id}, '${u.nome}')">Excluir</button>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function abrirModalNovo() {
+    editando = false;
+    document.getElementById('modal-titulo').textContent = 'Novo usuário';
+    document.getElementById('modal-subtitulo').textContent = 'Preencha os dados do novo usuário';
+    document.getElementById('edit-id').value = '';
+    document.getElementById('edit-nome').value = '';
+    document.getElementById('edit-usuario').value = '';
+    document.getElementById('edit-usuario').disabled = false;
+    document.getElementById('edit-senha').value = '';
+    document.getElementById('edit-senha').placeholder = 'Senha obrigatória';
+    document.getElementById('hint-senha').textContent = '';
+    document.getElementById('edit-nivel').value = 'operador';
+    document.getElementById('edit-ativo').value = '1';
+    document.getElementById('modal').classList.add('aberto');
+  }
+
+  function abrirModalEditar(id, nome, usuario, nivel, ativo) {
+    editando = true;
+    document.getElementById('modal-titulo').textContent = 'Editar usuário';
+    document.getElementById('modal-subtitulo').textContent = 'Altere os dados do usuário';
+    document.getElementById('edit-id').value = id;
+    document.getElementById('edit-nome').value = nome;
+    document.getElementById('edit-usuario').value = usuario;
+    document.getElementById('edit-usuario').disabled = true;
+    document.getElementById('edit-senha').value = '';
+    document.getElementById('edit-senha').placeholder = 'Deixe em branco para não alterar';
+    document.getElementById('hint-senha').textContent = 'A senha só será alterada se preenchida';
+    document.getElementById('edit-nivel').value = nivel;
+    document.getElementById('edit-ativo').value = ativo;
+    document.getElementById('modal').classList.add('aberto');
+  }
+
+  function fecharModal() {
+    document.getElementById('modal').classList.remove('aberto');
+  }
+
+  async function salvar() {
+    const nome = document.getElementById('edit-nome').value.trim();
+    const usuario = document.getElementById('edit-usuario').value.trim();
+    const senha = document.getElementById('edit-senha').value;
+    const nivel = document.getElementById('edit-nivel').value;
+    const ativo = parseInt(document.getElementById('edit-ativo').value);
+    const id = document.getElementById('edit-id').value;
+
+    if (!nome) { alert('Informe o nome'); return; }
+    if (!editando && !usuario) { alert('Informe o login'); return; }
+    if (!editando && !senha) { alert('Informe a senha'); return; }
+
+    const body = { nome, nivel, ativo };
+    if (!editando) body.usuario = usuario;
+    if (senha) body.senha = senha;
+
+    const url = editando ? `/api/usuarios/${id}` : '/api/usuarios';
+    const method = editando ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.erro); return; }
+    fecharModal();
+    carregar();
+  }
+
+  async function excluir(id, nome) {
+    if (!confirm(`Excluir o usuário "${nome}"? Esta ação não pode ser desfeita.`)) return;
+    const res = await fetch(`/api/usuarios/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { alert(data.erro); return; }
+    carregar();
+  }
+
+  async function logoff() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/login.html';
+  }
+
+  carregar();
+</script>
+</body>
+</html>
