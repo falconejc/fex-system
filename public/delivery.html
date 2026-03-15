@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delivery</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f5f5f5; }
+  header { background: #3b82f6; color: white; padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+  header a { color: white; text-decoration: none; font-size: 20px; }
+  header h1 { font-size: 20px; }
+  .container { max-width: 600px; margin: 30px auto; padding: 0 20px; }
+  .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .card h2 { font-size: 16px; color: #555; margin-bottom: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+  label { display: block; font-size: 14px; color: #555; margin-bottom: 6px; margin-top: 14px; }
+  input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; font-family: Arial, sans-serif; }
+  textarea { resize: vertical; min-height: 80px; }
+  .tipos { display: flex; gap: 12px; margin-top: 6px; }
+  .tipo-btn { flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; cursor: pointer; font-size: 15px; text-align: center; transition: all 0.2s; }
+  .tipo-btn.ativo { border-color: #3b82f6; background: #eff6ff; color: #1e40af; font-weight: bold; }
+  .pagamentos { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+  .pag-btn { flex: 1; min-width: 80px; padding: 12px; border: 2px solid #ddd; border-radius: 10px; background: white; cursor: pointer; font-size: 14px; text-align: center; transition: all 0.2s; }
+  .pag-btn.ativo { border-color: #3b82f6; background: #eff6ff; color: #1e40af; font-weight: bold; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .btn { width: 100%; padding: 14px; background: #3b82f6; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+  .btn:hover { background: #2563eb; }
+  .btn:disabled { background: #ccc; cursor: not-allowed; }
+  .item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px; }
+  .item .info .nome { font-weight: bold; font-size: 15px; color: #333; }
+  .item .info .detalhe { font-size: 12px; color: #888; margin-top: 2px; }
+  .btn-entrega { padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+  .btn-entrega:hover { background: #059669; }
+  .vazio { text-align: center; color: #aaa; padding: 20px; font-size: 14px; }
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
+  .modal.aberto { display: flex; }
+  .modal-box { background: white; border-radius: 16px; padding: 30px; max-width: 340px; width: 90%; text-align: center; }
+  .modal-codigo { font-size: 42px; font-weight: bold; color: #3b82f6; letter-spacing: 4px; margin: 16px 0; }
+  .modal-info { font-size: 14px; color: #666; margin-bottom: 20px; }
+  .btn-imprimir { width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; margin-bottom: 10px; }
+  .btn-fechar { width: 100%; padding: 12px; background: #f3f4f6; color: #333; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 6px; }
+  .tag-entrega { background: #dbeafe; color: #1e40af; }
+  .tag-retirada { background: #fef3c7; color: #92400e; }
+</style>
+</head>
+<body>
+<header>
+  <a href="/">&#8592;</a>
+  <h1>🛵 Delivery</h1>
+</header>
+<div class="container">
+  <div class="card">
+    <h2>Novo Pedido</h2>
+    <label>Tipo</label>
+    <div class="tipos">
+      <button class="tipo-btn ativo" onclick="selecionarTipo('entrega', this)">🛵 Entrega</button>
+      <button class="tipo-btn" onclick="selecionarTipo('retirada', this)">🏪 Retirada</button>
+    </div>
+    <label>Atendente</label>
+    <input type="text" id="atendente" placeholder="Nome do atendente">
+    <label>Nome do cliente</label>
+    <input type="text" id="nome_cliente" placeholder="Nome completo">
+    <div id="campos-endereco">
+      <label>Endereço</label>
+      <input type="text" id="endereco" placeholder="Rua / Avenida">
+      <div class="grid2">
+        <div>
+          <label>Número</label>
+          <input type="text" id="numero" placeholder="Nº">
+        </div>
+        <div>
+          <label>Bairro</label>
+          <input type="text" id="bairro" placeholder="Bairro">
+        </div>
+      </div>
+      <label>Referência</label>
+      <input type="text" id="referencia" placeholder="Ponto de referência">
+    </div>
+    <label>Pagamento</label>
+    <div class="pagamentos">
+      <button class="pag-btn ativo" onclick="selecionarPag('pix', this)">💠 Pix</button>
+      <button class="pag-btn" onclick="selecionarPag('cartao', this)">💳 Cartão</button>
+      <button class="pag-btn" onclick="selecionarPag('dinheiro', this)">💵 Dinheiro</button>
+    </div>
+    <label>Descrição do pedido</label>
+    <textarea id="descricao" placeholder="Ex: 1 frango assado com bacon, sem sal..."></textarea>
+    <button class="btn" onclick="registrarPedido()">Registrar e Imprimir Comanda</button>
+  </div>
+
+  <div class="card">
+    <h2>Pedidos Pendentes</h2>
+    <div class="pendentes" id="pendentes">
+      <div class="vazio">Carregando...</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <div style="font-size:16px;color:#555;">Pedido registrado!</div>
+    <div class="modal-codigo" id="modal-codigo"></div>
+    <div class="modal-info" id="modal-info"></div>
+    <button class="btn-imprimir" onclick="imprimir()">🖨️ Imprimir Comanda</button>
+    <button class="btn-fechar" onclick="fecharModal()">Fechar</button>
+  </div>
+</div>
+
+<script>
+  let tipoSelecionado = 'entrega';
+  let pagSelecionado = 'pix';
+  let pedidoAtual = null;
+
+  function selecionarTipo(tipo, btn) {
+    tipoSelecionado = tipo;
+    document.querySelectorAll('.tipo-btn').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    document.getElementById('campos-endereco').style.display = tipo === 'retirada' ? 'none' : 'block';
+  }
+
+  function selecionarPag(pag, btn) {
+    pagSelecionado = pag;
+    document.querySelectorAll('.pag-btn').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+  }
+
+  async function registrarPedido() {
+    const atendente = document.getElementById('atendente').value.trim();
+    const nome_cliente = document.getElementById('nome_cliente').value.trim();
+    if (!atendente) { alert('Informe o nome do atendente'); return; }
+    if (!nome_cliente) { alert('Informe o nome do cliente'); return; }
+    const btn = document.querySelector('.btn');
+    btn.disabled = true;
+    btn.textContent = 'Registrando...';
+    try {
+      const body = {
+        tipo: tipoSelecionado,
+        atendente,
+        nome_cliente,
+        endereco: document.getElementById('endereco')?.value.trim() || '',
+        numero: document.getElementById('numero')?.value.trim() || '',
+        bairro: document.getElementById('bairro')?.value.trim() || '',
+        referencia: document.getElementById('referencia')?.value.trim() || '',
+        pagamento: pagSelecionado,
+        descricao: document.getElementById('descricao').value.trim()
+      };
+      const res = await fetch('/api/delivery/pedido', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro);
+      pedidoAtual = data;
+      document.getElementById('modal-codigo').textContent = data.codigo;
+      document.getElementById('modal-info').textContent = data.nome_cliente + ' • ' + (data.tipo === 'entrega' ? '🛵 Entrega' : '🏪 Retirada');
+      document.getElementById('modal').classList.add('aberto');
+      carregarPendentes();
+      limparFormulario();
+    } catch(e) { alert('Erro: ' + e.message); }
+    btn.disabled = false;
+    btn.textContent = 'Registrar e Imprimir Comanda';
+  }
+
+  function limparFormulario() {
+    ['atendente','nome_cliente','endereco','numero','bairro','referencia','descricao'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+  }
+
+  function imprimir() {
+    if (!pedidoAtual) return;
+    const p = pedidoAtual;
+    const w = window.open('', '_blank', 'width=400,height=600');
+    const hora = new Date(p.horario_pedido).toLocaleTimeString('pt-BR');
+    const data = new Date(p.horario_pedido).toLocaleDateString('pt-BR');
+    const pagLabels = { pix: 'Pix', cartao: 'Cartão', dinheiro: 'Dinheiro' };
+    const endereco = p.tipo === 'entrega'
+      ? `<div class="info">End: ${p.endereco}, ${p.numero}</div>
+         <div class="info">Bairro: ${p.bairro}</div>
+         ${p.referencia ? `<div class="info">Ref: ${p.referencia}</div>` : ''}`
+      : '<div class="info">** RETIRADA NO LOCAL **</div>';
+    w.document.write(`
+      <html><head><title>Comanda</title>
+      <style>
+        body { font-family: monospace; font-size: 14px; padding: 10px; width: 280px; }
+        h2 { text-align: center; font-size: 16px; }
+        h3 { text-align: center; font-size: 13px; font-weight: normal; margin-top: 2px; }
+        .linha { border-top: 1px dashed #000; margin: 8px 0; }
+        .codigo { text-align: center; font-size: 28px; font-weight: bold; letter-spacing: 3px; margin: 8px 0; }
+        .info { margin: 3px 0; }
+        .descricao { border: 1px solid #000; padding: 6px; margin-top: 6px; min-height: 50px; font-size: 13px; }
+        .rodape { text-align: center; font-size: 11px; margin-top: 10px; }
+      </style></head><body>
+      <h2>COMANDA DE PEDIDO</h2>
+      <h3>${p.tipo === 'entrega' ? '*** ENTREGA ***' : '*** RETIRADA ***'}</h3>
+      <div class="linha"></div>
+      <div class="codigo">${p.codigo}</div>
+      <div class="linha"></div>
+      <div class="info">Data: ${data}  Hora: ${hora}</div>
+      <div class="info">Atendente: ${p.atendente}</div>
+      <div class="info">Cliente: ${p.nome_cliente}</div>
+      ${endereco}
+      <div class="info">Pagamento: ${pagLabels[p.pagamento] || p.pagamento}</div>
+      <div class="linha"></div>
+      <div class="info"><strong>Descrição:</strong></div>
+      <div class="descricao">${p.descricao || ''}</div>
+      <div class="rodape">Sistema de Vendas</div>
+      <script>window.onload=()=>{window.print();}<\/script>
+      </body></html>
+    `);
+    w.document.close();
+  }
+
+  function fecharModal() {
+    document.getElementById('modal').classList.remove('aberto');
+    pedidoAtual = null;
+  }
+
+  async function darBaixa(codigo) {
+    if (!confirm('Confirmar entrega do pedido ' + codigo + '?')) return;
+    const res = await fetch('/api/delivery/entrega/' + codigo, { method: 'POST' });
+    const data = await res.json();
+    if (data.sucesso) carregarPendentes();
+    else alert(data.erro);
+  }
+
+  async function carregarPendentes() {
+    const res = await fetch('/api/delivery/pendentes');
+    const lista = await res.json();
+    const el = document.getElementById('pendentes');
+    if (!lista.length) { el.innerHTML = '<div class="vazio">Nenhum pedido pendente</div>'; return; }
+    el.innerHTML = lista.map(p => {
+      const hora = new Date(p.horario_pedido).toLocaleTimeString('pt-BR');
+      const tagClass = p.tipo === 'entrega' ? 'tag-entrega' : 'tag-retirada';
+      const tagLabel = p.tipo === 'entrega' ? '🛵 Entrega' : '🏪 Retirada';
+      return `<div class="item">
+        <div class="info">
+          <div class="nome">${p.nome_cliente} <span class="tag ${tagClass}">${tagLabel}</span></div>
+          <div class="detalhe">${p.codigo} • ${p.atendente} • ${hora}</div>
+          <div class="detalhe">${p.bairro ? p.bairro + ' • ' : ''}${p.pagamento}</div>
+        </div>
+        <button class="btn-entrega" onclick="darBaixa('${p.codigo}')">Entregar</button>
+      </div>`;
+    }).join('');
+  }
+
+  carregarPendentes();
+  setInterval(carregarPendentes, 15000);
+</script>
+</body>
+</html>

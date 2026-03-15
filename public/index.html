@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Vendas</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f5f5f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  .container { text-align: center; padding: 20px; }
+  h1 { font-size: 28px; color: #333; margin-bottom: 8px; }
+  p { color: #666; margin-bottom: 40px; font-size: 16px; }
+  .cards { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+  .card { background: white; border-radius: 16px; padding: 40px 30px; width: 220px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+  .card .icon { font-size: 56px; margin-bottom: 16px; }
+  .card h2 { font-size: 18px; color: #333; margin-bottom: 8px; }
+  .card p { font-size: 13px; color: #888; margin: 0; }
+  .card.frango { border-top: 4px solid #f59e0b; }
+  .card.delivery { border-top: 4px solid #3b82f6; }
+  .card.relatorio { border-top: 4px solid #10b981; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Sistema de Vendas</h1>
+  <p>Selecione o módulo desejado</p>
+  <div class="cards">
+    <a href="/frango.html" class="card frango">
+      <div class="icon">🍗</div>
+      <h2>Frango</h2>
+      <p>Registrar venda e dar baixa na entrega</p>
+    </a>
+    <a href="/delivery.html" class="card delivery">
+      <div class="icon">🛵</div>
+      <h2>Delivery</h2>
+      <p>Registrar pedido e imprimir comanda</p>
+    </a>
+    <a href="/relatorio.html" class="card relatorio">
+      <div class="icon">📊</div>
+      <h2>Relatórios</h2>
+      <p>Vendas e entregas do dia</p>
+    </a>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Frango - Venda</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f5f5f5; }
+  header { background: #f59e0b; color: white; padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+  header a { color: white; text-decoration: none; font-size: 20px; }
+  header h1 { font-size: 20px; }
+  .container { max-width: 600px; margin: 30px auto; padding: 0 20px; }
+  .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .card h2 { font-size: 16px; color: #555; margin-bottom: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+  label { display: block; font-size: 14px; color: #555; margin-bottom: 6px; margin-top: 14px; }
+  input, select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
+  .tipos { display: flex; gap: 12px; margin-top: 6px; }
+  .tipo-btn { flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; cursor: pointer; font-size: 15px; text-align: center; transition: all 0.2s; }
+  .tipo-btn.ativo { border-color: #f59e0b; background: #fef3c7; color: #92400e; font-weight: bold; }
+  .btn { width: 100%; padding: 14px; background: #f59e0b; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+  .btn:hover { background: #d97706; }
+  .btn:disabled { background: #ccc; cursor: not-allowed; }
+  .pendentes { margin-top: 10px; }
+  .item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px; }
+  .item .info { font-size: 14px; }
+  .item .codigo { font-weight: bold; font-size: 16px; color: #333; }
+  .item .tipo-tag { font-size: 12px; color: #888; }
+  .item .hora { font-size: 12px; color: #aaa; }
+  .btn-entrega { padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+  .btn-entrega:hover { background: #059669; }
+  .vazio { text-align: center; color: #aaa; padding: 20px; font-size: 14px; }
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
+  .modal.aberto { display: flex; }
+  .modal-box { background: white; border-radius: 16px; padding: 30px; max-width: 340px; width: 90%; text-align: center; }
+  .modal-codigo { font-size: 48px; font-weight: bold; color: #f59e0b; letter-spacing: 4px; margin: 16px 0; }
+  .modal-info { font-size: 14px; color: #666; margin-bottom: 20px; }
+  .btn-imprimir { width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; margin-bottom: 10px; }
+  .btn-fechar { width: 100%; padding: 12px; background: #f3f4f6; color: #333; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
+</style>
+</head>
+<body>
+<header>
+  <a href="/">&#8592;</a>
+  <h1>🍗 Venda de Frango</h1>
+</header>
+<div class="container">
+  <div class="card">
+    <h2>Nova Venda</h2>
+    <label>Atendente</label>
+    <input type="text" id="atendente" placeholder="Nome do atendente">
+    <label>Tipo de frango</label>
+    <div class="tipos">
+      <button class="tipo-btn ativo" onclick="selecionarTipo('simples', this)">🍗 Simples</button>
+      <button class="tipo-btn" onclick="selecionarTipo('bacon', this)">🥓 Com Bacon</button>
+    </div>
+    <button class="btn" onclick="registrarVenda()">Registrar Venda e Imprimir</button>
+  </div>
+
+  <div class="card">
+    <h2>Aguardando Entrega</h2>
+    <div class="pendentes" id="pendentes">
+      <div class="vazio">Carregando...</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <div style="font-size:16px;color:#555;">Venda registrada!</div>
+    <div class="modal-codigo" id="modal-codigo"></div>
+    <div class="modal-info" id="modal-info"></div>
+    <button class="btn-imprimir" onclick="imprimir()">🖨️ Imprimir Comprovante</button>
+    <button class="btn-fechar" onclick="fecharModal()">Fechar</button>
+  </div>
+</div>
+
+<script>
+  let tipoSelecionado = 'simples';
+  let vendaAtual = null;
+
+  function selecionarTipo(tipo, btn) {
+    tipoSelecionado = tipo;
+    document.querySelectorAll('.tipo-btn').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+  }
+
+  async function registrarVenda() {
+    const atendente = document.getElementById('atendente').value.trim();
+    if (!atendente) { alert('Informe o nome do atendente'); return; }
+    const btn = document.querySelector('.btn');
+    btn.disabled = true;
+    btn.textContent = 'Registrando...';
+    try {
+      const res = await fetch('/api/frango/venda', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo: tipoSelecionado, atendente })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro);
+      vendaAtual = data;
+      document.getElementById('modal-codigo').textContent = data.codigo;
+      document.getElementById('modal-info').textContent =
+        (data.tipo === 'simples' ? '🍗 Frango Simples' : '🥓 Frango com Bacon') +
+        ' • Atendente: ' + data.atendente;
+      document.getElementById('modal').classList.add('aberto');
+      carregarPendentes();
+    } catch(e) { alert('Erro: ' + e.message); }
+    btn.disabled = false;
+    btn.textContent = 'Registrar Venda e Imprimir';
+  }
+
+  function imprimir() {
+    if (!vendaAtual) return;
+    const w = window.open('', '_blank', 'width=400,height=500');
+    const hora = new Date(vendaAtual.horario_compra).toLocaleTimeString('pt-BR');
+    const data = new Date(vendaAtual.horario_compra).toLocaleDateString('pt-BR');
+    w.document.write(`
+      <html><head><title>Comprovante</title>
+      <style>
+        body { font-family: monospace; font-size: 14px; padding: 10px; width: 280px; }
+        h2 { text-align: center; font-size: 16px; }
+        .linha { border-top: 1px dashed #000; margin: 8px 0; }
+        .codigo { text-align: center; font-size: 36px; font-weight: bold; letter-spacing: 4px; margin: 10px 0; }
+        .info { margin: 4px 0; }
+        .rodape { text-align: center; font-size: 12px; margin-top: 10px; }
+      </style></head><body>
+      <h2>FRANGO ASSADO</h2>
+      <div class="linha"></div>
+      <div class="info">Data: ${data}</div>
+      <div class="info">Hora: ${hora}</div>
+      <div class="info">Atendente: ${vendaAtual.atendente}</div>
+      <div class="info">Produto: ${vendaAtual.tipo === 'simples' ? 'Frango Simples' : 'Frango com Bacon'}</div>
+      <div class="linha"></div>
+      <div style="text-align:center;font-size:13px;">Seu código:</div>
+      <div class="codigo">${vendaAtual.codigo}</div>
+      <div class="linha"></div>
+      <div class="rodape">Guarde este comprovante<br>Apresente na retirada</div>
+      <script>window.onload=()=>{window.print();}<\/script>
+      </body></html>
+    `);
+    w.document.close();
+  }
+
+  function fecharModal() {
+    document.getElementById('modal').classList.remove('aberto');
+    vendaAtual = null;
+  }
+
+  async function darBaixa(codigo) {
+    if (!confirm('Confirmar entrega do código ' + codigo + '?')) return;
+    const res = await fetch('/api/frango/entrega/' + codigo, { method: 'POST' });
+    const data = await res.json();
+    if (data.sucesso) carregarPendentes();
+    else alert(data.erro);
+  }
+
+  async function carregarPendentes() {
+    const res = await fetch('/api/frango/pendentes');
+    const lista = await res.json();
+    const el = document.getElementById('pendentes');
+    if (!lista.length) { el.innerHTML = '<div class="vazio">Nenhuma entrega pendente</div>'; return; }
+    el.innerHTML = lista.map(v => {
+      const hora = new Date(v.horario_compra).toLocaleTimeString('pt-BR');
+      return `<div class="item">
+        <div class="info">
+          <div class="codigo">${v.codigo}</div>
+          <div class="tipo-tag">${v.tipo === 'simples' ? '🍗 Simples' : '🥓 Com Bacon'} • ${v.atendente}</div>
+          <div class="hora">Comprado às ${hora}</div>
+        </div>
+        <button class="btn-entrega" onclick="darBaixa('${v.codigo}')">Entregar</button>
+      </div>`;
+    }).join('');
+  }
+
+  carregarPendentes();
+  setInterval(carregarPendentes, 15000);
+</script>
+</body>
+</html>
