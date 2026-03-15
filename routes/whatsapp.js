@@ -12,11 +12,6 @@ const EVOLUTION_URL = 'http://localhost:8080';
 const EVOLUTION_KEY = 'fex-evolution-key-2024';
 const INSTANCE = 'frango-expresso';
 
-/**
- * POST /api/whatsapp/comprovante/:codigo
- * Envia comprovante de venda por WhatsApp.
- * O telefone pode vir no body ou estar salvo na venda.
- */
 router.post('/comprovante/:codigo', async (req, res) => {
   const { telefone } = req.body;
   const venda = db.prepare(`
@@ -31,10 +26,23 @@ router.post('/comprovante/:codigo', async (req, res) => {
   const tel = telefone || venda.telefone;
   if (!tel) return res.status(400).json({ erro: 'Telefone não informado' });
 
-  // Salva telefone na venda se ainda não tiver
   if (!venda.telefone && telefone) {
     db.prepare('UPDATE vendas SET telefone = ? WHERE codigo = ?').run(telefone, req.params.codigo);
   }
+
+  // Formata número: remove não dígitos e adiciona 55 se não tiver
+  const formatarTel = (t) => {
+    const digits = t.replace(/\D/g, '');
+    if (digits.startsWith('55') && digits.length >= 12) return digits;
+    return '55' + digits;
+  };
+
+  // Formata número: remove não dígitos e adiciona 55 se não tiver
+  const formatarTel = (t) => {
+    const digits = t.replace(/\D/g, '');
+    if (digits.startsWith('55') && digits.length >= 12) return digits;
+    return '55' + digits;
+  };
 
   const p = venda.horario_compra.replace('T', ' ').split(/[- :]/);
   const dataCompra = new Date(p[0], p[1]-1, p[2], p[3], p[4], p[5]||0);
@@ -55,12 +63,9 @@ router.post('/comprovante/:codigo', async (req, res) => {
   try {
     const response = await fetch(`${EVOLUTION_URL}/message/sendText/${INSTANCE}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': EVOLUTION_KEY
-      },
+      headers: { 'Content-Type': 'application/json', 'apikey': EVOLUTION_KEY },
       body: JSON.stringify({
-        number: tel.replace(/\D/g, ''),
+        number: formatarTel(tel),
         textMessage: { text: mensagem }
       })
     });
@@ -68,15 +73,11 @@ router.post('/comprovante/:codigo', async (req, res) => {
     const data_resp = await response.json();
     if (!response.ok) throw new Error(JSON.stringify(data_resp));
 
-    // Envia também a imagem do QR code
     await fetch(`${EVOLUTION_URL}/message/sendMedia/${INSTANCE}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': EVOLUTION_KEY
-      },
+      headers: { 'Content-Type': 'application/json', 'apikey': EVOLUTION_KEY },
       body: JSON.stringify({
-        number: tel.replace(/\D/g, ''),
+        number: formatarTel(tel),
         mediaMessage: {
           mediatype: 'image',
           media: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${venda.codigo}`,

@@ -274,9 +274,6 @@
       const btnWpp = document.getElementById('btn-wpp');
       if (data.telefone) { btnWpp.style.display = 'block'; }
       else { btnWpp.style.display = 'none'; }
-      const btnWpp = document.getElementById('btn-wpp');
-      if (data.telefone) { btnWpp.style.display = 'block'; }
-      else { btnWpp.style.display = 'none'; }
       document.getElementById('observacao').value = '';
       document.getElementById('telefone').value = '';
       carregarEstoque();
@@ -289,28 +286,6 @@
       }
     } catch(e) { alert(e.message); }
     btn.disabled = false; btn.textContent = 'Registrar Venda e Imprimir';
-  }
-
-  async function enviarWhatsApp() {
-    if (!vendaAtual) return;
-    const btn = document.getElementById('btn-wpp');
-    btn.disabled = true;
-    btn.textContent = '⏳ Enviando...';
-    try {
-      const res = await fetch('/api/whatsapp/comprovante/' + vendaAtual.codigo, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telefone: vendaAtual.telefone })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.erro);
-      btn.textContent = '✅ Enviado!';
-      setTimeout(() => { btn.textContent = '📱 Enviar WhatsApp'; btn.disabled = false; }, 3000);
-    } catch(e) {
-      alert('Erro ao enviar: ' + e.message);
-      btn.textContent = '📱 Enviar WhatsApp';
-      btn.disabled = false;
-    }
   }
 
   async function enviarWhatsApp() {

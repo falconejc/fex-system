@@ -23,7 +23,7 @@ function agora() {
 }
 
 router.post('/venda', (req, res) => {
-  const { tipo_id, observacao } = req.body;
+  const { tipo_id, observacao, telefone } = req.body;
   const atendente = req.usuario.nome;
   if (!tipo_id) return res.status(400).json({ erro: 'Tipo obrigatório' });
 
@@ -45,8 +45,8 @@ router.post('/venda', (req, res) => {
     if (++tentativas > 10) return res.status(500).json({ erro: 'Erro ao gerar código' });
   } while (db.prepare('SELECT id FROM vendas WHERE codigo = ?').get(codigo));
 
-  db.prepare('INSERT INTO vendas (codigo, tipo, tipo_id, atendente, usuario_id, observacao, horario_compra) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .run(codigo, tipo.nome, tipo_id, atendente, req.usuario.id, observacao || '', agora());
+  db.prepare('INSERT INTO vendas (codigo, tipo, tipo_id, atendente, usuario_id, observacao, telefone, horario_compra) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(codigo, tipo.nome, tipo_id, atendente, req.usuario.id, observacao || '', telefone || '', agora());
 
   // Baixa automatica de insumos vinculados ao tipo
   const insumos_vinculados = db.prepare('SELECT ti.*, i.nome, i.quantidade_atual FROM tipo_insumos ti LEFT JOIN insumos i ON ti.insumo_id = i.id WHERE ti.tipo_id = ?').all(tipo_id);
