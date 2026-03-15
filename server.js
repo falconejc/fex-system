@@ -37,6 +37,7 @@ app.use('/api/usuarios', verificarToken, require('./routes/usuarios'));
 app.use('/api/exportar', verificarToken, require('./routes/exportar'));
 app.use('/api/estoque',  verificarToken, require('./routes/estoque'));
 app.use('/api/lotes',    verificarToken, require('./routes/lotes'));
+app.use('/api/tipos',    verificarToken, require('./routes/tipos'));
 
 app.get('/', (req, res) => {
   const token = req.cookies?.token;

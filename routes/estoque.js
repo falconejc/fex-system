@@ -4,39 +4,46 @@ const db = require('../database');
 const { exigirNivel } = require('../auth');
 
 function hoje() {
-  return new Date().toISOString().split('T')[0];
+  return new Date().toLocaleDateString('pt-BR', {timeZone:'America/Sao_Paulo'}).split('/').reverse().join('-');
 }
 
 router.get('/hoje', (req, res) => {
   const data = hoje();
-  const estoque = db.prepare('SELECT * FROM estoque WHERE data = ?').get(data);
-  if (!estoque) return res.json({ data, simples_total: 0, bacon_total: 0, simples_vendidos: 0, bacon_vendidos: 0 });
-
-  const simples_vendidos = db.prepare("SELECT COUNT(*) as c FROM vendas WHERE tipo='simples' AND cancelado=0 AND date(horario_compra)=?").get(data).c;
-  const bacon_vendidos = db.prepare("SELECT COUNT(*) as c FROM vendas WHERE tipo='bacon' AND cancelado=0 AND date(horario_compra)=?").get(data).c;
-
-  res.json({
-    data,
-    simples_total: estoque.simples_total,
-    bacon_total: estoque.bacon_total,
-    simples_vendidos,
-    bacon_vendidos,
-    simples_restantes: estoque.simples_total - simples_vendidos,
-    bacon_restantes: estoque.bacon_total - bacon_vendidos,
+  const tipos = db.prepare('SELECT * FROM tipos_frango WHERE ativo = 1').all();
+  const resultado = tipos.map(tipo => {
+    const est = db.prepare('SELECT * FROM estoque WHERE data = ? AND tipo_id = ?').get(data, tipo.id);
+    const vendidos = db.prepare("SELECT COUNT(*) as c FROM vendas WHERE tipo_id=? AND cancelado=0 AND date(horario_compra)=?").get(tipo.id, data).c;
+    const lotes = db.prepare("SELECT * FROM lotes WHERE date(horario_entrada)=? AND tipo_id=? ORDER BY horario_previsto ASC").all(data, tipo.id);
+    const prontos = lotes.filter(l => l.status === 'pronto').reduce((s, l) => s + l.quantidade, 0);
+    const assando = lotes.filter(l => l.status === 'assando').reduce((s, l) => s + l.quantidade, 0);
+    const total = est ? est.quantidade : 0;
+    return {
+      tipo_id: tipo.id,
+      tipo_nome: tipo.nome,
+      tipo_preco: tipo.preco,
+      total,
+      vendidos,
+      restantes: Math.max(0, total - vendidos),
+      prontos,
+      assando,
+      lotes
+    };
   });
+  res.json(resultado);
 });
 
 router.post('/', exigirNivel('admin', 'caixa'), (req, res) => {
-  const { simples_total, bacon_total } = req.body;
+  const { estoques } = req.body;
+  if (!estoques || !Array.isArray(estoques)) return res.status(400).json({ erro: 'Dados inválidos' });
   const data = hoje();
-  const existe = db.prepare('SELECT id FROM estoque WHERE data = ?').get(data);
-  if (existe) {
-    db.prepare('UPDATE estoque SET simples_total=?, bacon_total=?, usuario_id=?, atualizado_em=CURRENT_TIMESTAMP WHERE data=?')
-      .run(simples_total, bacon_total, req.usuario.id, data);
-  } else {
-    db.prepare('INSERT INTO estoque (data, simples_total, bacon_total, usuario_id) VALUES (?,?,?,?)')
-      .run(data, simples_total, bacon_total, req.usuario.id);
-  }
+  estoques.forEach(({ tipo_id, quantidade }) => {
+    const existe = db.prepare('SELECT id FROM estoque WHERE data = ? AND tipo_id = ?').get(data, tipo_id);
+    if (existe) {
+      db.prepare('UPDATE estoque SET quantidade=?, usuario_id=? WHERE data=? AND tipo_id=?').run(quantidade, req.usuario.id, data, tipo_id);
+    } else {
+      db.prepare('INSERT INTO estoque (data, tipo_id, quantidade, usuario_id) VALUES (?,?,?,?)').run(data, tipo_id, quantidade, req.usuario.id);
+    }
+  });
   res.json({ sucesso: true });
 });
 

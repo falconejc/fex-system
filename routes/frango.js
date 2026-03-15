@@ -16,18 +16,19 @@ function agora() {
 }
 
 router.post('/venda', (req, res) => {
-  const { tipo, observacao } = req.body;
+  const { tipo_id, observacao } = req.body;
   const atendente = req.usuario.nome;
-  if (!tipo) return res.status(400).json({ erro: 'Tipo obrigatório' });
+  if (!tipo_id) return res.status(400).json({ erro: 'Tipo obrigatório' });
+
+  const tipo = db.prepare('SELECT * FROM tipos_frango WHERE id = ? AND ativo = 1').get(tipo_id);
+  if (!tipo) return res.status(400).json({ erro: 'Tipo inválido' });
 
   const data = hoje();
-  const estoque = db.prepare('SELECT * FROM estoque WHERE data = ?').get(data);
-
-  if (estoque) {
-    const vendidos = db.prepare("SELECT COUNT(*) as c FROM vendas WHERE tipo=? AND cancelado=0 AND date(horario_compra)=?").get(tipo, data).c;
-    const total = tipo === 'simples' ? estoque.simples_total : estoque.bacon_total;
-    if (total > 0 && vendidos >= total) {
-      return res.status(400).json({ erro: `Estoque esgotado! Todos os frangos ${tipo === 'simples' ? 'simples' : 'com bacon'} já foram vendidos.` });
+  const est = db.prepare('SELECT * FROM estoque WHERE data = ? AND tipo_id = ?').get(data, tipo_id);
+  if (est && est.quantidade > 0) {
+    const vendidos = db.prepare("SELECT COUNT(*) as c FROM vendas WHERE tipo_id=? AND cancelado=0 AND date(horario_compra)=?").get(tipo_id, data).c;
+    if (vendidos >= est.quantidade) {
+      return res.status(400).json({ erro: `Estoque esgotado para ${tipo.nome}!` });
     }
   }
 
@@ -37,18 +38,28 @@ router.post('/venda', (req, res) => {
     if (++tentativas > 10) return res.status(500).json({ erro: 'Erro ao gerar código' });
   } while (db.prepare('SELECT id FROM vendas WHERE codigo = ?').get(codigo));
 
-  db.prepare('INSERT INTO vendas (codigo, tipo, atendente, usuario_id, observacao, horario_compra) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(codigo, tipo, atendente, req.usuario.id, observacao || '', agora());
+  db.prepare('INSERT INTO vendas (codigo, tipo, tipo_id, atendente, usuario_id, observacao, horario_compra) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(codigo, tipo.nome, tipo_id, atendente, req.usuario.id, observacao || '', agora());
 
-  res.json(db.prepare('SELECT * FROM vendas WHERE codigo = ?').get(codigo));
+  res.json({ ...db.prepare('SELECT * FROM vendas WHERE codigo = ?').get(codigo), tipo_nome: tipo.nome });
 });
 
 router.get('/pendentes', (req, res) => {
-  res.json(db.prepare("SELECT * FROM vendas WHERE status='pendente' AND cancelado=0 ORDER BY horario_compra ASC").all());
+  res.json(db.prepare(`
+    SELECT v.*, t.nome as tipo_nome, t.preco
+    FROM vendas v
+    LEFT JOIN tipos_frango t ON v.tipo_id = t.id
+    WHERE v.status='pendente' AND v.cancelado=0
+    ORDER BY v.horario_compra ASC
+  `).all());
 });
 
 router.get('/qrcode/:codigo', (req, res) => {
-  const venda = db.prepare('SELECT * FROM vendas WHERE codigo = ?').get(req.params.codigo);
+  const venda = db.prepare(`
+    SELECT v.*, t.nome as tipo_nome FROM vendas v
+    LEFT JOIN tipos_frango t ON v.tipo_id = t.id
+    WHERE v.codigo = ?
+  `).get(req.params.codigo);
   if (!venda) return res.status(404).json({ erro: 'Código não encontrado' });
   res.json(venda);
 });
@@ -63,10 +74,12 @@ router.post('/entrega/:codigo', (req, res) => {
 });
 
 router.put('/:id', exigirNivel('admin'), (req, res) => {
-  const { tipo, atendente, status, observacao } = req.body;
+  const { tipo_id, atendente, status, observacao } = req.body;
   const venda = db.prepare('SELECT * FROM vendas WHERE id = ?').get(req.params.id);
   if (!venda) return res.status(404).json({ erro: 'Venda não encontrada' });
-  db.prepare('UPDATE vendas SET tipo=?, atendente=?, status=?, observacao=? WHERE id=?').run(tipo, atendente, status, observacao, req.params.id);
+  const tipo = db.prepare('SELECT * FROM tipos_frango WHERE id = ?').get(tipo_id);
+  db.prepare('UPDATE vendas SET tipo=?, tipo_id=?, atendente=?, status=?, observacao=? WHERE id=?')
+    .run(tipo ? tipo.nome : venda.tipo, tipo_id, atendente, status, observacao, req.params.id);
   res.json({ sucesso: true });
 });
 
