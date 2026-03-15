@@ -118,10 +118,24 @@ router.get('/frangos-crus', (req, res) => {
   const data = req.query.data || hoje();
   const tipos = db.prepare('SELECT * FROM tipos_frango WHERE ativo = 1').all();
   const resultado = tipos.map(tipo => {
-    const registros = db.prepare('SELECT * FROM frangos_crus WHERE data = ? AND tipo_id = ? ORDER BY criado_em DESC').all(data, tipo.id);
+    const registros = db.prepare(
+      'SELECT * FROM frangos_crus WHERE data = ? AND tipo_id = ? ORDER BY criado_em DESC'
+    ).all(data, tipo.id);
     const total = registros.reduce((s, r) => s + r.quantidade, 0);
-    const assados = db.prepare("SELECT COALESCE(SUM(quantidade),0) as t FROM lotes WHERE date(horario_entrada)=? AND tipo_id=?").get(data, tipo.id).t;
-    return { tipo_id: tipo.id, tipo_nome: tipo.nome, total_crus: total, total_assados: assados, aproveitamento: total > 0 ? Math.round((assados/total)*100) : 0, registros };
+    // Corrigido: filtra lotes pelo campo data (date) corretamente
+    const assados = db.prepare(
+      "SELECT COALESCE(SUM(l.quantidade),0) as t FROM lotes l WHERE date(l.horario_entrada) = ? AND l.tipo_id = ?"
+    ).get(data, tipo.id).t;
+    const disponivel = Math.max(0, total - assados);
+    return {
+      tipo_id: tipo.id,
+      tipo_nome: tipo.nome,
+      total_crus: total,
+      total_assados: assados,
+      disponivel,
+      aproveitamento: total > 0 ? Math.round((assados / total) * 100) : 0,
+      registros
+    };
   });
   res.json(resultado);
 });

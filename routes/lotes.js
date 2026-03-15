@@ -48,15 +48,18 @@ function hoje() {
  * @returns {number} Quantidade disponível para assar
  */
 function calcularDisponivel(data, tipo_id) {
+  // Soma todos os frangos crus registrados para este tipo nesta data
   const totalCrus = db.prepare(
     'SELECT COALESCE(SUM(quantidade), 0) as t FROM frangos_crus WHERE data = ? AND tipo_id = ?'
   ).get(data, tipo_id).t;
 
+  // Soma todos os frangos já colocados em lotes nesta data para este tipo
+  // Usa date() para garantir comparação apenas pela data, ignorando horário
   const totalEmLotes = db.prepare(
-    "SELECT COALESCE(SUM(quantidade), 0) as t FROM lotes WHERE date(horario_entrada) = ? AND tipo_id = ?"
+    "SELECT COALESCE(SUM(quantidade), 0) as t FROM lotes l WHERE date(l.horario_entrada) = ? AND l.tipo_id = ?"
   ).get(data, tipo_id).t;
 
-  return totalCrus - totalEmLotes;
+  return Math.max(0, totalCrus - totalEmLotes);
 }
 
 /**
