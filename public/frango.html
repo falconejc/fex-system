@@ -83,6 +83,8 @@
     <label>Tipo de frango</label>
     <div class="tipos-grid" id="tipos-grid"></div>
     <div id="lote-aviso-venda"></div>
+    <label>WhatsApp do cliente <span style="color:#aaa;font-weight:normal">(opcional)</span></label>
+    <input type="tel" id="telefone" placeholder="Ex: 38999999999">
     <label>Observações <span style="color:#aaa;font-weight:normal">(opcional)</span></label>
     <textarea id="observacao" placeholder="Ex: sem sal, bem passado..."></textarea>
     <button class="btn" id="btn-vender" onclick="registrarVenda()">Registrar Venda e Imprimir</button>
@@ -106,6 +108,7 @@
     <div class="modal-aviso" id="modal-aviso-lote"></div>
     <canvas id="qr-canvas"></canvas>
     <button class="btn-imprimir" onclick="imprimir()">🖨️ Imprimir Comprovante</button>
+    <button class="btn-imprimir" id="btn-wpp" onclick="enviarWhatsApp()" style="background:#25d366;display:none">📱 Enviar WhatsApp</button>
     <button class="btn-fechar" onclick="fecharModal('modal-venda')">Fechar</button>
   </div>
 </div>
@@ -240,7 +243,7 @@
       const res = await fetch('/api/frango/venda', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipo_id: tipoSelecionado, observacao: document.getElementById('observacao').value.trim() })
+        body: JSON.stringify({ tipo_id: tipoSelecionado, observacao: document.getElementById('observacao').value.trim(), telefone: document.getElementById('telefone').value.trim() })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro);
@@ -268,7 +271,14 @@
       img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(data.codigo);
 
       document.getElementById('modal-venda').classList.add('aberto');
+      const btnWpp = document.getElementById('btn-wpp');
+      if (data.telefone) { btnWpp.style.display = 'block'; }
+      else { btnWpp.style.display = 'none'; }
+      const btnWpp = document.getElementById('btn-wpp');
+      if (data.telefone) { btnWpp.style.display = 'block'; }
+      else { btnWpp.style.display = 'none'; }
       document.getElementById('observacao').value = '';
+      document.getElementById('telefone').value = '';
       carregarEstoque();
       carregarPendentes();
 
@@ -279,6 +289,50 @@
       }
     } catch(e) { alert(e.message); }
     btn.disabled = false; btn.textContent = 'Registrar Venda e Imprimir';
+  }
+
+  async function enviarWhatsApp() {
+    if (!vendaAtual) return;
+    const btn = document.getElementById('btn-wpp');
+    btn.disabled = true;
+    btn.textContent = '⏳ Enviando...';
+    try {
+      const res = await fetch('/api/whatsapp/comprovante/' + vendaAtual.codigo, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefone: vendaAtual.telefone })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro);
+      btn.textContent = '✅ Enviado!';
+      setTimeout(() => { btn.textContent = '📱 Enviar WhatsApp'; btn.disabled = false; }, 3000);
+    } catch(e) {
+      alert('Erro ao enviar: ' + e.message);
+      btn.textContent = '📱 Enviar WhatsApp';
+      btn.disabled = false;
+    }
+  }
+
+  async function enviarWhatsApp() {
+    if (!vendaAtual) return;
+    const btn = document.getElementById('btn-wpp');
+    btn.disabled = true;
+    btn.textContent = '⏳ Enviando...';
+    try {
+      const res = await fetch('/api/whatsapp/comprovante/' + vendaAtual.codigo, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefone: vendaAtual.telefone })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro);
+      btn.textContent = '✅ Enviado!';
+      setTimeout(() => { btn.textContent = '📱 Enviar WhatsApp'; btn.disabled = false; }, 3000);
+    } catch(e) {
+      alert('Erro ao enviar: ' + e.message);
+      btn.textContent = '📱 Enviar WhatsApp';
+      btn.disabled = false;
+    }
   }
 
   async function imprimir() {
