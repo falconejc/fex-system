@@ -274,8 +274,13 @@
     const canvas = document.getElementById('qr-canvas');
     const qrDataUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(vendaAtual.codigo);
     const w = window.open('', '_blank', 'width=400,height=600');
-    const hora = new Date(vendaAtual.horario_compra).toLocaleTimeString('pt-BR');
-    const data = new Date(vendaAtual.horario_compra).toLocaleDateString('pt-BR');
+    const dataCompra = new Date(vendaAtual.horario_compra);
+    const hora = dataCompra.toLocaleTimeString('pt-BR', {timeZone:'America/Sao_Paulo'});
+    const data = dataCompra.toLocaleDateString('pt-BR', {timeZone:'America/Sao_Paulo'});
+    const diaSemana = new Date(new Date().toLocaleString('en-US', {timeZone:'America/Sao_Paulo'})).getDay();
+    const isDomingo = diaSemana === 0;
+    const horarioLimite = isDomingo ? '13:45' : '18:30';
+    const diaTexto = isDomingo ? 'Domingo' : 'Dia de semana';
     w.document.write(`
       <html><head><title>Comprovante</title>
       <style>
@@ -286,6 +291,8 @@
         .info { margin: 3px 0; }
         .obs { font-style: italic; font-size: 12px; margin-top: 4px; }
         .qr { text-align: center; margin: 8px 0; }
+        .aviso { border: 2px solid #000; padding: 8px; margin: 8px 0; text-align: center; font-size: 12px; line-height: 1.6; }
+        .aviso strong { font-size: 13px; }
         .rodape { text-align: center; font-size: 11px; margin-top: 10px; }
       </style></head><body>
       <h2>FRANGO EXPRESSO</h2>
@@ -299,6 +306,12 @@
       <div class="codigo">${vendaAtual.codigo}</div>
       <div class="qr"><img src="${qrDataUrl}" width="120"></div>
       <div class="linha"></div>
+      <div class="aviso">
+        <strong>ATENÇÃO</strong><br>
+        Retire seu frango <strong>hoje</strong>.<br>
+        ${diaTexto}: retire até as <strong>${horarioLimite}</strong>.<br>
+        Não nos responsabilizamos<br>por retiradas fora do prazo.
+      </div>
       <div class="rodape">Guarde este comprovante<br>Apresente na retirada</div>
       <script>window.onload=()=>{window.print();}<\/script>
       </body></html>
