@@ -23,12 +23,7 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(401).json({ erro: 'Usuário ou senha inválidos' });
   }
   const token = gerarToken(user);
-  res.cookie('token', token, {
-    httpOnly: true,
-    maxAge: 12 * 60 * 60 * 1000,
-    sameSite: 'lax',
-    path: '/'
-  });
+  res.cookie('token', token, { httpOnly: true, maxAge: 12 * 60 * 60 * 1000, sameSite: 'lax', path: '/' });
   res.json({ sucesso: true, nivel: user.nivel, nome: user.nome });
 });
 
@@ -45,6 +40,7 @@ app.use('/api/frango', verificarToken, require('./routes/frango'));
 app.use('/api/delivery', verificarToken, require('./routes/delivery'));
 app.use('/api/relatorio', verificarToken, require('./routes/relatorio'));
 app.use('/api/usuarios', verificarToken, require('./routes/usuarios'));
+app.use('/api/exportar', verificarToken, require('./routes/exportar'));
 
 app.get('/', (req, res) => {
   const token = req.cookies?.token;

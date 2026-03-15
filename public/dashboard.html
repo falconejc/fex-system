@@ -51,6 +51,7 @@
     <label>Até:</label>
     <input type="date" id="data-fim">
     <button onclick="carregar()">Buscar</button>
+    <button onclick="exportar()" style="padding:8px 20px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold;">⬇ Exportar Excel</button>
   </div>
 
   <div class="kpis" id="kpis"></div>
@@ -177,6 +178,15 @@
   }
 
   carregar();
+
+  async function exportar() {
+    const ini = document.getElementById("data-ini").value;
+    const fim = document.getElementById("data-fim").value;
+    window.location.href = `/api/exportar/excel?ini=${ini}&fim=${fim}`;
+  }
 </script>
 </body>
 </html>
+<script>
+  const _origCarregar = carregar;
+</script>
