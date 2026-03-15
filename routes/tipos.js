@@ -35,4 +35,34 @@ router.put('/:id', exigirNivel('admin'), (req, res) => {
   res.json({ sucesso: true });
 });
 
+// Lista insumos vinculados a um tipo
+router.get('/:id/insumos', (req, res) => {
+  const vinculados = db.prepare(`
+    SELECT ti.*, i.nome, i.unidade
+    FROM tipo_insumos ti
+    LEFT JOIN insumos i ON ti.insumo_id = i.id
+    WHERE ti.tipo_id = ?
+  `).all(req.params.id);
+  res.json(vinculados);
+});
+
+// Vincula ou atualiza insumo em um tipo
+router.post('/:id/insumos', exigirNivel('admin'), (req, res) => {
+  const { insumo_id, quantidade } = req.body;
+  if (!insumo_id || !quantidade) return res.status(400).json({ erro: 'Insumo e quantidade obrigatorios' });
+  const existe = db.prepare('SELECT id FROM tipo_insumos WHERE tipo_id = ? AND insumo_id = ?').get(req.params.id, insumo_id);
+  if (existe) {
+    db.prepare('UPDATE tipo_insumos SET quantidade = ? WHERE tipo_id = ? AND insumo_id = ?').run(quantidade, req.params.id, insumo_id);
+  } else {
+    db.prepare('INSERT INTO tipo_insumos (tipo_id, insumo_id, quantidade) VALUES (?, ?, ?)').run(req.params.id, insumo_id, quantidade);
+  }
+  res.json({ sucesso: true });
+});
+
+// Remove vinculo de insumo de um tipo
+router.delete('/:id/insumos/:insumo_id', exigirNivel('admin'), (req, res) => {
+  db.prepare('DELETE FROM tipo_insumos WHERE tipo_id = ? AND insumo_id = ?').run(req.params.id, req.params.insumo_id);
+  res.json({ sucesso: true });
+});
+
 module.exports = router;

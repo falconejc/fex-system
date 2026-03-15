@@ -48,7 +48,18 @@ router.post('/venda', (req, res) => {
   db.prepare('INSERT INTO vendas (codigo, tipo, tipo_id, atendente, usuario_id, observacao, horario_compra) VALUES (?, ?, ?, ?, ?, ?, ?)')
     .run(codigo, tipo.nome, tipo_id, atendente, req.usuario.id, observacao || '', agora());
 
-  res.json({ ...db.prepare('SELECT * FROM vendas WHERE codigo = ?').get(codigo), tipo_nome: tipo.nome });
+  // Baixa automatica de insumos vinculados ao tipo
+  const insumos_vinculados = db.prepare('SELECT ti.*, i.nome, i.quantidade_atual FROM tipo_insumos ti LEFT JOIN insumos i ON ti.insumo_id = i.id WHERE ti.tipo_id = ?').all(tipo_id);
+  const alertas_insumos = [];
+  insumos_vinculados.forEach(iv => {
+    const nova_qtd = iv.quantidade_atual - iv.quantidade;
+    db.prepare('UPDATE insumos SET quantidade_atual = ? WHERE id = ?').run(nova_qtd, iv.insumo_id);
+    db.prepare('INSERT INTO movimentacoes_insumos (insumo_id, tipo, quantidade, observacao, usuario_id) VALUES (?, ?, ?, ?, ?)').run(iv.insumo_id, 'saida', iv.quantidade, 'Venda automatica - ' + codigo, req.usuario.id);
+    if (nova_qtd <= 0) alertas_insumos.push({ nome: iv.nome, quantidade_atual: nova_qtd });
+  });
+
+  const venda = db.prepare('SELECT * FROM vendas WHERE codigo = ?').get(codigo);
+  res.json({ ...venda, tipo_nome: tipo.nome, alertas_insumos });
 });
 
 router.get('/pendentes', (req, res) => {

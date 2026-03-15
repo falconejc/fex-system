@@ -270,6 +270,12 @@
       document.getElementById('observacao').value = '';
       carregarEstoque();
       carregarPendentes();
+
+      // Mostra alerta se algum insumo zerou
+      if (data.alertas_insumos && data.alertas_insumos.length > 0) {
+        const nomes = data.alertas_insumos.map(a => a.nome + ' (' + a.quantidade_atual + ')').join(', ');
+        setTimeout(() => alert('⚠️ Atenção! Estoque zerado ou negativo: ' + nomes), 500);
+      }
     } catch(e) { alert(e.message); }
     btn.disabled = false; btn.textContent = 'Registrar Venda e Imprimir';
   }

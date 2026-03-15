@@ -101,6 +101,7 @@
           <div class="detalhe">${t.descricao || 'Sem descrição'} • R$ ${parseFloat(t.preco).toFixed(2)}</div>
         </div>
         <div class="acoes">
+          <button class="btn-editar" onclick="abrirInsumos(${t.id}, '${t.nome}')">Insumos</button>
           <button class="btn-editar" onclick="abrirModalEditar(${t.id}, '${t.nome}', '${t.descricao||''}', ${t.preco}, ${t.ativo})">Editar</button>
         </div>
       </div>
@@ -149,6 +150,112 @@
     if (!res.ok) { alert(data.erro); return; }
     fecharModal();
     carregar();
+  }
+
+  // Modal de insumos do tipo
+  let tipoInsumoAtual = null;
+  let todosInsumos = [];
+
+  async function abrirInsumos(id, nome) {
+    tipoInsumoAtual = id;
+    document.getElementById('modal-insumos-titulo').textContent = 'Insumos: ' + nome;
+    const [resV, resI] = await Promise.all([
+      fetch('/api/tipos/' + id + '/insumos'),
+      fetch('/api/estoque_modulo/insumos')
+    ]);
+    const vinculados = await resV.json();
+    todosInsumos = await resI.json();
+
+    const select = document.getElementById('novo-insumo-select');
+    select.innerHTML = todosInsumos.map(i => '<option value="' + i.id + '">' + i.nome + ' (' + i.unidade + ')</option>').join('');
+
+    renderVinculados(vinculados);
+    document.getElementById('modal-insumos').classList.add('aberto');
+  }
+
+  function renderVinculados(lista) {
+    const el = document.getElementById('lista-vinculados');
+    if (!lista.length) { el.innerHTML = '<p style="color:#aaa;font-size:13px;padding:10px 0">Nenhum insumo vinculado</p>'; return; }
+    el.innerHTML = lista.map(v => '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6">' +
+      '<span style="font-size:14px"><strong>' + v.nome + '</strong> — ' + v.quantidade + ' ' + v.unidade + ' por frango</span>' +
+      '<button onclick="desvincular(' + v.insumo_id + ')" style="padding:4px 10px;background:#fee2e2;color:#991b1b;border:none;border-radius:5px;cursor:pointer;font-size:12px">Remover</button>' +
+      '</div>').join('');
+  }
+
+  async function vincularInsumo() {
+    const insumo_id = parseInt(document.getElementById('novo-insumo-select').value);
+    const quantidade = parseFloat(document.getElementById('novo-insumo-qtd').value);
+    if (!quantidade || quantidade <= 0) { alert('Informe a quantidade'); return; }
+    const res = await fetch('/api/tipos/' + tipoInsumoAtual + '/insumos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ insumo_id, quantidade })
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.erro); return; }
+    document.getElementById('novo-insumo-qtd').value = '';
+    const resV = await fetch('/api/tipos/' + tipoInsumoAtual + '/insumos');
+    renderVinculados(await resV.json());
+  }
+
+  async function desvincular(insumo_id) {
+    if (!confirm('Remover este insumo?')) return;
+    await fetch('/api/tipos/' + tipoInsumoAtual + '/insumos/' + insumo_id, { method: 'DELETE' });
+    const resV = await fetch('/api/tipos/' + tipoInsumoAtual + '/insumos');
+    renderVinculados(await resV.json());
+  }
+
+  // Modal de insumos do tipo
+  let tipoInsumoAtual = null;
+  let todosInsumos = [];
+
+  async function abrirInsumos(id, nome) {
+    tipoInsumoAtual = id;
+    document.getElementById('modal-insumos-titulo').textContent = 'Insumos: ' + nome;
+    const [resV, resI] = await Promise.all([
+      fetch('/api/tipos/' + id + '/insumos'),
+      fetch('/api/estoque_modulo/insumos')
+    ]);
+    const vinculados = await resV.json();
+    todosInsumos = await resI.json();
+
+    const select = document.getElementById('novo-insumo-select');
+    select.innerHTML = todosInsumos.map(i => '<option value="' + i.id + '">' + i.nome + ' (' + i.unidade + ')</option>').join('');
+
+    renderVinculados(vinculados);
+    document.getElementById('modal-insumos').classList.add('aberto');
+  }
+
+  function renderVinculados(lista) {
+    const el = document.getElementById('lista-vinculados');
+    if (!lista.length) { el.innerHTML = '<p style="color:#aaa;font-size:13px;padding:10px 0">Nenhum insumo vinculado</p>'; return; }
+    el.innerHTML = lista.map(v => '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6">' +
+      '<span style="font-size:14px"><strong>' + v.nome + '</strong> — ' + v.quantidade + ' ' + v.unidade + ' por frango</span>' +
+      '<button onclick="desvincular(' + v.insumo_id + ')" style="padding:4px 10px;background:#fee2e2;color:#991b1b;border:none;border-radius:5px;cursor:pointer;font-size:12px">Remover</button>' +
+      '</div>').join('');
+  }
+
+  async function vincularInsumo() {
+    const insumo_id = parseInt(document.getElementById('novo-insumo-select').value);
+    const quantidade = parseFloat(document.getElementById('novo-insumo-qtd').value);
+    if (!quantidade || quantidade <= 0) { alert('Informe a quantidade'); return; }
+    const res = await fetch('/api/tipos/' + tipoInsumoAtual + '/insumos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ insumo_id, quantidade })
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.erro); return; }
+    document.getElementById('novo-insumo-qtd').value = '';
+    const resV = await fetch('/api/tipos/' + tipoInsumoAtual + '/insumos');
+    renderVinculados(await resV.json());
+  }
+
+  async function desvincular(insumo_id) {
+    if (!confirm('Remover este insumo?')) return;
+    await fetch('/api/tipos/' + tipoInsumoAtual + '/insumos/' + insumo_id, { method: 'DELETE' });
+    const resV = await fetch('/api/tipos/' + tipoInsumoAtual + '/insumos');
+    renderVinculados(await resV.json());
   }
 
   function fecharModal() { document.getElementById('modal').classList.remove('aberto'); }
