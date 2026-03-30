@@ -66,6 +66,8 @@
     <input type="hidden" id="edit-id">
     <label>Nome</label>
     <input type="text" id="edit-nome" placeholder="Ex: Com Catupiry">
+    <label>Ícone (emoji)</label>
+    <input type="text" id="edit-icone" placeholder="Ex: 🍗 🥓 🧀" maxlength="4" style="font-size:20px;width:80px">
     <label>Descrição (opcional)</label>
     <input type="text" id="edit-desc" placeholder="Ex: Frango assado com catupiry">
     <label>Preço (R$)</label>
@@ -97,12 +99,12 @@
     el.innerHTML = lista.map(t => `
       <div class="tipo-item">
         <div class="info">
-          <div class="nome">🍗 ${t.nome} <span class="badge badge-${t.ativo ? 'ativo' : 'inativo'}">${t.ativo ? 'Ativo' : 'Inativo'}</span></div>
+          <div class="nome">${t.icone || '🍗'} ${t.nome} <span class="badge badge-${t.ativo ? 'ativo' : 'inativo'}">${t.ativo ? 'Ativo' : 'Inativo'}</span></div>
           <div class="detalhe">${t.descricao || 'Sem descrição'} • R$ ${parseFloat(t.preco).toFixed(2)}</div>
         </div>
         <div class="acoes">
           <button class="btn-editar" onclick="abrirInsumos(${t.id}, '${t.nome}')">Insumos</button>
-          <button class="btn-editar" onclick="abrirModalEditar(${t.id}, '${t.nome}', '${t.descricao||''}', ${t.preco}, ${t.ativo})">Editar</button>
+          <button class="btn-editar" onclick="abrirModalEditar(${t.id}, '${t.nome}', '${t.descricao||''}', ${t.preco}, ${t.ativo}, '${t.icone||'🍗'}')">Editar</button>
         </div>
       </div>
     `).join('');
@@ -114,18 +116,20 @@
     document.getElementById('modal-sub').textContent = 'Preencha os dados do novo tipo de frango';
     document.getElementById('edit-id').value = '';
     document.getElementById('edit-nome').value = '';
+    document.getElementById('edit-icone').value = '🍗';
     document.getElementById('edit-desc').value = '';
     document.getElementById('edit-preco').value = '';
     document.getElementById('edit-ativo').value = '1';
     document.getElementById('modal').classList.add('aberto');
   }
 
-  function abrirModalEditar(id, nome, desc, preco, ativo) {
+  function abrirModalEditar(id, nome, desc, preco, ativo, icone) {
     editando = true;
     document.getElementById('modal-titulo').textContent = 'Editar tipo';
     document.getElementById('modal-sub').textContent = 'Altere os dados do tipo de frango';
     document.getElementById('edit-id').value = id;
     document.getElementById('edit-nome').value = nome;
+    document.getElementById('edit-icone').value = icone || '🍗';
     document.getElementById('edit-desc').value = desc;
     document.getElementById('edit-preco').value = preco;
     document.getElementById('edit-ativo').value = ativo;

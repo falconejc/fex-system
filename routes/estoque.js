@@ -26,6 +26,7 @@ router.get('/hoje', (req, res) => {
     return {
       tipo_id: tipo.id,
       tipo_nome: tipo.nome,
+      tipo_icone: tipo.icone || '🍗',
       tipo_preco: tipo.preco,
       total,
       vendidos,

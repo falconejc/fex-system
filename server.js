@@ -45,6 +45,7 @@ app.use('/api/usuarios', verificarToken, require('./routes/usuarios'));
 app.use('/api/exportar', verificarToken, require('./routes/exportar'));
 app.use('/api/estoque',  verificarToken, require('./routes/estoque'));
 app.use('/api/lotes',    verificarToken, require('./routes/lotes'));
+app.use('/api/whatsapp', verificarToken, require('./routes/whatsapp'));
 app.use('/api/tipos',    verificarToken, require('./routes/tipos'));
 app.use('/api/estoque_modulo', verificarToken, require('./routes/estoque_modulo'));
 
