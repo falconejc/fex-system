@@ -45,8 +45,16 @@ router.post('/venda', (req, res) => {
     if (++tentativas > 10) return res.status(500).json({ erro: 'Erro ao gerar código' });
   } while (db.prepare('SELECT id FROM vendas WHERE codigo = ?').get(codigo));
 
-  db.prepare('INSERT INTO vendas (codigo, tipo, tipo_id, atendente, usuario_id, observacao, telefone, horario_compra) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-    .run(codigo, tipo.nome, tipo_id, atendente, req.usuario.id, observacao || '', telefone || '', agora());
+  // Calcula ordem sequencial do tipo no dia
+  const dataHoje = new Date().toISOString().slice(0, 10);
+  const ordemRow = db.prepare(`
+    SELECT COUNT(*) as total FROM vendas
+    WHERE tipo_id = ? AND DATE(horario_compra) = ? AND cancelado = 0
+  `).get(tipo_id, dataHoje);
+  const ordem_tipo = (ordemRow.total || 0) + 1;
+
+  db.prepare('INSERT INTO vendas (codigo, tipo, tipo_id, atendente, usuario_id, observacao, telefone, horario_compra, ordem_tipo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(codigo, tipo.nome, tipo_id, atendente, req.usuario.id, observacao || '', telefone || '', agora(), ordem_tipo);
 
   // Baixa automatica de insumos vinculados ao tipo
   const insumos_vinculados = db.prepare('SELECT ti.*, i.nome, i.quantidade_atual FROM tipo_insumos ti LEFT JOIN insumos i ON ti.insumo_id = i.id WHERE ti.tipo_id = ?').all(tipo_id);
@@ -64,11 +72,11 @@ router.post('/venda', (req, res) => {
 
 router.get('/pendentes', (req, res) => {
   res.json(db.prepare(`
-    SELECT v.*, t.nome as tipo_nome, t.preco
+    SELECT v.*, t.nome as tipo_nome, t.preco, t.icone as tipo_icone
     FROM vendas v
     LEFT JOIN tipos_frango t ON v.tipo_id = t.id
     WHERE v.status='pendente' AND v.cancelado=0
-    ORDER BY v.horario_compra ASC
+    ORDER BY v.tipo_id ASC, v.ordem_tipo ASC
   `).all());
 });
 
