@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tipos de Frango - Fex System</title>
+<title>Tipos de Frango - Fex</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: Arial, sans-serif; background: #f5f5f5; }
@@ -12,32 +12,40 @@
   header a { color: white; text-decoration: none; font-size: 20px; }
   header h1 { font-size: 20px; }
   .btn-logoff { padding: 7px 14px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
-  .container { max-width: 600px; margin: 30px auto; padding: 0 20px; }
-  .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+  .container { max-width: 540px; margin: 24px auto; padding: 0 16px; }
+  .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
   .card-header h2 { font-size: 16px; color: #555; }
-  .btn-novo { padding: 8px 16px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
-  .tipo-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 10px; }
-  .tipo-item .info .nome { font-weight: bold; font-size: 15px; color: #333; }
-  .tipo-item .info .detalhe { font-size: 12px; color: #888; margin-top: 3px; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 8px; }
-  .badge-ativo { background: #d1fae5; color: #065f46; }
-  .badge-inativo { background: #f3f4f6; color: #6b7280; }
-  .acoes { display: flex; gap: 8px; }
-  .btn-editar { padding: 7px 14px; background: #eff6ff; color: #1e40af; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
-  label { display: block; font-size: 14px; color: #555; margin-bottom: 6px; margin-top: 14px; text-align: left; }
-  input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: Arial; }
+  .btn-novo { padding: 9px 18px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
+  .tipo-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px; }
+  .tipo-info { display: flex; align-items: center; gap: 10px; }
+  .tipo-icone { font-size: 24px; }
+  .tipo-nome { font-weight: bold; font-size: 15px; }
+  .tipo-preco { font-size: 13px; color: #10b981; font-weight: bold; }
+  .tipo-desc { font-size: 12px; color: #888; }
+  .tipo-status { font-size: 11px; padding: 2px 8px; border-radius: 99px; }
+  .tipo-status.ativo { background: #d1fae5; color: #065f46; }
+  .tipo-status.inativo { background: #fee2e2; color: #991b1b; }
+  .acoes { display: flex; gap: 6px; }
+  .btn-editar { padding: 6px 12px; background: #f3f4f6; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
+  .btn-editar:hover { background: #e5e7eb; }
+  .vazio { text-align: center; color: #aaa; padding: 24px; font-size: 14px; }
   .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
   .modal.aberto { display: flex; }
-  .modal-box { background: white; border-radius: 16px; padding: 28px; max-width: 400px; width: 90%; }
-  .modal-box h3 { font-size: 18px; color: #333; margin-bottom: 4px; }
-  .modal-box p { font-size: 13px; color: #888; margin-bottom: 8px; }
-  .modal-acoes { display: flex; gap: 10px; margin-top: 20px; }
-  .btn-salvar { flex: 1; padding: 12px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
-  .btn-cancelar { flex: 1; padding: 12px; background: #f3f4f6; color: #333; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
-  .preco-input { position: relative; }
-  .preco-input span { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; font-size: 14px; }
-  .preco-input input { padding-left: 28px; }
+  .modal-box { background: white; border-radius: 16px; padding: 24px; max-width: 400px; width: 90%; max-height: 90vh; overflow-y: auto; }
+  .modal-box h3 { font-size: 17px; color: #333; margin-bottom: 4px; }
+  .modal-box p { font-size: 13px; color: #888; margin-bottom: 16px; }
+  .campo { margin-bottom: 14px; }
+  .campo label { display: block; font-size: 13px; color: #555; margin-bottom: 5px; font-weight: bold; }
+  .campo input, .campo select, .campo textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+  .btn-salvar { width: 100%; padding: 13px; background: #f59e0b; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; margin-bottom: 8px; }
+  .btn-fechar { width: 100%; padding: 11px; background: #f3f4f6; color: #333; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; }
+  .secao-insumos { margin-top: 16px; border-top: 1px solid #eee; padding-top: 14px; }
+  .secao-insumos h4 { font-size: 14px; color: #333; margin-bottom: 10px; }
+  .insumo-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .insumo-row select { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+  .insumo-row input { width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+  .btn-vincular { padding: 8px 14px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
 </style>
 </head>
 <body>
@@ -59,50 +67,81 @@
   </div>
 </div>
 
+<!-- Modal tipo -->
 <div class="modal" id="modal">
   <div class="modal-box">
     <h3 id="modal-titulo">Novo tipo</h3>
     <p id="modal-sub">Preencha os dados do novo tipo de frango</p>
     <input type="hidden" id="edit-id">
-    <label>Nome</label>
-    <input type="text" id="edit-nome" placeholder="Ex: Com Catupiry">
-    <label>Ícone (emoji)</label>
-    <input type="text" id="edit-icone" placeholder="Ex: 🍗 🥓 🧀" maxlength="4" style="font-size:20px;width:80px">
-    <label>Descrição (opcional)</label>
-    <input type="text" id="edit-desc" placeholder="Ex: Frango assado com catupiry">
-    <label>Preço (R$)</label>
-    <div class="preco-input">
-      <span>R$</span>
-      <input type="number" id="edit-preco" min="0" step="0.01" placeholder="0,00">
+    <div class="campo">
+      <label>Ícone (emoji)</label>
+      <input type="text" id="edit-icone" value="🍗" maxlength="4">
     </div>
-    <label>Status</label>
-    <select id="edit-ativo">
-      <option value="1">Ativo</option>
-      <option value="0">Inativo</option>
-    </select>
-    <div class="modal-acoes">
-      <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
-      <button class="btn-salvar" onclick="salvar()">Salvar</button>
+    <div class="campo">
+      <label>Nome</label>
+      <input type="text" id="edit-nome" placeholder="Ex: Frango Simples">
     </div>
+    <div class="campo">
+      <label>Descrição</label>
+      <input type="text" id="edit-desc" placeholder="Descrição opcional">
+    </div>
+    <div class="campo">
+      <label>Preço (R$)</label>
+      <input type="number" id="edit-preco" step="0.01" placeholder="0.00">
+    </div>
+    <div class="campo">
+      <label>Status</label>
+      <select id="edit-ativo">
+        <option value="1">Ativo</option>
+        <option value="0">Inativo</option>
+      </select>
+    </div>
+    <button class="btn-salvar" onclick="salvar()">Salvar</button>
+    <button class="btn-fechar" onclick="fecharModal('modal')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal insumos -->
+<div class="modal" id="modal-insumos">
+  <div class="modal-box">
+    <h3 id="modal-insumos-titulo">Insumos</h3>
+    <p>Insumos consumidos automaticamente a cada venda deste tipo</p>
+    <div id="lista-vinculados"></div>
+    <div class="secao-insumos">
+      <h4>Vincular insumo</h4>
+      <div class="insumo-row">
+        <select id="novo-insumo-select"></select>
+        <input type="number" id="novo-insumo-qtd" placeholder="Qtd" step="0.01">
+        <button class="btn-vincular" onclick="vincularInsumo()">+</button>
+      </div>
+    </div>
+    <br>
+    <button class="btn-fechar" onclick="fecharModal('modal-insumos')">Fechar</button>
   </div>
 </div>
 
 <script>
   let editando = false;
+  let tipoInsumoAtual = null;
+  let todosInsumos = [];
 
-  async function carregar() {
-    const res = await fetch('/api/tipos/todos');
-    if (res.status === 403) { window.location.href = '/'; return; }
-    const lista = await res.json();
+  async function carregarTipos() {
+    const res = await fetch('/api/tipos');
+    const tipos = await res.json();
     const el = document.getElementById('lista-tipos');
-    if (!lista.length) { el.innerHTML = '<p style="color:#aaa;text-align:center;padding:20px">Nenhum tipo cadastrado</p>'; return; }
-    el.innerHTML = lista.map(t => `
+    if (!tipos.length) { el.innerHTML = '<div class="vazio">Nenhum tipo cadastrado</div>'; return; }
+    el.innerHTML = tipos.map(t => `
       <div class="tipo-item">
-        <div class="info">
-          <div class="nome">${t.icone || '🍗'} ${t.nome} <span class="badge badge-${t.ativo ? 'ativo' : 'inativo'}">${t.ativo ? 'Ativo' : 'Inativo'}</span></div>
-          <div class="detalhe">${t.descricao || 'Sem descrição'} • R$ ${parseFloat(t.preco).toFixed(2)}</div>
+        <div class="tipo-info">
+          <span class="tipo-icone">${t.icone || '🍗'}</span>
+          <div>
+            <div class="tipo-nome">${t.nome}</div>
+            <div class="tipo-preco">R$ ${parseFloat(t.preco||0).toFixed(2)}</div>
+            ${t.descricao ? `<div class="tipo-desc">${t.descricao}</div>` : ''}
+          </div>
         </div>
         <div class="acoes">
+          <span class="tipo-status ${t.ativo ? 'ativo' : 'inativo'}">${t.ativo ? 'Ativo' : 'Inativo'}</span>
           <button class="btn-editar" onclick="abrirInsumos(${t.id}, '${t.nome}')">Insumos</button>
           <button class="btn-editar" onclick="abrirModalEditar(${t.id}, '${t.nome}', '${t.descricao||''}', ${t.preco}, ${t.ativo}, '${t.icone||'🍗'}')">Editar</button>
         </div>
@@ -130,35 +169,30 @@
     document.getElementById('edit-id').value = id;
     document.getElementById('edit-nome').value = nome;
     document.getElementById('edit-icone').value = icone || '🍗';
-    document.getElementById('edit-desc').value = desc;
+    document.getElementById('edit-desc').value = desc || '';
     document.getElementById('edit-preco').value = preco;
     document.getElementById('edit-ativo').value = ativo;
     document.getElementById('modal').classList.add('aberto');
   }
 
   async function salvar() {
-    const nome = document.getElementById('edit-nome').value.trim();
-    const descricao = document.getElementById('edit-desc').value.trim();
-    const preco = parseFloat(document.getElementById('edit-preco').value) || 0;
-    const ativo = parseInt(document.getElementById('edit-ativo').value);
     const id = document.getElementById('edit-id').value;
-    if (!nome) { alert('Informe o nome'); return; }
-    const url = editando ? `/api/tipos/${id}` : '/api/tipos';
+    const body = {
+      nome: document.getElementById('edit-nome').value,
+      icone: document.getElementById('edit-icone').value,
+      descricao: document.getElementById('edit-desc').value,
+      preco: parseFloat(document.getElementById('edit-preco').value) || 0,
+      ativo: parseInt(document.getElementById('edit-ativo').value)
+    };
+    if (!body.nome) { alert('Nome obrigatório'); return; }
+    const url = editando ? '/api/tipos/' + id : '/api/tipos';
     const method = editando ? 'PUT' : 'POST';
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome, descricao, preco, ativo })
-    });
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json();
-    if (!res.ok) { alert(data.erro); return; }
-    fecharModal();
-    carregar();
+    if (!res.ok) { alert(data.erro || 'Erro ao salvar'); return; }
+    fecharModal('modal');
+    carregarTipos();
   }
-
-  // Modal de insumos do tipo
-  let tipoInsumoAtual = null;
-  let todosInsumos = [];
 
   async function abrirInsumos(id, nome) {
     tipoInsumoAtual = id;
@@ -169,10 +203,8 @@
     ]);
     const vinculados = await resV.json();
     todosInsumos = await resI.json();
-
     const select = document.getElementById('novo-insumo-select');
     select.innerHTML = todosInsumos.map(i => '<option value="' + i.id + '">' + i.nome + ' (' + i.unidade + ')</option>').join('');
-
     renderVinculados(vinculados);
     document.getElementById('modal-insumos').classList.add('aberto');
   }
@@ -180,10 +212,12 @@
   function renderVinculados(lista) {
     const el = document.getElementById('lista-vinculados');
     if (!lista.length) { el.innerHTML = '<p style="color:#aaa;font-size:13px;padding:10px 0">Nenhum insumo vinculado</p>'; return; }
-    el.innerHTML = lista.map(v => '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6">' +
+    el.innerHTML = lista.map(v =>
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6">' +
       '<span style="font-size:14px"><strong>' + v.nome + '</strong> — ' + v.quantidade + ' ' + v.unidade + ' por frango</span>' +
       '<button onclick="desvincular(' + v.insumo_id + ')" style="padding:4px 10px;background:#fee2e2;color:#991b1b;border:none;border-radius:5px;cursor:pointer;font-size:12px">Remover</button>' +
-      '</div>').join('');
+      '</div>'
+    ).join('');
   }
 
   async function vincularInsumo() {
@@ -209,67 +243,14 @@
     renderVinculados(await resV.json());
   }
 
-  // Modal de insumos do tipo
-  let tipoInsumoAtual = null;
-  let todosInsumos = [];
-
-  async function abrirInsumos(id, nome) {
-    tipoInsumoAtual = id;
-    document.getElementById('modal-insumos-titulo').textContent = 'Insumos: ' + nome;
-    const [resV, resI] = await Promise.all([
-      fetch('/api/tipos/' + id + '/insumos'),
-      fetch('/api/estoque_modulo/insumos')
-    ]);
-    const vinculados = await resV.json();
-    todosInsumos = await resI.json();
-
-    const select = document.getElementById('novo-insumo-select');
-    select.innerHTML = todosInsumos.map(i => '<option value="' + i.id + '">' + i.nome + ' (' + i.unidade + ')</option>').join('');
-
-    renderVinculados(vinculados);
-    document.getElementById('modal-insumos').classList.add('aberto');
-  }
-
-  function renderVinculados(lista) {
-    const el = document.getElementById('lista-vinculados');
-    if (!lista.length) { el.innerHTML = '<p style="color:#aaa;font-size:13px;padding:10px 0">Nenhum insumo vinculado</p>'; return; }
-    el.innerHTML = lista.map(v => '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6">' +
-      '<span style="font-size:14px"><strong>' + v.nome + '</strong> — ' + v.quantidade + ' ' + v.unidade + ' por frango</span>' +
-      '<button onclick="desvincular(' + v.insumo_id + ')" style="padding:4px 10px;background:#fee2e2;color:#991b1b;border:none;border-radius:5px;cursor:pointer;font-size:12px">Remover</button>' +
-      '</div>').join('');
-  }
-
-  async function vincularInsumo() {
-    const insumo_id = parseInt(document.getElementById('novo-insumo-select').value);
-    const quantidade = parseFloat(document.getElementById('novo-insumo-qtd').value);
-    if (!quantidade || quantidade <= 0) { alert('Informe a quantidade'); return; }
-    const res = await fetch('/api/tipos/' + tipoInsumoAtual + '/insumos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ insumo_id, quantidade })
-    });
-    const data = await res.json();
-    if (!res.ok) { alert(data.erro); return; }
-    document.getElementById('novo-insumo-qtd').value = '';
-    const resV = await fetch('/api/tipos/' + tipoInsumoAtual + '/insumos');
-    renderVinculados(await resV.json());
-  }
-
-  async function desvincular(insumo_id) {
-    if (!confirm('Remover este insumo?')) return;
-    await fetch('/api/tipos/' + tipoInsumoAtual + '/insumos/' + insumo_id, { method: 'DELETE' });
-    const resV = await fetch('/api/tipos/' + tipoInsumoAtual + '/insumos');
-    renderVinculados(await resV.json());
-  }
-
-  function fecharModal() { document.getElementById('modal').classList.remove('aberto'); }
+  function fecharModal(id) { document.getElementById(id).classList.remove('aberto'); }
 
   async function logoff() {
     await fetch('/api/auth/logout', { method: 'POST' });
     window.location.href = '/login.html';
   }
 
-  carregar();
+  carregarTipos();
 </script>
 </body>
 </html>

@@ -11,7 +11,7 @@ const db = require('../database');
 
 router.get('/dia', (req, res) => {
   const data = req.query.data || new Date().toISOString().split('T')[0];
-  const vendas = db.prepare("SELECT * FROM vendas WHERE date(horario_compra) = ? ORDER BY horario_compra DESC").all(data);
+  const vendas = db.prepare(`SELECT v.*, t.nome as tipo_nome, t.icone as tipo_icone FROM vendas v LEFT JOIN tipos_frango t ON v.tipo_id = t.id WHERE date(v.horario_compra) = ? ORDER BY v.horario_compra DESC`).all(data);
   const delivery = db.prepare("SELECT * FROM delivery WHERE date(horario_pedido) = ? ORDER BY horario_pedido DESC").all(data);
   res.json({
     data,
@@ -31,7 +31,7 @@ router.get('/dia', (req, res) => {
 router.get('/periodo', (req, res) => {
   const ini = req.query.ini || new Date().toISOString().split('T')[0];
   const fim = req.query.fim || new Date().toISOString().split('T')[0];
-  const vendas = db.prepare("SELECT * FROM vendas WHERE date(horario_compra) BETWEEN ? AND ? ORDER BY horario_compra ASC").all(ini, fim);
+  const vendas = db.prepare(`SELECT v.*, t.nome as tipo_nome, t.icone as tipo_icone FROM vendas v LEFT JOIN tipos_frango t ON v.tipo_id = t.id WHERE date(v.horario_compra) BETWEEN ? AND ? ORDER BY v.horario_compra ASC`).all(ini, fim);
   const delivery = db.prepare("SELECT * FROM delivery WHERE date(horario_pedido) BETWEEN ? AND ? ORDER BY horario_pedido ASC").all(ini, fim);
 
   const diasMap = {};

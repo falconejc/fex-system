@@ -182,7 +182,7 @@
       <thead><tr><th>Código</th><th>Tipo</th><th>Atendente</th><th>Compra</th><th>Entrega</th><th>Status</th>${isAdmin ? '<th>Ações</th>' : ''}</tr></thead>
       <tbody>${vendas.map(v => `<tr>
         <td><strong>${v.codigo}</strong></td>
-        <td>${v.tipo === 'simples' ? '🍗 Simples' : '🥓 Bacon'}</td>
+        <td>${v.tipo_nome || v.tipo}</td>
         <td>${v.atendente}</td>
         <td>${new Date(v.horario_compra).toLocaleTimeString('pt-BR')}</td>
         <td>${v.horario_entrega ? new Date(v.horario_entrega).toLocaleTimeString('pt-BR') : '-'}</td>
