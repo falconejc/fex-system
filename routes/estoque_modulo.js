@@ -81,11 +81,11 @@ router.post('/insumos', exigirNivel('admin', 'caixa'), (req, res) => {
 });
 
 router.put('/insumos/:id', exigirNivel('admin', 'caixa'), (req, res) => {
-  const { nome, unidade, quantidade_minima, descricao, ativo } = req.body;
+  const { nome, unidade, quantidade_atual, quantidade_minima, descricao, ativo } = req.body;
   const insumo = db.prepare('SELECT * FROM insumos WHERE id = ?').get(req.params.id);
   if (!insumo) return res.status(404).json({ erro: 'Insumo não encontrado' });
-  db.prepare('UPDATE insumos SET nome=?, unidade=?, quantidade_minima=?, descricao=?, ativo=? WHERE id=?')
-    .run(nome, unidade, quantidade_minima, descricao, ativo, req.params.id);
+  db.prepare('UPDATE insumos SET nome=?, unidade=?, quantidade_atual=?, quantidade_minima=?, descricao=?, ativo=? WHERE id=?')
+    .run(nome, unidade, quantidade_atual ?? insumo.quantidade_atual, quantidade_minima, descricao, ativo, req.params.id);
   res.json({ sucesso: true });
 });
 

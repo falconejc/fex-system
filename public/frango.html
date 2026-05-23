@@ -36,6 +36,7 @@
   .item .info .tipo-tag { font-size: 12px; color: #888; }
   .item .info .obs { font-size: 12px; color: #f59e0b; margin-top: 2px; }
   .btn-entrega { padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+  .btn-reimprimir { padding: 6px 10px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
   .vazio { text-align: center; color: #aaa; padding: 20px; font-size: 14px; }
   .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
   .modal.aberto { display: flex; }
@@ -103,7 +104,7 @@
 <!-- Modal venda -->
 <div class="modal" id="modal-venda">
   <div class="modal-box">
-    <div style="font-size:15px;color:#555">Venda registrada!</div>
+    <div id="modal-venda-titulo" style="font-size:15px;color:#555">Venda registrada!</div>
     <div class="modal-codigo" id="modal-codigo"></div>
     <div class="modal-info" id="modal-info"></div>
     <div class="modal-aviso" id="modal-aviso-lote"></div>
@@ -266,6 +267,7 @@
       const loteRes = await fetch('/api/lotes/proximo/' + tipoSelecionado);
       infoLoteAtual = await loteRes.json();
 
+      document.getElementById('modal-venda-titulo').textContent = 'Venda registrada!';
       document.getElementById('modal-codigo').textContent = data.codigo;
       document.getElementById('modal-info').textContent = '🍗 ' + (data.tipo_nome || data.tipo) + ' • ' + data.atendente;
 
@@ -413,9 +415,44 @@
           ${v.observacao ? `<div class="obs">📝 ${v.observacao}</div>` : ''}
           <div class="tipo-tag" style="margin-top:2px">Comprado às ${hora}</div>
         </div>
-        <button class="btn-entrega" onclick="darBaixa('${v.codigo}')">Entregar</button>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+            <button class="btn-entrega" onclick="darBaixa('${v.codigo}')">Entregar</button>
+            <button class="btn-reimprimir" onclick="reimprimirFicha('${v.codigo}')">🖨️ Reimprimir</button>
+          </div>
       </div>`;
     }).join('');
+  }
+
+  async function reimprimirFicha(codigo) {
+    const res = await fetch('/api/frango/qrcode/' + codigo);
+    if (!res.ok) { alert('Venda não encontrada'); return; }
+    const venda = await res.json();
+    vendaAtual = venda;
+
+    const loteRes = await fetch('/api/lotes/proximo/' + venda.tipo_id);
+    infoLoteAtual = await loteRes.json();
+
+    document.getElementById('modal-venda-titulo').textContent = 'Reimprimir ficha';
+    document.getElementById('modal-codigo').textContent = venda.codigo;
+    document.getElementById('modal-info').textContent = '🍗 ' + (venda.tipo_nome || venda.tipo) + ' • ' + venda.atendente;
+
+    const avisoEl = document.getElementById('modal-aviso-lote');
+    if (infoLoteAtual && infoLoteAtual.status === 'assando') {
+      avisoEl.textContent = '🔥 Pronto às ' + infoLoteAtual.hora_formatada + ' (~' + infoLoteAtual.minutos_restantes + ' min)';
+      avisoEl.style.display = 'block';
+    } else {
+      avisoEl.style.display = 'none';
+    }
+
+    const canvas = document.getElementById('qr-canvas');
+    canvas.width = 150; canvas.height = 150;
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0, 150, 150);
+    img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(venda.codigo);
+
+    document.getElementById('btn-wpp').style.display = venda.telefone ? 'block' : 'none';
+    document.getElementById('modal-venda').classList.add('aberto');
   }
 
   async function darBaixa(codigo) {
