@@ -28,6 +28,12 @@ router.post('/pedido', (req, res) => {
   res.json(db.prepare('SELECT * FROM delivery WHERE codigo = ?').get(codigo));
 });
 
+router.get('/pedido/:codigo', (req, res) => {
+  const pedido = db.prepare('SELECT * FROM delivery WHERE codigo = ?').get(req.params.codigo);
+  if (!pedido) return res.status(404).json({ erro: 'Pedido não encontrado' });
+  res.json(pedido);
+});
+
 router.get('/pendentes', (req, res) => {
   res.json(db.prepare("SELECT * FROM delivery WHERE status='pendente' AND cancelado=0 ORDER BY horario_pedido ASC").all());
 });

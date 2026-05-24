@@ -31,6 +31,7 @@
   .item .info .detalhe { font-size: 12px; color: #888; margin-top: 2px; }
   .btn-entrega { padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
   .btn-entrega:hover { background: #059669; }
+  .btn-reimprimir { padding: 6px 10px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
   .vazio { text-align: center; color: #aaa; padding: 20px; font-size: 14px; }
   .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
   .modal.aberto { display: flex; }
@@ -99,7 +100,7 @@
 
 <div class="modal" id="modal">
   <div class="modal-box">
-    <div style="font-size:16px;color:#555;">Pedido registrado!</div>
+    <div id="modal-titulo" style="font-size:16px;color:#555;">Pedido registrado!</div>
     <div class="modal-codigo" id="modal-codigo"></div>
     <div class="modal-info" id="modal-info"></div>
     <button class="btn-imprimir" onclick="imprimir()">🖨️ Imprimir Comanda</button>
@@ -163,6 +164,7 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro);
       pedidoAtual = data;
+      document.getElementById('modal-titulo').textContent = 'Pedido registrado!';
       document.getElementById('modal-codigo').textContent = data.codigo;
       document.getElementById('modal-info').textContent = data.nome_cliente + ' • ' + (data.tipo === 'entrega' ? '🛵 Entrega' : '🏪 Retirada');
       document.getElementById('modal').classList.add('aberto');
@@ -242,6 +244,17 @@
     w.document.close();
   }
 
+  async function reimprimirPedido(codigo) {
+    const res = await fetch('/api/delivery/pedido/' + codigo);
+    if (!res.ok) { alert('Pedido não encontrado'); return; }
+    const data = await res.json();
+    pedidoAtual = data;
+    document.getElementById('modal-titulo').textContent = 'Reimprimir comanda';
+    document.getElementById('modal-codigo').textContent = data.codigo;
+    document.getElementById('modal-info').textContent = data.nome_cliente + ' • ' + (data.tipo === 'entrega' ? '🛵 Entrega' : '🏪 Retirada');
+    document.getElementById('modal').classList.add('aberto');
+  }
+
   function fecharModal() {
     document.getElementById('modal').classList.remove('aberto');
     pedidoAtual = null;
@@ -270,7 +283,10 @@
           <div class="detalhe">${p.codigo} • ${p.atendente} • ${hora}</div>
           <div class="detalhe">${p.bairro ? p.bairro + ' • ' : ''}${p.pagamento}</div>
         </div>
-        <button class="btn-entrega" onclick="darBaixa('${p.codigo}')">Entregar</button>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+          <button class="btn-entrega" onclick="darBaixa('${p.codigo}')">Entregar</button>
+          <button class="btn-reimprimir" onclick="reimprimirPedido('${p.codigo}')">🖨️ Reimprimir</button>
+        </div>
       </div>`;
     }).join('');
   }

@@ -46,7 +46,7 @@ router.post('/venda', (req, res) => {
   } while (db.prepare('SELECT id FROM vendas WHERE codigo = ?').get(codigo));
 
   // Calcula ordem sequencial do tipo no dia
-  const dataHoje = new Date().toISOString().slice(0, 10);
+  const dataHoje = hoje();
   const ordemRow = db.prepare(`
     SELECT COUNT(*) as total FROM vendas
     WHERE tipo_id = ? AND DATE(horario_compra) = ? AND cancelado = 0
