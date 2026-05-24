@@ -3,7 +3,12 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "start:test": "PORT=3001 APP_ENV=test DB_FILE=frango-test.db node server.js",
+    "pm2:start": "pm2 start ecosystem.config.js --only frango-system",
+    "pm2:start:test": "pm2 start ecosystem.config.js --only frango-system-test",
+    "pm2:stop:test": "pm2 stop frango-system-test",
+    "pm2:logs:test": "pm2 logs frango-system-test"
   },
   "keywords": [],
   "author": "",

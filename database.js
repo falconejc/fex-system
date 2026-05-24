@@ -9,7 +9,8 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 
-const db = new Database(path.join(__dirname, 'frango.db'));
+const dbFile = process.env.DB_FILE || 'frango.db';
+const db = new Database(path.join(__dirname, dbFile));
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS usuarios (
