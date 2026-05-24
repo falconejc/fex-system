@@ -31,10 +31,12 @@ db.exec(`
     atendente TEXT NOT NULL,
     usuario_id INTEGER,
     observacao TEXT,
+    telefone TEXT,
     horario_compra DATETIME DEFAULT CURRENT_TIMESTAMP,
     horario_entrega DATETIME,
     status TEXT DEFAULT 'pendente',
-    cancelado INTEGER DEFAULT 0
+    cancelado INTEGER DEFAULT 0,
+    ordem_tipo INTEGER DEFAULT 0
   );
 
   CREATE TABLE IF NOT EXISTS delivery (
@@ -81,6 +83,7 @@ db.exec(`
     nome TEXT NOT NULL,
     descricao TEXT,
     preco REAL DEFAULT 0,
+    icone TEXT DEFAULT '🍗',
     ativo INTEGER DEFAULT 1,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
   );
@@ -134,6 +137,14 @@ db.exec(`
     UNIQUE(tipo_id, insumo_id)
   );
 `);
+
+// Migrations: adiciona colunas que podem não existir em bancos antigos
+const migrations = [
+  "ALTER TABLE vendas ADD COLUMN telefone TEXT",
+  "ALTER TABLE vendas ADD COLUMN ordem_tipo INTEGER DEFAULT 0",
+  "ALTER TABLE tipos_frango ADD COLUMN icone TEXT DEFAULT '🍗'",
+];
+migrations.forEach(sql => { try { db.exec(sql); } catch(e) {} });
 
 const adminExiste = db.prepare("SELECT id FROM usuarios WHERE usuario = 'admin'").get();
 if (!adminExiste) {
