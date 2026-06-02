@@ -107,6 +107,7 @@
     <div class="sucesso-box">
       <div class="icon">✅</div>
       <p id="sucesso-texto">Entrega confirmada!</p>
+      <div id="sucesso-tipo" style="font-size:32px;font-weight:bold;color:#065f46;margin-top:10px;letter-spacing:1px;line-height:1.2"></div>
     </div>
     <button class="btn-confirmar" onclick="fecharModal('modal-sucesso'); abrirScanner()">Próxima entrega</button>
     <button class="btn-fechar" onclick="fecharModal('modal-sucesso')">Fechar</button>
@@ -117,6 +118,29 @@
 <script>
   let scannerStream = null;
   let codigoQRLido = null;
+  let tipoNomeAtual = '';
+  let tipoIdAtual = 0;
+
+  const bipsPorTipo = { 1: 1, 2: 2 }; // Frango Simples=1 bip, Frango com Bacon=2 bips
+
+  function beep(n) {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      for (let i = 0; i < n; i++) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = 880;
+        const t = ctx.currentTime + i * 0.5;
+        gain.gain.setValueAtTime(0.4, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+        osc.start(t);
+        osc.stop(t + 0.35);
+      }
+    } catch(e) {}
+  }
 
   function formatarHora(str) {
     if (!str) return '-';
@@ -158,7 +182,7 @@
             <div class="detalhe">⏰ ${formatarHora(v.horario_compra)} • ${v.atendente}</div>
             ${v.observacao ? `<div class="obs">📝 ${v.observacao}</div>` : ''}
           </div>
-          <button class="btn-entregar" onclick="darBaixaManual('${v.codigo}')">Entregar</button>
+          <button class="btn-entregar" onclick="darBaixaManual('${v.codigo}', '${grupo.nome.replace(/'/g, "\\'")}', ${v.tipo_id||0})">Entregar</button>
         </div>`;
       });
       html += '</div>';
@@ -167,12 +191,14 @@
     el.innerHTML = html;
   }
 
-  async function darBaixaManual(codigo) {
+  async function darBaixaManual(codigo, tipo, tipo_id) {
     if (!confirm('Confirmar entrega do código ' + codigo + '?')) return;
     const res = await fetch('/api/frango/entrega/' + codigo, { method: 'POST' });
     const data = await res.json();
     if (data.sucesso) {
-      document.getElementById('sucesso-texto').textContent = 'Frango ' + codigo + ' entregue!';
+      beep(bipsPorTipo[tipo_id] || 1);
+      document.getElementById('sucesso-texto').textContent = 'Entregue: ' + codigo;
+      document.getElementById('sucesso-tipo').textContent = tipo || '';
       document.getElementById('modal-sucesso').classList.add('aberto');
       carregarPendentes();
     } else alert(data.erro);
@@ -223,9 +249,11 @@
     const venda = await res.json();
     if (venda.status === 'entregue') { alert('Este frango já foi entregue!'); return; }
     if (venda.cancelado) { alert('Esta venda foi cancelada!'); return; }
+    tipoNomeAtual = venda.tipo_nome || venda.tipo || '';
+    tipoIdAtual = venda.tipo_id || 0;
     document.getElementById('qr-codigo').textContent = venda.codigo;
     document.getElementById('qr-info').textContent =
-      '🍗 ' + (venda.tipo_nome || venda.tipo) + (venda.observacao ? ' • ' + venda.observacao : '');
+      '🍗 ' + tipoNomeAtual + (venda.observacao ? ' • ' + venda.observacao : '');
     document.getElementById('modal-confirmar').classList.add('aberto');
   }
 
@@ -234,7 +262,9 @@
     const data = await res.json();
     fecharModal('modal-confirmar');
     if (data.sucesso) {
-      document.getElementById('sucesso-texto').textContent = 'Frango ' + codigoQRLido + ' entregue!';
+      beep(bipsPorTipo[tipoIdAtual] || 1);
+      document.getElementById('sucesso-texto').textContent = 'Entregue: ' + codigoQRLido;
+      document.getElementById('sucesso-tipo').textContent = tipoNomeAtual;
       document.getElementById('modal-sucesso').classList.add('aberto');
       carregarPendentes();
     } else alert(data.erro);
