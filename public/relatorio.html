@@ -48,6 +48,18 @@
   .modal-acoes { display: flex; gap: 10px; margin-top: 20px; }
   .btn-salvar { flex: 1; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
   .btn-fechar { flex: 1; padding: 12px; background: #f3f4f6; color: #333; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  @media (max-width: 600px) {
+    .container { padding: 0 12px; margin: 16px auto; }
+    .filtro { padding: 14px 16px; gap: 8px; }
+    .filtro input { width: 100%; }
+    .resumo { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .resumo-card { padding: 12px 6px; }
+    .resumo-card .num { font-size: 22px; }
+    .resumo-card .desc { font-size: 10px; }
+    .card { padding: 16px 12px; }
+    th, td { padding: 6px 5px; font-size: 12px; }
+    .grid2 { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -146,6 +158,12 @@
 </div>
 
 <script>
+  function fmtHora(str) {
+    if (!str) return '-';
+    const p = str.replace('T', ' ').split(/[- :]/);
+    return p[3].padStart(2,'0') + ':' + p[4].padStart(2,'0');
+  }
+
   let nivelUsuario = '';
   const hoje = new Date().toISOString().split('T')[0];
   document.getElementById('data-filtro').value = hoje;
@@ -178,42 +196,42 @@
     const el = document.getElementById('tabela-frango');
     if (!vendas.length) { el.innerHTML = '<div class="vazio">Nenhuma venda no período</div>'; return; }
     const isAdmin = nivelUsuario === 'admin';
-    el.innerHTML = `<table>
+    el.innerHTML = `<div style="overflow-x:auto"><table>
       <thead><tr><th>Código</th><th>Tipo</th><th>Atendente</th><th>Compra</th><th>Entrega</th><th>Status</th>${isAdmin ? '<th>Ações</th>' : ''}</tr></thead>
       <tbody>${vendas.map(v => `<tr>
         <td><strong>${v.codigo}</strong></td>
         <td>${v.tipo_nome || v.tipo}</td>
         <td>${v.atendente}</td>
-        <td>${new Date(v.horario_compra).toLocaleTimeString('pt-BR')}</td>
-        <td>${v.horario_entrega ? new Date(v.horario_entrega).toLocaleTimeString('pt-BR') : '-'}</td>
+        <td style="white-space:nowrap">${fmtHora(v.horario_compra)}</td>
+        <td style="white-space:nowrap">${fmtHora(v.horario_entrega)}</td>
         <td><span class="badge badge-${v.status}">${v.status}</span></td>
         ${isAdmin ? `<td><div class="acoes">
           <button class="btn-editar" onclick='abrirFrango(${JSON.stringify(v)})'>Editar</button>
           ${v.status !== 'cancelado' ? `<button class="btn-cancelar-item" onclick="cancelarFrango(${v.id})">Cancelar</button>` : ''}
         </div></td>` : ''}
       </tr>`).join('')}</tbody>
-    </table>`;
+    </table></div>`;
   }
 
   function renderDelivery(pedidos) {
     const el = document.getElementById('tabela-delivery');
     if (!pedidos.length) { el.innerHTML = '<div class="vazio">Nenhum pedido no período</div>'; return; }
     const isAdmin = nivelUsuario === 'admin';
-    el.innerHTML = `<table>
+    el.innerHTML = `<div style="overflow-x:auto"><table>
       <thead><tr><th>Código</th><th>Cliente</th><th>Tipo</th><th>Pagamento</th><th>Horário</th><th>Status</th>${isAdmin ? '<th>Ações</th>' : ''}</tr></thead>
       <tbody>${pedidos.map(p => `<tr>
         <td><strong>${p.codigo}</strong></td>
         <td>${p.nome_cliente}</td>
         <td>${p.tipo === 'entrega' ? '🛵' : '🏪'} ${p.tipo}</td>
         <td>${p.pagamento}</td>
-        <td>${new Date(p.horario_pedido).toLocaleTimeString('pt-BR')}</td>
+        <td style="white-space:nowrap">${fmtHora(p.horario_pedido)}</td>
         <td><span class="badge badge-${p.status}">${p.status}</span></td>
         ${isAdmin ? `<td><div class="acoes">
           <button class="btn-editar" onclick='abrirDelivery(${JSON.stringify(p)})'>Editar</button>
           ${p.status !== 'cancelado' ? `<button class="btn-cancelar-item" onclick="cancelarDelivery(${p.id})">Cancelar</button>` : ''}
         </div></td>` : ''}
       </tr>`).join('')}</tbody>
-    </table>`;
+    </table></div>`;
   }
 
   function abrirFrango(v) {

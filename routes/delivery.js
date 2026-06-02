@@ -10,6 +10,10 @@ const router = express.Router();
 const db = require('../database');
 const { exigirNivel } = require('../auth');
 
+function agora() {
+  return new Date().toLocaleString('sv-SE', {timeZone:'America/Sao_Paulo'}).replace('T', ' ');
+}
+
 function gerarCodigo() {
   return 'D' + Math.random().toString(36).substring(2, 7).toUpperCase();
 }
@@ -22,9 +26,9 @@ router.post('/pedido', (req, res) => {
     codigo = gerarCodigo();
     if (++tentativas > 10) return res.status(500).json({ erro: 'Erro ao gerar código' });
   } while (db.prepare('SELECT id FROM delivery WHERE codigo = ?').get(codigo));
-  db.prepare(`INSERT INTO delivery (codigo, tipo, atendente, usuario_id, nome_cliente, endereco, numero, bairro, referencia, pagamento, descricao)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .run(codigo, tipo, atendente, req.usuario.id, nome_cliente, endereco||'', numero||'', bairro||'', referencia||'', pagamento, descricao||'');
+  db.prepare(`INSERT INTO delivery (codigo, tipo, atendente, usuario_id, nome_cliente, endereco, numero, bairro, referencia, pagamento, descricao, horario_pedido)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(codigo, tipo, atendente, req.usuario.id, nome_cliente, endereco||'', numero||'', bairro||'', referencia||'', pagamento, descricao||'', agora());
   res.json(db.prepare('SELECT * FROM delivery WHERE codigo = ?').get(codigo));
 });
 
@@ -43,7 +47,7 @@ router.post('/entrega/:codigo', (req, res) => {
   if (!pedido) return res.status(404).json({ erro: 'Código não encontrado' });
   if (pedido.status === 'entregue') return res.status(400).json({ erro: 'Já entregue' });
   if (pedido.cancelado) return res.status(400).json({ erro: 'Pedido cancelado' });
-  db.prepare("UPDATE delivery SET status='entregue', horario_entrega=CURRENT_TIMESTAMP WHERE codigo=?").run(req.params.codigo);
+  db.prepare("UPDATE delivery SET status='entregue', horario_entrega=? WHERE codigo=?").run(agora(), req.params.codigo);
   res.json({ sucesso: true });
 });
 

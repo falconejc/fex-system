@@ -111,6 +111,20 @@
 </div>
 
 <script>
+  function fmtHora(str) {
+    if (!str) return '-';
+    const p = str.replace('T', ' ').split(/[- :]/);
+    return p[3].padStart(2,'0') + ':' + p[4].padStart(2,'0');
+  }
+
+  function fmtDataHora(str) {
+    if (!str) return ['', ''];
+    const p = str.replace('T', ' ').split(/[- :]/);
+    const hora = p[3].padStart(2,'0') + ':' + p[4].padStart(2,'0') + ':' + (p[5]||'00').padStart(2,'0');
+    const data = p[2].padStart(2,'0') + '/' + p[1].padStart(2,'0') + '/' + p[0];
+    return [hora, data];
+  }
+
   let tipoSelecionado = 'entrega';
   let pagSelecionado = 'pix';
   let pedidoAtual = null;
@@ -186,8 +200,7 @@
     if (!pedidoAtual) return;
     const p = pedidoAtual;
     const w = window.open('', '_blank', 'width=400,height=600');
-    const hora = new Date(p.horario_pedido).toLocaleTimeString('pt-BR');
-    const data = new Date(p.horario_pedido).toLocaleDateString('pt-BR');
+    const [hora, data] = fmtDataHora(p.horario_pedido);
     const pagLabels = { pix: 'Pix', cartao: 'Cartão', dinheiro: 'Dinheiro' };
     const endereco = p.tipo === 'entrega'
       ? `<div class="info">End: ${p.endereco}, ${p.numero}</div>
@@ -274,7 +287,7 @@
     const el = document.getElementById('pendentes');
     if (!lista.length) { el.innerHTML = '<div class="vazio">Nenhum pedido pendente</div>'; return; }
     el.innerHTML = lista.map(p => {
-      const hora = new Date(p.horario_pedido).toLocaleTimeString('pt-BR');
+      const hora = fmtHora(p.horario_pedido);
       const tagClass = p.tipo === 'entrega' ? 'tag-entrega' : 'tag-retirada';
       const tagLabel = p.tipo === 'entrega' ? '🛵 Entrega' : '🏪 Retirada';
       return `<div class="item">
@@ -292,7 +305,9 @@
   }
 
   carregarPendentes();
-  setInterval(carregarPendentes, 15000);
+  setInterval(carregarPendentes, 30000);
+  const sse = new EventSource('/api/eventos');
+  sse.onmessage = () => carregarPendentes();
 </script>
 </body>
 </html>

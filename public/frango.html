@@ -155,6 +155,12 @@
 
 <script src="/jsqr.min.js"></script>
 <script>
+  function fmtHora(str) {
+    if (!str) return '-';
+    const p = str.replace('T', ' ').split(/[- :]/);
+    return p[3].padStart(2,'0') + ':' + p[4].padStart(2,'0');
+  }
+
   let tipoSelecionado = null;
   let nivelUsuario = '';
   let vendaAtual = null;
@@ -333,9 +339,8 @@
     const qrDataUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(vendaAtual.codigo);
     const w = window.open('', '_blank', 'width=400,height=650');
     const p = vendaAtual.horario_compra.replace('T',' ').split(/[- :]/);
-    const dataCompra = new Date(p[0], p[1]-1, p[2], p[3], p[4], p[5]||0);
-    const hora = dataCompra.toLocaleTimeString('pt-BR');
-    const data = dataCompra.toLocaleDateString('pt-BR');
+    const hora = p[3].padStart(2,'0') + ':' + p[4].padStart(2,'0') + ':' + (p[5]||'00').padStart(2,'0');
+    const data = p[2].padStart(2,'0') + '/' + p[1].padStart(2,'0') + '/' + p[0];
     const diaSemana = new Date(new Date().toLocaleString('en-US', {timeZone:'America/Sao_Paulo'})).getDay();
     const isDomingo = diaSemana === 0;
     const horarioLimite = isDomingo ? '13:45' : '18:30';
@@ -408,14 +413,12 @@
     const el = document.getElementById('pendentes');
     if (!lista.length) { el.innerHTML = '<div class="vazio">Nenhuma entrega pendente</div>'; return; }
     el.innerHTML = lista.map(v => {
-      const p = v.horario_compra.replace('T',' ').split(/[- :]/);
-      const hora = new Date(p[0], p[1]-1, p[2], p[3], p[4], p[5]||0).toLocaleTimeString('pt-BR');
       return `<div class="item">
         <div class="info">
           <div class="codigo">${v.codigo}</div>
           <div class="tipo-tag">🍗 ${v.tipo_nome || v.tipo} • ${v.atendente}</div>
           ${v.observacao ? `<div class="obs">📝 ${v.observacao}</div>` : ''}
-          <div class="tipo-tag" style="margin-top:2px">Comprado às ${hora}</div>
+          <div class="tipo-tag" style="margin-top:2px">Comprado às ${fmtHora(v.horario_compra)}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
             <button class="btn-entrega" onclick="darBaixa('${v.codigo}')">Entregar</button>
