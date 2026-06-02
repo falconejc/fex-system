@@ -17,6 +17,7 @@ const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 const db = require('./database');
 const { gerarToken, verificarToken, SECRET } = require('./auth');
+const { clients } = require('./events');
 const jwt = require('jsonwebtoken');
 
 const PORT = process.env.PORT || 3000;
@@ -82,6 +83,19 @@ app.use('/api/lotes',         verificarToken, require('./routes/lotes'));
 app.use('/api/whatsapp',      verificarToken, require('./routes/whatsapp'));
 app.use('/api/tipos',         verificarToken, require('./routes/tipos'));
 app.use('/api/estoque_modulo',verificarToken, require('./routes/estoque_modulo'));
+
+app.get('/api/eventos', verificarToken, (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no'
+  });
+  res.write('data: conectado\n\n');
+  clients.add(res);
+  const keepalive = setInterval(() => { try { res.write(':\n\n'); } catch(e) {} }, 25000);
+  req.on('close', () => { clients.delete(res); clearInterval(keepalive); });
+});
 
 app.get('/', (req, res) => {
   const token = req.cookies?.token;

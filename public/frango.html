@@ -181,7 +181,9 @@
     if (usuarioAtual.nivel === 'dono') document.getElementById('btn-vender').disabled = true;
     await carregarEstoque();
     carregarPendentes();
-    setInterval(() => { carregarEstoque(); carregarPendentes(); }, 20000);
+    setInterval(() => { carregarEstoque(); carregarPendentes(); }, 30000);
+    const sse = new EventSource('/api/eventos');
+    sse.onmessage = () => { carregarEstoque(); carregarPendentes(); };
   }
 
   async function carregarEstoque() {
@@ -377,7 +379,7 @@
       <div class="linha"></div>
       <div class="info">Data: ${data}  Hora: ${hora}</div>
       <div class="info">Atendente: ${vendaAtual.atendente}</div>
-      <div class="info">Produto: ${vendaAtual.tipo_nome || vendaAtual.tipo}</div>
+      <div class="info" style="font-size:16px;font-weight:bold">Produto: ${vendaAtual.tipo_nome || vendaAtual.tipo}</div>
       ${vendaAtual.observacao ? `<div class="obs">Obs: ${vendaAtual.observacao}</div>` : ''}
       <div class="linha"></div>
       <div style="text-align:center;font-size:13px">Seu código:</div>

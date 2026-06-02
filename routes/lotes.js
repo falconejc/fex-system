@@ -160,19 +160,34 @@ router.put('/:id/tempo', exigirNivel('admin', 'assador'), (req, res) => {
  * Usado no comprovante de venda para informar o cliente.
  */
 router.get('/proximo/:tipo_id', (req, res) => {
+  const data = hoje();
+  const tipo_id = req.params.tipo_id;
+
+  // Soma a quantidade de todos os lotes prontos hoje para este tipo
+  const totalProntos = db.prepare(
+    "SELECT COALESCE(SUM(quantidade), 0) as t FROM lotes WHERE status='pronto' AND tipo_id=? AND date(horario_entrada)=?"
+  ).get(tipo_id, data).t;
+
+  if (totalProntos > 0) {
+    // Compara com total de vendas do dia para saber se ainda há pronto disponível
+    const vendidos = db.prepare(
+      "SELECT COUNT(*) as c FROM vendas WHERE tipo_id=? AND cancelado=0 AND date(horario_compra)=?"
+    ).get(tipo_id, data).c;
+
+    if (vendidos < totalProntos) {
+      return res.json({ status: 'pronto', mensagem: 'Pronto para retirada!' });
+    }
+  }
+
   const agr = agora();
   const lote = db.prepare(`
     SELECT l.*, t.nome as tipo_nome FROM lotes l
     LEFT JOIN tipos_frango t ON l.tipo_id = t.id
     WHERE l.status='assando' AND l.tipo_id=? AND l.horario_previsto >= ?
     ORDER BY l.horario_previsto ASC LIMIT 1
-  `).get(req.params.tipo_id, agr);
+  `).get(tipo_id, agr);
 
   if (!lote) {
-    const pronto = db.prepare(
-      "SELECT * FROM lotes WHERE status='pronto' AND tipo_id=? ORDER BY horario_previsto DESC LIMIT 1"
-    ).get(req.params.tipo_id);
-    if (pronto) return res.json({ status: 'pronto', mensagem: 'Pronto para retirada!' });
     return res.json({ status: 'indisponivel', mensagem: 'Nenhum frango no forno' });
   }
 

@@ -143,7 +143,9 @@ const BTPrinter = (() => {
     p(CMD.LEFT);
     p(ln('Data: '+dc.toLocaleDateString('pt-BR')+'  Hora: '+dc.toLocaleTimeString('pt-BR')));
     p(ln('Atendente: '+(venda.atendente||'')));
+    p(CMD.BOLD_ON); p(CMD.FONT_MEDIUM);
     p(ln('Produto: '+(venda.tipo_nome||venda.tipo||'')));
+    p(CMD.FONT_NORMAL); p(CMD.BOLD_OFF);
     if (venda.observacao) p(ln('Obs: '+venda.observacao));
     p(div());
 

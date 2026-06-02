@@ -9,6 +9,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database');
 const { exigirNivel } = require('../auth');
+const { broadcast } = require('../events');
 
 function gerarCodigo() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -68,6 +69,7 @@ router.post('/venda', (req, res) => {
 
   const venda = db.prepare('SELECT * FROM vendas WHERE codigo = ?').get(codigo);
   res.json({ ...venda, tipo_nome: tipo.nome, alertas_insumos });
+  broadcast('atualizar');
 });
 
 router.get('/pendentes', (req, res) => {
@@ -97,6 +99,7 @@ router.post('/entrega/:codigo', (req, res) => {
   if (venda.cancelado) return res.status(400).json({ erro: 'Venda cancelada' });
   db.prepare("UPDATE vendas SET status='entregue', horario_entrega=? WHERE codigo=?").run(agora(), req.params.codigo);
   res.json({ sucesso: true });
+  broadcast('atualizar');
 });
 
 router.put('/:id', exigirNivel('admin'), (req, res) => {

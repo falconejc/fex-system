@@ -248,7 +248,9 @@
   }
 
   carregarPendentes();
-  setInterval(carregarPendentes, 15000);
+  setInterval(carregarPendentes, 30000);
+  const sse = new EventSource('/api/eventos');
+  sse.onmessage = () => carregarPendentes();
 </script>
 </body>
 </html>
