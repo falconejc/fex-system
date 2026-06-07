@@ -51,6 +51,13 @@
   .modal-acoes { display: flex; gap: 10px; margin-top: 16px; }
   .btn-salvar { flex: 1; padding: 12px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
   .btn-cancelar { flex: 1; padding: 12px; background: #f3f4f6; color: #333; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .espetos-wrapper { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .espeto { display: flex; align-items: center; gap: 5px; background: #fef3c7; border-radius: 6px; padding: 5px 8px; }
+  .lote-item.pronto .espeto { background: #d1fae5; }
+  .espeto-palito { width: 3px; border-radius: 2px; background: #92400e; align-self: stretch; min-height: 22px; }
+  .espeto-frangos { display: flex; gap: 1px; font-size: 20px; line-height: 1; }
+  @keyframes pulsar { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.92); } }
+  .lote-item.assando .espeto-frangos { animation: pulsar 1.5s ease-in-out infinite; }
 </style>
 </head>
 <body>
@@ -128,6 +135,19 @@
     return p[3].padStart(2,'0') + ':' + p[4].padStart(2,'0');
   }
 
+  function renderEspetos(quantidade) {
+    const POR_ESPETO = 5;
+    const numEspetos = Math.ceil(quantidade / POR_ESPETO);
+    let html = '<div class="espetos-wrapper">';
+    for (let i = 0; i < numEspetos; i++) {
+      const neste = Math.min(POR_ESPETO, quantidade - i * POR_ESPETO);
+      html += '<div class="espeto"><div class="espeto-palito"></div><div class="espeto-frangos">';
+      for (let j = 0; j < neste; j++) html += '🍗';
+      html += '</div></div>';
+    }
+    return html + '</div>';
+  }
+
   function minutosRestantes(str) {
     const p = str.replace('T', ' ').split(/[- :]/);
     const d = new Date(p[0], p[1]-1, p[2], p[3], p[4], p[5]||0);
@@ -185,6 +205,7 @@
         </div>
         ${l.observacao ? `<div style="font-size:12px;color:#888;margin-top:4px">📝 ${l.observacao}</div>` : ''}
         ${tempoTxt}
+        ${renderEspetos(l.quantidade)}
         ${!pronto ? `<div class="lote-acoes">
           <button class="btn-pronto" onclick="marcarPronto(${l.id})">Marcar como pronto</button>
           <button class="btn-atraso" onclick="abrirAtraso(${l.id})">+ Tempo</button>

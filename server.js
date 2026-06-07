@@ -24,13 +24,43 @@ const PORT = process.env.PORT || 3000;
 const APP_ENV = process.env.APP_ENV || 'production';
 const IS_TEST = APP_ENV === 'test';
 
-const BANNER_HTML = IS_TEST
+const TEST_BANNER = IS_TEST
   ? '<div style="position:fixed;bottom:0;left:0;right:0;background:#dc2626;color:white;text-align:center;padding:8px;font-size:13px;font-weight:bold;z-index:9999">⚠️ AMBIENTE DE TESTES — dados não são reais</div>'
   : '';
 
+const CLOCK_SCRIPT = `<script>
+(function(){
+  function tick(){
+    var d=new Date();
+    var h=String(d.getHours()).padStart(2,'0');
+    var m=String(d.getMinutes()).padStart(2,'0');
+    var s=String(d.getSeconds()).padStart(2,'0');
+    var el=document.getElementById('fex-clock');
+    if(el) el.textContent=h+':'+m+':'+s;
+  }
+  function inserirRelogio(){
+    var header=document.querySelector('header');
+    if(!header||document.getElementById('fex-clock')) return;
+    var clock=document.createElement('div');
+    clock.id='fex-clock';
+    clock.style.cssText='position:absolute;left:50%;transform:translateX(-50%);font-family:monospace;font-size:15px;font-weight:bold;letter-spacing:1px;background:rgba(0,0,0,0.18);padding:4px 10px;border-radius:6px;color:white;white-space:nowrap;pointer-events:none';
+    header.style.position='relative';
+    header.appendChild(clock);
+    tick();
+    setInterval(tick,1000);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',inserirRelogio);
+  else inserirRelogio();
+})();
+</script>`;
+
+const INJECT_HTML = TEST_BANNER + CLOCK_SCRIPT;
+
 function injetarBanner(filePath) {
   let html = fs.readFileSync(filePath, 'utf8');
-  return html.replace('</body>', BANNER_HTML + '</body>');
+  const idx = html.lastIndexOf('</body>');
+  if (idx === -1) return html;
+  return html.slice(0, idx) + INJECT_HTML + html.slice(idx);
 }
 
 const app = express();
@@ -40,21 +70,19 @@ app.use(cookieParser());
 
 app.get('/api/env', (req, res) => res.json({ env: APP_ENV }));
 
-// Em modo teste, injeta o banner em todas as páginas HTML
-if (IS_TEST) {
-  app.use((req, res, next) => {
-    if (req.method !== 'GET' || !req.path.endsWith('.html')) return next();
-    const filePath = path.join(__dirname, 'public', req.path);
-    if (!fs.existsSync(filePath)) return next();
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(injetarBanner(filePath));
-  });
-}
+// Injeta relógio (e banner de teste) em todas as páginas HTML
+app.use((req, res, next) => {
+  if (req.method !== 'GET' || !req.path.endsWith('.html')) return next();
+  const filePath = path.join(__dirname, 'public', req.path);
+  if (!fs.existsSync(filePath)) return next();
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(injetarBanner(filePath));
+});
 
 app.get('/login.html', (req, res) => {
   const filePath = path.join(__dirname, 'public', 'login.html');
-  if (IS_TEST) { res.setHeader('Content-Type', 'text/html; charset=utf-8'); return res.send(injetarBanner(filePath)); }
-  res.sendFile(filePath);
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(injetarBanner(filePath));
 });
 
 app.post('/api/auth/login', (req, res) => {
@@ -103,8 +131,8 @@ app.get('/', (req, res) => {
   try {
     jwt.verify(token, SECRET);
     const filePath = path.join(__dirname, 'public', 'index.html');
-    if (IS_TEST) { res.setHeader('Content-Type', 'text/html; charset=utf-8'); return res.send(injetarBanner(filePath)); }
-    res.sendFile(filePath);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(injetarBanner(filePath));
   } catch { res.redirect('/login.html'); }
 });
 

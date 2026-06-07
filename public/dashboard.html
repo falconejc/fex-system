@@ -113,13 +113,19 @@
 
   function renderGraficoTipo(vendas) {
     destruir('tipo');
-    const simples = vendas.filter(v => v.tipo === 'simples').length;
-    const bacon = vendas.filter(v => v.tipo === 'bacon').length;
+    const contagem = {};
+    vendas.forEach(v => {
+      const nome = v.tipo_nome || v.tipo || 'Desconhecido';
+      contagem[nome] = (contagem[nome] || 0) + 1;
+    });
+    const labels = Object.keys(contagem);
+    const data = Object.values(contagem);
+    const cores = ['#f59e0b', '#ef4444', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6'];
     charts['tipo'] = new Chart(document.getElementById('grafico-tipo'), {
       type: 'doughnut',
       data: {
-        labels: ['Simples', 'Com Bacon'],
-        datasets: [{ data: [simples, bacon], backgroundColor: ['#f59e0b', '#ef4444'], borderWidth: 0 }]
+        labels,
+        datasets: [{ data, backgroundColor: cores.slice(0, labels.length), borderWidth: 0 }]
       },
       options: { plugins: { legend: { position: 'bottom' } } }
     });

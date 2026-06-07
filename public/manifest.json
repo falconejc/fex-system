@@ -1,0 +1,17 @@
+{
+  "name": "Frango Expresso",
+  "short_name": "Fex System",
+  "description": "Sistema de vendas Frango Expresso",
+  "start_url": "/",
+  "display": "fullscreen",
+  "background_color": "#ffffff",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo.jfif",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    }
+  ]
+}
