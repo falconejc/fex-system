@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lista de Preços - Frango Expresso</title>
+<style>
+  :root { --banner-h: 0px; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f3f4f6; min-height: 100vh; }
+
+  header {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .header-left { display: flex; align-items: center; gap: 10px; min-width: 0; max-width: calc(50% - 52px); overflow: hidden; }
+  header a { color: white; text-decoration: none; font-size: 22px; line-height: 1; flex-shrink: 0; }
+  header h1 { font-size: 17px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .header-spacer { flex-shrink: 0; width: 40px; }
+
+  .toolbar {
+    background: white;
+    padding: 12px 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    position: sticky;
+    top: var(--header-h, 53px);
+    z-index: 90;
+  }
+  .search-box {
+    display: flex;
+    align-items: center;
+    background: #f3f4f6;
+    border-radius: 10px;
+    padding: 9px 13px;
+    gap: 8px;
+    margin-bottom: 11px;
+  }
+  .search-box input { border: none; background: transparent; font-size: 14px; width: 100%; outline: none; color: #333; }
+
+  .tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0;
+    padding: 7px 15px;
+    border-radius: 20px;
+    border: 2px solid #e5e7eb;
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    transition: all 0.18s;
+    white-space: nowrap;
+  }
+  .tab:hover { border-color: #d1d5db; }
+  .tab.ativo { color: white; border-color: transparent; }
+  .tab[data-cat="todos"].ativo  { background: #6b7280; }
+  .tab[data-cat="cortes"].ativo { background: #f59e0b; }
+  .tab[data-cat="bebidas"].ativo { background: #3b82f6; }
+  .tab[data-cat="mercearia"].ativo { background: #10b981; }
+  .tab[data-cat="comida"].ativo { background: #ef4444; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+    gap: 13px;
+    padding: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: white;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    transition: transform 0.15s, box-shadow 0.15s;
+    border-top: 4px solid #e5e7eb;
+  }
+  .card.clicavel { cursor: pointer; }
+  .card.clicavel:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+  .card[data-cat="cortes"]   { border-top-color: #f59e0b; }
+  .card[data-cat="bebidas"]  { border-top-color: #3b82f6; }
+  .card[data-cat="mercearia"]{ border-top-color: #10b981; }
+  .card[data-cat="comida"]   { border-top-color: #ef4444; }
+
+  .card-media {
+    height: 108px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 52px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card[data-cat="cortes"]    .card-media { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+  .card[data-cat="bebidas"]   .card-media { background: linear-gradient(135deg, #dbeafe, #bfdbfe); }
+  .card[data-cat="mercearia"] .card-media { background: linear-gradient(135deg, #d1fae5, #a7f3d0); }
+  .card[data-cat="comida"]    .card-media { background: linear-gradient(135deg, #fee2e2, #fecaca); }
+  .card-media img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .card-media .emoji-fallback {
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  }
+
+  .card-body { padding: 10px 12px 13px; }
+  .cat-label {
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 7px;
+    border-radius: 10px;
+    color: white;
+    display: inline-block;
+    margin-bottom: 5px;
+  }
+  .cat-label.cortes    { background: #f59e0b; }
+  .cat-label.bebidas   { background: #3b82f6; }
+  .cat-label.mercearia { background: #10b981; }
+  .cat-label.comida    { background: #ef4444; }
+  .card-nome { font-size: 13px; font-weight: bold; color: #1f2937; line-height: 1.3; margin-bottom: 5px; }
+  .card-preco { font-size: 17px; font-weight: bold; color: #16a34a; }
+  .card-unidade { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+
+  .secao-titulo {
+    grid-column: 1 / -1;
+    font-size: 15px;
+    font-weight: bold;
+    color: #374151;
+    padding: 4px 4px 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .secao-titulo::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e5e7eb;
+  }
+
+  .fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: #f59e0b;
+    color: white;
+    border: none;
+    font-size: 30px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(245,158,11,0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    transition: transform 0.2s, box-shadow 0.2s;
+    line-height: 1;
+    bottom: calc(24px + var(--banner-h));
+  }
+  .fab:hover { transform: scale(1.1); box-shadow: 0 6px 22px rgba(245,158,11,0.5); }
+
+  /* Modal */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 300;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: var(--banner-h);
+  }
+  .overlay.aberto { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px 28px;
+    width: 100%;
+    max-width: 500px;
+    max-height: calc(92vh - var(--banner-h));
+    overflow-y: auto;
+  }
+  .modal-handle {
+    width: 40px; height: 4px;
+    background: #e5e7eb;
+    border-radius: 2px;
+    margin: 0 auto 18px;
+  }
+  .modal h2 { font-size: 18px; color: #1f2937; margin-bottom: 18px; }
+  .campo { margin-bottom: 13px; }
+  .campo label { display: block; font-size: 12px; color: #6b7280; margin-bottom: 5px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.03em; }
+  .campo input, .campo select {
+    width: 100%; padding: 11px 13px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+    color: #1f2937;
+    transition: border-color 0.15s;
+  }
+  .campo input:focus, .campo select:focus { border-color: #f59e0b; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .emojis-sug { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+  .emoji-chip {
+    font-size: 22px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 8px;
+    background: #f9fafb;
+    border: 1.5px solid #e5e7eb;
+    transition: background 0.12s;
+    line-height: 1;
+  }
+  .emoji-chip:hover { background: #fef3c7; border-color: #f59e0b; }
+
+  .img-preview-wrap { margin-top: 8px; }
+  .img-preview-wrap img {
+    width: 100%; height: 120px;
+    object-fit: cover;
+    border-radius: 10px;
+    display: none;
+    border: 1.5px solid #e5e7eb;
+  }
+
+  .btns { display: flex; gap: 10px; margin-top: 16px; position: sticky; bottom: 0; background: white; padding: 12px 0 4px; }
+  .btn-salvar {
+    flex: 1; padding: 13px;
+    background: #f59e0b; color: white;
+    border: none; border-radius: 10px;
+    font-size: 15px; font-weight: bold;
+    cursor: pointer;
+  }
+  .btn-salvar:hover { background: #d97706; }
+  .btn-cancelar {
+    padding: 13px 18px;
+    background: #f3f4f6; color: #555;
+    border: none; border-radius: 10px;
+    font-size: 15px; cursor: pointer;
+  }
+  .btn-excluir {
+    padding: 13px 14px;
+    background: #fee2e2; color: #991b1b;
+    border: none; border-radius: 10px;
+    font-size: 15px; cursor: pointer;
+    display: none;
+  }
+
+  .vazio {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: #9ca3af;
+  }
+  .vazio .icon { font-size: 64px; margin-bottom: 14px; }
+  .vazio p { font-size: 15px; }
+
+  @media (max-width: 480px) {
+    .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
+    .card-media { height: 90px; font-size: 42px; }
+  }
+  @media (min-width: 600px) {
+    .overlay { align-items: center; padding: 20px; }
+    .modal { border-radius: 20px; }
+    .modal-handle { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <a href="/">&#8592;</a>
+    <h1>💰 Lista de Preços</h1>
+  </div>
+  <div class="header-spacer"></div>
+</header>
+
+<div class="toolbar">
+  <div class="search-box">
+    <span style="color:#9ca3af;font-size:16px">🔍</span>
+    <input type="text" id="busca" placeholder="Buscar produto..." oninput="filtrar()">
+  </div>
+  <div class="tabs">
+    <button class="tab ativo" data-cat="todos"     onclick="selecionarCat('todos')">🗂 Todos</button>
+    <button class="tab"       data-cat="cortes"    onclick="selecionarCat('cortes')">🍗 Cortes de Frango</button>
+    <button class="tab"       data-cat="bebidas"   onclick="selecionarCat('bebidas')">🥤 Bebidas</button>
+    <button class="tab"       data-cat="mercearia" onclick="selecionarCat('mercearia')">🛒 Mercearia</button>
+    <button class="tab"       data-cat="comida"    onclick="selecionarCat('comida')">🍱 Comida</button>
+  </div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<button class="fab" id="fab" onclick="abrirNovo()">+</button>
+
+<!-- Modal -->
+<div class="overlay" id="overlay" onclick="fecharSeForaDoModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+    <h2 id="modal-titulo">Novo Produto</h2>
+    <input type="hidden" id="produto-id">
+
+    <div class="campo">
+      <label>Nome do produto *</label>
+      <input type="text" id="campo-nome" placeholder="Ex: Água 500ml">
+    </div>
+
+    <div class="row2">
+      <div class="campo">
+        <label>Categoria *</label>
+        <select id="campo-cat" onchange="atualizarEmojis()">
+          <option value="cortes">🍗 Cortes de Frango</option>
+          <option value="bebidas">🥤 Bebidas</option>
+          <option value="mercearia">🛒 Mercearia</option>
+          <option value="comida">🍱 Comida</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label>Unidade</label>
+        <select id="campo-unidade">
+          <option value="un">Unidade</option>
+          <option value="kg">Kg</option>
+          <option value="g">Grama</option>
+          <option value="L">Litro</option>
+          <option value="ml">ml</option>
+          <option value="cx">Caixa</option>
+          <option value="pct">Pacote</option>
+          <option value="dzn">Dúzia</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label>Preço (R$) *</label>
+      <input type="number" id="campo-preco" placeholder="0,00" step="0.50" min="0">
+    </div>
+
+    <div class="campo">
+      <label>Emoji / Ícone</label>
+      <input type="text" id="campo-emoji" placeholder="🍗" maxlength="4">
+      <div class="emojis-sug" id="emojis-sug"></div>
+    </div>
+
+    <div class="campo">
+      <label>URL da imagem (opcional)</label>
+      <input type="url" id="campo-img" placeholder="https://..." oninput="previewImg()">
+      <div class="img-preview-wrap">
+        <img id="img-preview" alt="Preview">
+      </div>
+    </div>
+
+    <div class="campo">
+      <label>Descrição (opcional)</label>
+      <input type="text" id="campo-desc" placeholder="Marca, tamanho, observação...">
+    </div>
+
+    <div class="btns">
+      <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-excluir" id="btn-excluir" onclick="excluir()">🗑 Excluir</button>
+      <button class="btn-salvar"  onclick="salvar()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let produtos = [];
+let catAtual = 'todos';
+let podeCadastrar = false;
+
+const CATS = {
+  cortes:    { label: 'Frango', emoji: '🍗' },
+  bebidas:   { label: 'Bebida', emoji: '🥤' },
+  mercearia: { label: 'Mercado', emoji: '🛒' },
+  comida:    { label: 'Comida', emoji: '🍱' },
+};
+
+const EMOJIS_CAT = {
+  cortes:    ['🍗','🍖','🦴','🐔','🥩','🫕','🍽️'],
+  bebidas:   ['💧','🥤','🧃','🥛','☕','🍺','🍷','🍹','🧋','🫖','🍸'],
+  mercearia: ['🍚','🫘','🧂','🛢️','🍬','🍝','🥚','🧈','🍞','🫙','🌾','🫒'],
+  comida:    ['🍱','🍽️','🥘','🍲','🥗','🫔','🌮','🍛','🥙','🫕'],
+};
+
+const UNIDADES = { un: 'unidade', kg: 'kg', g: 'g', L: 'litro', ml: 'ml', cx: 'caixa', pct: 'pacote', dzn: 'dúzia' };
+
+function ajustarLayout() {
+  const h = document.querySelector('header').offsetHeight;
+  document.documentElement.style.setProperty('--header-h', h + 'px');
+}
+
+async function init() {
+  const res = await fetch('/api/auth/me');
+  if (!res.ok) { window.location.href = '/login.html'; return; }
+  const user = await res.json();
+  if (user.nivel === 'admin' || user.nivel === 'dono') {
+    podeCadastrar = true;
+    document.getElementById('fab').style.display = 'flex';
+  }
+
+  const envRes = await fetch('/api/env');
+  const { env } = await envRes.json();
+  if (env === 'test') {
+    document.documentElement.style.setProperty('--banner-h', '40px');
+  }
+
+  // mede após o relógio ser injetado no header
+  requestAnimationFrame(() => { requestAnimationFrame(ajustarLayout); });
+  window.addEventListener('resize', ajustarLayout);
+
+  await carregar();
+}
+
+async function carregar() {
+  const res = await fetch('/api/precos');
+  if (!res.ok) return;
+  produtos = await res.json();
+  renderizar();
+}
+
+function filtrar() {
+  renderizar();
+}
+
+function selecionarCat(cat) {
+  catAtual = cat;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativo'));
+  document.querySelector(`.tab[data-cat="${cat}"]`).classList.add('ativo');
+  renderizar();
+}
+
+function renderizar() {
+  const busca = document.getElementById('busca').value.toLowerCase();
+  const lista = produtos.filter(p => {
+    if (catAtual !== 'todos' && p.categoria !== catAtual) return false;
+    if (busca && !p.nome.toLowerCase().includes(busca) && !(p.descricao || '').toLowerCase().includes(busca)) return false;
+    return true;
+  });
+
+  const grid = document.getElementById('grid');
+
+  if (!lista.length) {
+    grid.innerHTML = `<div class="vazio"><div class="icon">🔍</div><p>Nenhum produto encontrado</p></div>`;
+    return;
+  }
+
+  // Agrupa por categoria quando exibe "todos"
+  let html = '';
+  if (catAtual === 'todos' && !busca) {
+    const grupos = { cortes: [], bebidas: [], mercearia: [], comida: [] };
+    lista.forEach(p => { if (grupos[p.categoria]) grupos[p.categoria].push(p); });
+    const labels = { cortes: '🍗 Cortes de Frango', bebidas: '🥤 Bebidas', mercearia: '🛒 Mercearia', comida: '🍱 Comida' };
+    for (const cat of ['cortes', 'bebidas', 'mercearia', 'comida']) {
+      if (grupos[cat].length) {
+        html += `<div class="secao-titulo">${labels[cat]}</div>`;
+        html += grupos[cat].map(p => cardHTML(p)).join('');
+      }
+    }
+  } else {
+    html = lista.map(p => cardHTML(p)).join('');
+  }
+
+  grid.innerHTML = html;
+}
+
+function cardHTML(p) {
+  const preco = Number(p.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const unid  = UNIDADES[p.unidade] || p.unidade || 'unidade';
+  const emoji = p.emoji || CATS[p.categoria]?.emoji || '📦';
+  const catInfo = CATS[p.categoria] || {};
+
+  let mediaHTML;
+  if (p.imagem_url) {
+    mediaHTML = `<img src="${escHTML(p.imagem_url)}" alt="${escHTML(p.nome)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="emoji-fallback" style="display:none">${emoji}</span>`;
+  } else {
+    mediaHTML = `<span class="emoji-fallback">${emoji}</span>`;
+  }
+
+  const clicavel = podeCadastrar ? ' clicavel' : '';
+  const onclick  = podeCadastrar ? `onclick="clicarCard(${p.id})"` : '';
+
+  return `<div class="card${clicavel}" data-cat="${p.categoria}" ${onclick}>
+    <div class="card-media">${mediaHTML}</div>
+    <div class="card-body">
+      <span class="cat-label ${p.categoria}">${catInfo.label || p.categoria}</span>
+      <div class="card-nome">${escHTML(p.nome)}</div>
+      <div class="card-preco">${preco}</div>
+      <div class="card-unidade">por ${unid}</div>
+    </div>
+  </div>`;
+}
+
+function escHTML(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function clicarCard(id) {
+  if (!podeCadastrar) return;
+  const p = produtos.find(x => x.id === id);
+  if (p) abrirEditar(p);
+}
+
+function abrirNovo() {
+  document.getElementById('modal-titulo').textContent = 'Novo Produto';
+  document.getElementById('produto-id').value = '';
+  document.getElementById('campo-nome').value = '';
+  document.getElementById('campo-cat').value = catAtual !== 'todos' ? catAtual : 'cortes';
+  document.getElementById('campo-emoji').value = '';
+  document.getElementById('campo-preco').value = '';
+  document.getElementById('campo-unidade').value = 'un';
+  document.getElementById('campo-img').value = '';
+  document.getElementById('campo-desc').value = '';
+  document.getElementById('img-preview').style.display = 'none';
+  document.getElementById('btn-excluir').style.display = 'none';
+  atualizarEmojis();
+  document.getElementById('overlay').classList.add('aberto');
+  setTimeout(() => document.getElementById('campo-nome').focus(), 120);
+}
+
+function abrirEditar(p) {
+  if (!podeCadastrar) return;
+  document.getElementById('modal-titulo').textContent = 'Editar Produto';
+  document.getElementById('produto-id').value = p.id;
+  document.getElementById('campo-nome').value = p.nome;
+  document.getElementById('campo-cat').value = p.categoria;
+  document.getElementById('campo-emoji').value = p.emoji || '';
+  document.getElementById('campo-preco').value = p.preco;
+  document.getElementById('campo-unidade').value = p.unidade || 'un';
+  document.getElementById('campo-img').value = p.imagem_url || '';
+  document.getElementById('campo-desc').value = p.descricao || '';
+  document.getElementById('btn-excluir').style.display = 'block';
+  const preview = document.getElementById('img-preview');
+  if (p.imagem_url) { preview.src = p.imagem_url; preview.style.display = 'block'; }
+  else { preview.style.display = 'none'; }
+  atualizarEmojis();
+  document.getElementById('overlay').classList.add('aberto');
+}
+
+function fecharModal() {
+  document.getElementById('overlay').classList.remove('aberto');
+}
+
+function fecharSeForaDoModal(e) {
+  if (e.target === document.getElementById('overlay')) fecharModal();
+}
+
+function atualizarEmojis() {
+  const cat = document.getElementById('campo-cat').value;
+  const lista = EMOJIS_CAT[cat] || [];
+  document.getElementById('emojis-sug').innerHTML = lista
+    .map(e => `<span class="emoji-chip" onclick="document.getElementById('campo-emoji').value='${e}'">${e}</span>`)
+    .join('');
+}
+
+function previewImg() {
+  const url = document.getElementById('campo-img').value.trim();
+  const img  = document.getElementById('img-preview');
+  if (url) {
+    img.src = url;
+    img.style.display = 'block';
+    img.onerror = () => { img.style.display = 'none'; };
+  } else {
+    img.style.display = 'none';
+  }
+}
+
+async function salvar() {
+  const id   = document.getElementById('produto-id').value;
+  const nome = document.getElementById('campo-nome').value.trim();
+  if (!nome) { alert('Informe o nome do produto'); return; }
+
+  const body = {
+    nome,
+    categoria:  document.getElementById('campo-cat').value,
+    emoji:      document.getElementById('campo-emoji').value.trim() || null,
+    preco:      parseFloat(document.getElementById('campo-preco').value) || 0,
+    unidade:    document.getElementById('campo-unidade').value,
+    imagem_url: document.getElementById('campo-img').value.trim() || null,
+    descricao:  document.getElementById('campo-desc').value.trim() || null,
+    ativo: 1,
+  };
+
+  const url    = id ? `/api/precos/${id}` : '/api/precos';
+  const method = id ? 'PUT' : 'POST';
+  const res    = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+
+  if (res.ok) { fecharModal(); await carregar(); }
+  else { const e = await res.json().catch(() => ({})); alert(e.erro || 'Erro ao salvar'); }
+}
+
+async function excluir() {
+  const id = document.getElementById('produto-id').value;
+  if (!id || !confirm('Excluir este produto? Esta ação não pode ser desfeita.')) return;
+  const res = await fetch(`/api/precos/${id}`, { method: 'DELETE' });
+  if (res.ok) { fecharModal(); await carregar(); }
+}
+
+init();
+</script>
+</body>
+</html>

@@ -43,8 +43,8 @@ const CLOCK_SCRIPT = `<script>
     if(!header||document.getElementById('fex-clock')) return;
     var clock=document.createElement('div');
     clock.id='fex-clock';
-    clock.style.cssText='position:absolute;left:50%;transform:translateX(-50%);font-family:monospace;font-size:15px;font-weight:bold;letter-spacing:1px;background:rgba(0,0,0,0.18);padding:4px 10px;border-radius:6px;color:white;white-space:nowrap;pointer-events:none';
-    header.style.position='relative';
+    clock.style.cssText='position:absolute;left:50%;transform:translateX(-50%);font-family:monospace;font-size:12px;font-weight:bold;letter-spacing:1px;background:rgba(0,0,0,0.18);padding:3px 8px;border-radius:5px;color:white;white-space:nowrap;pointer-events:none';
+    if(window.getComputedStyle(header).position==='static') header.style.position='relative';
     header.appendChild(clock);
     tick();
     setInterval(tick,1000);
@@ -111,6 +111,7 @@ app.use('/api/lotes',         verificarToken, require('./routes/lotes'));
 app.use('/api/whatsapp',      verificarToken, require('./routes/whatsapp'));
 app.use('/api/tipos',         verificarToken, require('./routes/tipos'));
 app.use('/api/estoque_modulo',verificarToken, require('./routes/estoque_modulo'));
+app.use('/api/precos',        verificarToken, require('./routes/precos'));
 
 app.get('/api/eventos', verificarToken, (req, res) => {
   res.writeHead(200, {

@@ -136,6 +136,19 @@ db.exec(`
     quantidade REAL NOT NULL DEFAULT 1,
     UNIQUE(tipo_id, insumo_id)
   );
+
+  CREATE TABLE IF NOT EXISTS produtos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    categoria TEXT NOT NULL,
+    preco REAL DEFAULT 0,
+    unidade TEXT DEFAULT 'un',
+    emoji TEXT DEFAULT '📦',
+    imagem_url TEXT,
+    descricao TEXT,
+    ativo INTEGER DEFAULT 1,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Migrations: adiciona colunas que podem não existir em bancos antigos
@@ -145,6 +158,46 @@ const migrations = [
   "ALTER TABLE tipos_frango ADD COLUMN icone TEXT DEFAULT '🍗'",
 ];
 migrations.forEach(sql => { try { db.exec(sql); } catch(e) {} });
+
+const produtosExistem = db.prepare('SELECT id FROM produtos LIMIT 1').get();
+if (!produtosExistem) {
+  const ins = db.prepare('INSERT INTO produtos (nome, categoria, preco, unidade, emoji) VALUES (?, ?, ?, ?, ?)');
+  // Cortes de Frango
+  ins.run('Frango Inteiro', 'cortes', 0, 'un', '🍗');
+  ins.run('Meio Frango', 'cortes', 0, 'un', '🍗');
+  ins.run('Coxa e Sobrecoxa', 'cortes', 0, 'un', '🍗');
+  ins.run('Coxa', 'cortes', 0, 'un', '🍗');
+  ins.run('Sobrecoxa', 'cortes', 0, 'un', '🍗');
+  ins.run('Asa', 'cortes', 0, 'un', '🍗');
+  ins.run('Pé de Frango', 'cortes', 0, 'pct', '🦴');
+  ins.run('Pescoço', 'cortes', 0, 'kg', '🍗');
+  ins.run('Fígado', 'cortes', 0, 'kg', '🫀');
+  // Bebidas
+  ins.run('Água 500ml', 'bebidas', 0, 'un', '💧');
+  ins.run('Água 1,5L', 'bebidas', 0, 'un', '💧');
+  ins.run('Refrigerante Lata', 'bebidas', 0, 'un', '🥤');
+  ins.run('Refrigerante 2L', 'bebidas', 0, 'un', '🥤');
+  ins.run('Suco de Laranja', 'bebidas', 0, 'un', '🧃');
+  ins.run('Suco de Caju', 'bebidas', 0, 'un', '🧃');
+  ins.run('Leite', 'bebidas', 0, 'un', '🥛');
+  ins.run('Café', 'bebidas', 0, 'un', '☕');
+  ins.run('Cerveja Lata', 'bebidas', 0, 'un', '🍺');
+  // Mercearia
+  ins.run('Arroz 5kg', 'mercearia', 0, 'pct', '🍚');
+  ins.run('Feijão 1kg', 'mercearia', 0, 'pct', '🫘');
+  ins.run('Óleo 900ml', 'mercearia', 0, 'un', '🛢️');
+  ins.run('Sal 1kg', 'mercearia', 0, 'pct', '🧂');
+  ins.run('Açúcar 1kg', 'mercearia', 0, 'pct', '🍬');
+  ins.run('Macarrão 500g', 'mercearia', 0, 'pct', '🍝');
+  ins.run('Farinha de Trigo 1kg', 'mercearia', 0, 'pct', '🌾');
+  ins.run('Vinagrete', 'mercearia', 0, 'un', '🫙');
+  // Comida
+  ins.run('Marmita P', 'comida', 0, 'un', '🍱');
+  ins.run('Marmita M', 'comida', 0, 'un', '🍱');
+  ins.run('Marmita G', 'comida', 0, 'un', '🍱');
+  ins.run('Prato Feito', 'comida', 0, 'un', '🍽️');
+  ins.run('Porção de Frango', 'comida', 0, 'un', '🍗');
+}
 
 const adminExiste = db.prepare("SELECT id FROM usuarios WHERE usuario = 'admin'").get();
 if (!adminExiste) {
