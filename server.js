@@ -101,7 +101,45 @@ const CONEXAO_SCRIPT = `<script>
 })();
 </script>`;
 
-const INJECT_HTML = TEST_BANNER + CLOCK_SCRIPT + CONEXAO_SCRIPT;
+const FULLSCREEN_SCRIPT = `<script>
+(function(){
+  function alternar(){
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(function(){});
+    else document.exitFullscreen();
+  }
+  function inserirBotao(){
+    var header = document.querySelector('header');
+    if (!header || document.getElementById('fex-fullscreen-btn')) return;
+    var btn = document.createElement('button');
+    btn.id = 'fex-fullscreen-btn';
+    btn.title = 'Tela cheia';
+    btn.textContent = '⛶';
+    btn.style.cssText = 'width:38px;height:38px;min-width:38px;border-radius:8px;border:none;background:rgba(0,0,0,0.18);color:white;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:8px';
+    btn.onclick = alternar;
+
+    // Se o header usa space-between, agrupa o botão com o último elemento
+    // (geralmente "Sair") num wrapper flex pra não quebrar o layout existente
+    if (header.children.length >= 1 && window.getComputedStyle(header).justifyContent === 'space-between') {
+      var ultimo = header.lastElementChild;
+      var wrapper = document.createElement('div');
+      wrapper.style.cssText = 'display:flex;align-items:center;gap:8px';
+      ultimo.parentNode.insertBefore(wrapper, ultimo);
+      wrapper.appendChild(ultimo);
+      wrapper.appendChild(btn);
+    } else {
+      header.appendChild(btn);
+    }
+
+    document.addEventListener('fullscreenchange', function(){
+      btn.textContent = document.fullscreenElement ? '🗗' : '⛶';
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',inserirBotao);
+  else inserirBotao();
+})();
+</script>`;
+
+const INJECT_HTML = TEST_BANNER + CLOCK_SCRIPT + CONEXAO_SCRIPT + FULLSCREEN_SCRIPT;
 
 function injetarBanner(filePath) {
   let html = fs.readFileSync(filePath, 'utf8');
