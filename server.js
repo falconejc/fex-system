@@ -54,7 +54,54 @@ const CLOCK_SCRIPT = `<script>
 })();
 </script>`;
 
-const INJECT_HTML = TEST_BANNER + CLOCK_SCRIPT;
+const CONEXAO_SCRIPT = `<script>
+(function(){
+  var offline = false;
+  var banner = null;
+  var fetchOriginal = window.fetch.bind(window);
+
+  function criarBanner(){
+    if (banner) return banner;
+    banner = document.createElement('div');
+    banner.id = 'fex-conexao-banner';
+    banner.style.cssText = 'display:none;position:fixed;top:0;left:0;right:0;z-index:99999;text-align:center;padding:10px;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:white;transition:background-color 0.2s';
+    document.body.appendChild(banner);
+    return banner;
+  }
+
+  function mostrarOffline(){
+    if (offline) return;
+    offline = true;
+    var b = criarBanner();
+    b.textContent = '⚠️ Sem conexão com o servidor';
+    b.style.background = '#dc2626';
+    b.style.display = 'block';
+  }
+
+  function mostrarReconectado(){
+    if (!offline) return;
+    offline = false;
+    var b = criarBanner();
+    b.textContent = '✅ Reconectado!';
+    b.style.background = '#10b981';
+    b.style.display = 'block';
+    setTimeout(function(){ if (!offline) b.style.display = 'none'; }, 3000);
+  }
+
+  window.fetch = function(){
+    return fetchOriginal.apply(window, arguments).then(
+      function(res){ mostrarReconectado(); return res; },
+      function(err){ mostrarOffline(); throw err; }
+    );
+  };
+
+  setInterval(function(){
+    fetchOriginal('/api/env', { cache: 'no-store' }).then(mostrarReconectado).catch(mostrarOffline);
+  }, 5000);
+})();
+</script>`;
+
+const INJECT_HTML = TEST_BANNER + CLOCK_SCRIPT + CONEXAO_SCRIPT;
 
 function injetarBanner(filePath) {
   let html = fs.readFileSync(filePath, 'utf8');

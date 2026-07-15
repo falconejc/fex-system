@@ -12,6 +12,9 @@
   header a { color: white; text-decoration: none; font-size: 20px; }
   header h1 { font-size: 20px; }
   .btn-logoff { padding: 10px 16px; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .btn-fullscreen { padding: 10px 14px; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+  .btn-fab { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: #f59e0b; color: white; font-size: 24px; border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.25); cursor: pointer; z-index: 70; display: flex; align-items: center; justify-content: center; }
   .container { max-width: 600px; margin: 24px auto; padding: 0 16px; }
   .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
   .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
@@ -72,6 +75,7 @@
       padding: 24px 20px;
     }
     .container { padding-bottom: 96px; }
+    .btn-fab { bottom: 112px; }
     #btn-vender {
       position: fixed;
       bottom: 0;
@@ -92,7 +96,10 @@
     <a href="/">&#8592;</a>
     <h1>🍗 Venda de Frango</h1>
   </div>
-  <button class="btn-logoff" onclick="logoff()">Sair</button>
+  <div class="header-actions">
+    <button class="btn-fullscreen" id="btn-fullscreen" onclick="alternarTelaCheia()" title="Tela cheia">⛶</button>
+    <button class="btn-logoff" onclick="logoff()">Sair</button>
+  </div>
 </header>
 
 <div class="container">
@@ -104,7 +111,7 @@
     <div id="estoque-display"><div class="vazio">Carregando...</div></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="card-nova-venda">
     <h2 style="font-size:16px;color:#555;margin-bottom:14px;border-bottom:1px solid #eee;padding-bottom:10px">Nova Venda</h2>
     <label>Atendente</label>
     <div class="atendente-box" id="atendente-box">Carregando...</div>
@@ -126,6 +133,8 @@
     <div id="pendentes"><div class="vazio">Carregando...</div></div>
   </div>
 </div>
+
+<button class="btn-fab" id="btn-fab-nova-venda" onclick="irParaNovaVenda()" title="Nova Venda (F2)">🆕</button>
 
 <!-- Modal venda -->
 <div class="modal" id="modal-venda">
@@ -585,6 +594,27 @@
   }
 
   function fecharModal(id) { document.getElementById(id).classList.remove('aberto'); }
+
+  function irParaNovaVenda() {
+    const card = document.getElementById('card-nova-venda');
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const primeiroTipo = document.querySelector('.tipo-btn:not([disabled])');
+    if (primeiroTipo) primeiroTipo.focus();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'F2') { e.preventDefault(); irParaNovaVenda(); }
+  });
+
+  function alternarTelaCheia() {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+    else document.exitFullscreen();
+  }
+
+  document.addEventListener('fullscreenchange', () => {
+    const btn = document.getElementById('btn-fullscreen');
+    if (btn) btn.textContent = document.fullscreenElement ? '🗗' : '⛶';
+  });
 
   async function logoff() {
     await fetch('/api/auth/logout', { method: 'POST' });
