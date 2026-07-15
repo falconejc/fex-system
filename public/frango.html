@@ -135,6 +135,7 @@
     <div class="modal-info" id="modal-info"></div>
     <div class="modal-aviso" id="modal-aviso-lote"></div>
     <canvas id="qr-canvas"></canvas>
+    <button class="btn-imprimir" onclick="imprimirEFechar()" style="background:#f59e0b;font-weight:bold">✅ Imprimir e Fechar</button>
     <button class="btn-imprimir" onclick="imprimir()">🖨️ Imprimir Comprovante</button>
     <button class="btn-imprimir" id="btn-wpp" onclick="enviarWhatsApp()" style="background:#25d366;display:none">📱 Enviar WhatsApp</button>
     <button class="btn-imprimir" id="btn-bt-connect" onclick="conectarBT()" style="background:#6b7280">🔌 Conectar Impressora BT</button>
@@ -203,6 +204,16 @@
   async function imprimirBT() {
     if (!vendaAtual) return;
     await BTPrinter.printComprovante(vendaAtual, infoLoteAtual);
+  }
+
+  async function imprimirEFechar() {
+    if (!vendaAtual) return;
+    if (BTPrinter.isConnected()) {
+      await BTPrinter.printComprovante(vendaAtual, infoLoteAtual);
+    } else {
+      imprimir();
+    }
+    fecharModal('modal-venda');
   }
 
   async function init() {
