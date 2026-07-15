@@ -28,6 +28,35 @@ const TEST_BANNER = IS_TEST
   ? '<div style="position:fixed;bottom:0;left:0;right:0;background:#dc2626;color:white;text-align:center;padding:8px;font-size:13px;font-weight:bold;z-index:9999">⚠️ AMBIENTE DE TESTES — dados não são reais</div>'
   : '';
 
+// Slot compartilhado no header pra agrupar relógio, botão de tela cheia etc.
+// sem sobrepor o título nem quebrar o layout justify-content:space-between
+const HEADER_SLOT_SCRIPT = `<script>
+window.__fexHeaderSlot = function(){
+  var header = document.querySelector('header');
+  if (!header) return null;
+  var slot = document.getElementById('fex-header-actions');
+  if (slot) return slot;
+  slot = document.createElement('div');
+  slot.id = 'fex-header-actions';
+  slot.style.cssText = 'display:flex;align-items:center;gap:8px;flex-shrink:0';
+  if (window.getComputedStyle(header).justifyContent === 'space-between') {
+    var fluxo = Array.prototype.filter.call(header.children, function(el){
+      return window.getComputedStyle(el).position !== 'absolute';
+    });
+    var ultimo = fluxo[fluxo.length - 1];
+    if (ultimo) {
+      ultimo.parentNode.insertBefore(slot, ultimo);
+      slot.appendChild(ultimo);
+    } else {
+      header.appendChild(slot);
+    }
+  } else {
+    header.appendChild(slot);
+  }
+  return slot;
+};
+</script>`;
+
 const CLOCK_SCRIPT = `<script>
 (function(){
   function tick(){
@@ -39,13 +68,13 @@ const CLOCK_SCRIPT = `<script>
     if(el) el.textContent=h+':'+m+':'+s;
   }
   function inserirRelogio(){
-    var header=document.querySelector('header');
-    if(!header||document.getElementById('fex-clock')) return;
+    if(document.getElementById('fex-clock')) return;
+    var slot = window.__fexHeaderSlot && window.__fexHeaderSlot();
+    if(!slot) return;
     var clock=document.createElement('div');
     clock.id='fex-clock';
-    clock.style.cssText='position:absolute;left:50%;transform:translateX(-50%);font-family:monospace;font-size:12px;font-weight:bold;letter-spacing:1px;background:rgba(0,0,0,0.18);padding:3px 8px;border-radius:5px;color:white;white-space:nowrap;pointer-events:none';
-    if(window.getComputedStyle(header).position==='static') header.style.position='relative';
-    header.appendChild(clock);
+    clock.style.cssText='font-family:monospace;font-size:12px;font-weight:bold;letter-spacing:1px;background:rgba(0,0,0,0.18);padding:3px 8px;border-radius:5px;color:white;white-space:nowrap';
+    slot.appendChild(clock);
     tick();
     setInterval(tick,1000);
   }
@@ -108,28 +137,16 @@ const FULLSCREEN_SCRIPT = `<script>
     else document.exitFullscreen();
   }
   function inserirBotao(){
-    var header = document.querySelector('header');
-    if (!header || document.getElementById('fex-fullscreen-btn')) return;
+    if (document.getElementById('fex-fullscreen-btn')) return;
+    var slot = window.__fexHeaderSlot && window.__fexHeaderSlot();
+    if (!slot) return;
     var btn = document.createElement('button');
     btn.id = 'fex-fullscreen-btn';
     btn.title = 'Tela cheia';
     btn.textContent = '⛶';
-    btn.style.cssText = 'width:38px;height:38px;min-width:38px;border-radius:8px;border:none;background:rgba(0,0,0,0.18);color:white;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:8px';
+    btn.style.cssText = 'width:36px;height:36px;min-width:36px;border-radius:8px;border:none;background:rgba(0,0,0,0.18);color:white;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0';
     btn.onclick = alternar;
-
-    // Se o header usa space-between, agrupa o botão com o último elemento
-    // (geralmente "Sair") num wrapper flex pra não quebrar o layout existente
-    if (header.children.length >= 1 && window.getComputedStyle(header).justifyContent === 'space-between') {
-      var ultimo = header.lastElementChild;
-      var wrapper = document.createElement('div');
-      wrapper.style.cssText = 'display:flex;align-items:center;gap:8px';
-      ultimo.parentNode.insertBefore(wrapper, ultimo);
-      wrapper.appendChild(ultimo);
-      wrapper.appendChild(btn);
-    } else {
-      header.appendChild(btn);
-    }
-
+    slot.appendChild(btn);
     document.addEventListener('fullscreenchange', function(){
       btn.textContent = document.fullscreenElement ? '🗗' : '⛶';
     });
@@ -139,7 +156,7 @@ const FULLSCREEN_SCRIPT = `<script>
 })();
 </script>`;
 
-const INJECT_HTML = TEST_BANNER + CLOCK_SCRIPT + CONEXAO_SCRIPT + FULLSCREEN_SCRIPT;
+const INJECT_HTML = TEST_BANNER + HEADER_SLOT_SCRIPT + CLOCK_SCRIPT + CONEXAO_SCRIPT + FULLSCREEN_SCRIPT;
 
 function injetarBanner(filePath) {
   let html = fs.readFileSync(filePath, 'utf8');
