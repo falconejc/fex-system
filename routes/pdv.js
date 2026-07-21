@@ -134,7 +134,7 @@ router.post('/caixa', (req, res) => {
   res.json(db.prepare('SELECT * FROM pdv_caixa WHERE data = ?').get(data));
 });
 
-router.put('/venda/:id/cancelar', exigirNivel('admin'), (req, res) => {
+router.put('/venda/:id/cancelar', exigirNivel('admin', 'dono'), (req, res) => {
   const venda = db.prepare('SELECT * FROM pdv_vendas WHERE id = ?').get(req.params.id);
   if (!venda) return res.status(404).json({ erro: 'Venda não encontrada' });
   if (venda.cancelado) return res.status(400).json({ erro: 'Venda já cancelada' });
@@ -160,7 +160,7 @@ router.get('/gastos', (req, res) => {
   res.json(db.prepare('SELECT * FROM pdv_gastos WHERE date(criado_em) = ? ORDER BY criado_em DESC').all(data));
 });
 
-router.put('/gasto/:id/cancelar', exigirNivel('admin'), (req, res) => {
+router.put('/gasto/:id/cancelar', exigirNivel('admin', 'dono'), (req, res) => {
   const gasto = db.prepare('SELECT * FROM pdv_gastos WHERE id = ?').get(req.params.id);
   if (!gasto) return res.status(404).json({ erro: 'Gasto não encontrado' });
   if (gasto.cancelado) return res.status(400).json({ erro: 'Gasto já cancelado' });

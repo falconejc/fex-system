@@ -241,10 +241,19 @@
     document.getElementById('painel-' + tab).classList.add('ativo');
   }
 
+  function podeVerResumoPDV() {
+    return nivelUsuario === 'admin' || nivelUsuario === 'dono';
+  }
+
   async function init() {
     const res = await fetch('/api/auth/me');
     const user = await res.json();
     nivelUsuario = user.nivel;
+    if (!podeVerResumoPDV()) {
+      document.getElementById('pdv-caixa-info').style.display = 'none';
+      document.getElementById('pdv-kpis').style.display = 'none';
+      document.getElementById('pdv-formas').style.display = 'none';
+    }
     carregar();
     carregarPDV();
     carregarPDVMes();
@@ -429,7 +438,7 @@
   function renderPDVTabela(vendas) {
     const el = document.getElementById('tabela-pdv');
     if (!vendas.length) { el.innerHTML = '<div class="vazio">Nenhuma venda no período</div>'; return; }
-    const isAdmin = nivelUsuario === 'admin';
+    const isAdmin = podeVerResumoPDV();
     el.innerHTML = `<div style="overflow-x:auto"><table>
       <thead><tr><th>Código</th><th>Descrição</th><th>Valor</th><th>Pagamento</th><th>Operador</th><th>Status</th>${isAdmin ? '<th>Ações</th>' : ''}</tr></thead>
       <tbody>${vendas.map(v => `<tr>
@@ -455,7 +464,7 @@
   function renderPDVGastos(gastos) {
     const el = document.getElementById('tabela-pdv-gastos');
     if (!gastos.length) { el.innerHTML = '<div class="vazio">Nenhum gasto no período</div>'; return; }
-    const isAdmin = nivelUsuario === 'admin';
+    const isAdmin = podeVerResumoPDV();
     el.innerHTML = `<div style="overflow-x:auto"><table>
       <thead><tr><th>Descrição</th><th>Valor</th><th>Operador</th><th>Status</th>${isAdmin ? '<th>Ações</th>' : ''}</tr></thead>
       <tbody>${gastos.map(g => `<tr>

@@ -64,7 +64,7 @@
 <header>
   <div class="header-left">
     <a href="/">&#8592;</a>
-    <h1>💰 PDV</h1>
+    <h1>🧾 PDV</h1>
   </div>
   <button class="btn-logoff" onclick="logoff()">Sair</button>
 </header>
@@ -100,7 +100,7 @@
     <button class="btn btn-gasto" id="btn-registrar-gasto" onclick="registrarGasto()">Registrar Gasto</button>
   </div>
 
-  <div class="card">
+  <div class="card" id="card-resumo-dia">
     <div class="card-header">
       <h2>Resumo do dia</h2>
       <button class="btn-imprimir-resumo" onclick="imprimirResumo()">🖨️ Imprimir Resumo</button>
@@ -142,10 +142,15 @@
     const user = await res.json();
     nivelUsuario = user.nivel;
     nomeUsuario = user.nome;
+    if (!podeGerenciar()) document.getElementById('card-resumo-dia').style.display = 'none';
     await carregarResumo();
     await carregarVendas();
     await carregarGastos();
     setInterval(() => { carregarResumo(); carregarVendas(); carregarGastos(); }, 30000);
+  }
+
+  function podeGerenciar() {
+    return nivelUsuario === 'admin' || nivelUsuario === 'dono';
   }
 
   function selecionarPagamento(forma, btn) {
@@ -235,7 +240,7 @@
     const lista = await res.json();
     const el = document.getElementById('lista-vendas');
     if (!lista.length) { el.innerHTML = '<div class="vazio">Nenhuma venda hoje</div>'; return; }
-    const isAdmin = nivelUsuario === 'admin';
+    const isAdmin = podeGerenciar();
     el.innerHTML = lista.map(v => `
       <div class="item ${v.cancelado ? 'cancelada' : ''}">
         <div class="info">
@@ -256,7 +261,7 @@
     const lista = await res.json();
     const el = document.getElementById('lista-gastos');
     if (!lista.length) { el.innerHTML = '<div class="vazio">Nenhum gasto hoje</div>'; return; }
-    const isAdmin = nivelUsuario === 'admin';
+    const isAdmin = podeGerenciar();
     el.innerHTML = lista.map(g => `
       <div class="item ${g.cancelado ? 'cancelada' : ''}">
         <div class="info">
@@ -283,7 +288,7 @@
   function renderCaixa() {
     const el = document.getElementById('caixa-conteudo');
     const caixa = resumoAtual && resumoAtual.resumo.abertura_caixa;
-    const isAdmin = nivelUsuario === 'admin';
+    const isAdmin = podeGerenciar();
 
     if (!caixa) {
       el.innerHTML = `
@@ -300,7 +305,7 @@
         <div>
           <div class="valor-abertura">${fmtMoeda(caixa.valor_abertura)}</div>
           <div class="desc">Abertura às ${fmtHora(caixa.criado_em)} por ${caixa.operador}</div>
-          <div class="saldo-esperado">💰 Saldo esperado em dinheiro agora: <strong>${fmtMoeda(saldo)}</strong></div>
+          ${isAdmin ? `<div class="saldo-esperado">💰 Saldo esperado em dinheiro agora: <strong>${fmtMoeda(saldo)}</strong></div>` : ''}
         </div>
         ${isAdmin ? `<button class="btn-alterar-caixa" onclick="alterarCaixa()">Alterar</button>` : ''}
       </div>
