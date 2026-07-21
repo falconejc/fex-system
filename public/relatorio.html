@@ -89,7 +89,7 @@
   <button class="btn-logoff" onclick="logoff()">Sair</button>
 </header>
 <div class="container">
-  <div class="filtro">
+  <div class="filtro" id="filtro-geral">
     <label>Data:</label>
     <input type="date" id="data-filtro">
     <button onclick="carregar()">Buscar</button>
@@ -133,7 +133,7 @@
       <h2>💸 Gastos / Saídas PDV</h2>
       <div id="tabela-pdv-gastos"><div class="vazio">Carregando...</div></div>
     </div>
-    <div class="card">
+    <div class="card" id="card-pdv-mensal">
       <h2>📅 Resumo mensal</h2>
       <div class="filtro">
         <label>Mês:</label>
@@ -239,6 +239,7 @@
     btn.classList.add('ativo');
     document.querySelectorAll('.painel').forEach(p => p.classList.remove('ativo'));
     document.getElementById('painel-' + tab).classList.add('ativo');
+    document.getElementById('filtro-geral').style.display = tab === 'pdv' ? 'none' : '';
   }
 
   function podeVerResumoPDV() {
@@ -253,6 +254,7 @@
       document.getElementById('pdv-caixa-info').style.display = 'none';
       document.getElementById('pdv-kpis').style.display = 'none';
       document.getElementById('pdv-formas').style.display = 'none';
+      document.getElementById('card-pdv-mensal').style.display = 'none';
     }
     carregar();
     carregarPDV();
