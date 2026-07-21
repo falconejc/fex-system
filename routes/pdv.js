@@ -54,6 +54,10 @@ router.get('/relatorio/dia', (req, res) => {
   const vendas = db.prepare('SELECT * FROM pdv_vendas WHERE date(criado_em) = ? ORDER BY criado_em DESC').all(data);
   const validas = vendas.filter(v => !v.cancelado);
 
+  const gastos = db.prepare('SELECT * FROM pdv_gastos WHERE date(criado_em) = ? ORDER BY criado_em DESC').all(data);
+  const gastosValidos = gastos.filter(g => !g.cancelado);
+  const totalGastos = gastosValidos.reduce((s, g) => s + g.valor, 0);
+
   const porFormaPagamento = {};
   FORMAS_PAGAMENTO.forEach(f => { porFormaPagamento[f] = { quantidade: 0, total: 0 }; });
   validas.forEach(v => {
@@ -63,7 +67,7 @@ router.get('/relatorio/dia', (req, res) => {
 
   const totalVendido = validas.reduce((s, v) => s + v.valor, 0);
   const caixa = db.prepare('SELECT * FROM pdv_caixa WHERE data = ?').get(data) || null;
-  const saldoEsperadoCaixa = caixa ? caixa.valor_abertura + porFormaPagamento.dinheiro.total : null;
+  const saldoEsperadoCaixa = caixa ? caixa.valor_abertura + porFormaPagamento.dinheiro.total - totalGastos : null;
 
   res.json({
     data,
@@ -72,10 +76,13 @@ router.get('/relatorio/dia', (req, res) => {
       quantidade_vendas: validas.length,
       ticket_medio: validas.length ? totalVendido / validas.length : 0,
       por_forma_pagamento: porFormaPagamento,
+      total_gastos: totalGastos,
+      quantidade_gastos: gastosValidos.length,
       abertura_caixa: caixa,
       saldo_esperado_caixa: saldoEsperadoCaixa
     },
-    vendas
+    vendas,
+    gastos
   });
 });
 
@@ -92,9 +99,11 @@ router.get('/relatorio/mes', (req, res) => {
   });
 
   const totalMes = vendas.reduce((s, v) => s + v.valor, 0);
+  const totalGastosMes = db.prepare("SELECT COALESCE(SUM(valor), 0) as total FROM pdv_gastos WHERE strftime('%Y-%m', criado_em) = ? AND cancelado = 0").get(mes).total;
+
   res.json({
     mes,
-    resumo: { total_vendido: totalMes, quantidade_vendas: vendas.length },
+    resumo: { total_vendido: totalMes, quantidade_vendas: vendas.length, total_gastos: totalGastosMes },
     por_dia: Object.values(porDiaMap).sort((a, b) => a.data.localeCompare(b.data))
   });
 });
@@ -130,6 +139,32 @@ router.put('/venda/:id/cancelar', exigirNivel('admin'), (req, res) => {
   if (!venda) return res.status(404).json({ erro: 'Venda não encontrada' });
   if (venda.cancelado) return res.status(400).json({ erro: 'Venda já cancelada' });
   db.prepare('UPDATE pdv_vendas SET cancelado = 1 WHERE id = ?').run(req.params.id);
+  res.json({ sucesso: true });
+});
+
+router.post('/gasto', (req, res) => {
+  const { descricao, valor } = req.body;
+  if (!descricao || !descricao.trim()) return res.status(400).json({ erro: 'Descrição obrigatória' });
+  const valorNum = Number(valor);
+  if (!valorNum || valorNum <= 0) return res.status(400).json({ erro: 'Valor inválido' });
+
+  const info = db.prepare(`INSERT INTO pdv_gastos (descricao, valor, operador, usuario_id, criado_em)
+    VALUES (?, ?, ?, ?, ?)`)
+    .run(descricao.trim(), valorNum, req.usuario.nome, req.usuario.id, agora());
+
+  res.json(db.prepare('SELECT * FROM pdv_gastos WHERE id = ?').get(info.lastInsertRowid));
+});
+
+router.get('/gastos', (req, res) => {
+  const data = hoje();
+  res.json(db.prepare('SELECT * FROM pdv_gastos WHERE date(criado_em) = ? ORDER BY criado_em DESC').all(data));
+});
+
+router.put('/gasto/:id/cancelar', exigirNivel('admin'), (req, res) => {
+  const gasto = db.prepare('SELECT * FROM pdv_gastos WHERE id = ?').get(req.params.id);
+  if (!gasto) return res.status(404).json({ erro: 'Gasto não encontrado' });
+  if (gasto.cancelado) return res.status(400).json({ erro: 'Gasto já cancelado' });
+  db.prepare('UPDATE pdv_gastos SET cancelado = 1 WHERE id = ?').run(req.params.id);
   res.json({ sucesso: true });
 });
 

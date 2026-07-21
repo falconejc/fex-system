@@ -178,6 +178,16 @@ db.exec(`
     usuario_id INTEGER,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS pdv_gastos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    descricao TEXT NOT NULL,
+    valor REAL NOT NULL,
+    operador TEXT NOT NULL,
+    usuario_id INTEGER,
+    cancelado INTEGER DEFAULT 0,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Migrations: adiciona colunas que podem não existir em bancos antigos

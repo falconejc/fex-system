@@ -27,6 +27,10 @@
   .btn:hover { background: #d97706; }
   .btn:disabled { background: #ccc; cursor: not-allowed; }
   .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .btn-gasto { background: #ef4444; }
+  .btn-gasto:hover { background: #dc2626; }
+  .valor-gasto { font-size: 17px; font-weight: bold; color: #ef4444; }
   .kpi { background: white; border-radius: 12px; padding: 14px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
   .kpi .num { font-size: 22px; font-weight: bold; color: #333; }
   .kpi .desc { font-size: 11px; color: #888; margin-top: 4px; }
@@ -52,6 +56,7 @@
   .btn-alterar-caixa { padding: 10px 16px; min-height: 44px; background: #f3f4f6; color: #333; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
   @media (max-width: 600px) {
     .formas-resumo { grid-template-columns: repeat(2, 1fr); }
+    .grid4 { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
 </head>
@@ -87,17 +92,31 @@
   </div>
 
   <div class="card">
+    <h2>💸 Gastos / Saídas</h2>
+    <label>Descrição</label>
+    <input type="text" id="gasto-descricao" placeholder="Ex: Compra de gelo, motoboy, troco...">
+    <label>Valor (R$)</label>
+    <input type="number" id="gasto-valor" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal">
+    <button class="btn btn-gasto" id="btn-registrar-gasto" onclick="registrarGasto()">Registrar Gasto</button>
+  </div>
+
+  <div class="card">
     <div class="card-header">
       <h2>Resumo do dia</h2>
       <button class="btn-imprimir-resumo" onclick="imprimirResumo()">🖨️ Imprimir Resumo</button>
     </div>
-    <div class="grid3" id="kpis-dia"></div>
+    <div class="grid4" id="kpis-dia"></div>
     <div class="formas-resumo" id="formas-dia"></div>
   </div>
 
   <div class="card">
     <h2>Vendas de hoje</h2>
     <div id="lista-vendas"><div class="vazio">Carregando...</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Gastos de hoje</h2>
+    <div id="lista-gastos"><div class="vazio">Carregando...</div></div>
   </div>
 </div>
 
@@ -125,7 +144,8 @@
     nomeUsuario = user.nome;
     await carregarResumo();
     await carregarVendas();
-    setInterval(() => { carregarResumo(); carregarVendas(); }, 30000);
+    await carregarGastos();
+    setInterval(() => { carregarResumo(); carregarVendas(); carregarGastos(); }, 30000);
   }
 
   function selecionarPagamento(forma, btn) {
@@ -163,6 +183,32 @@
     btn.disabled = false; btn.textContent = 'Registrar Venda';
   }
 
+  async function registrarGasto() {
+    const descricao = document.getElementById('gasto-descricao').value.trim();
+    const valor = document.getElementById('gasto-valor').value;
+    if (!descricao) { alert('Informe a descrição'); return; }
+    if (!valor || Number(valor) <= 0) { alert('Informe um valor válido'); return; }
+
+    const btn = document.getElementById('btn-registrar-gasto');
+    btn.disabled = true; btn.textContent = 'Registrando...';
+    try {
+      const res = await fetch('/api/pdv/gasto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ descricao, valor: Number(valor) })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro);
+
+      document.getElementById('gasto-descricao').value = '';
+      document.getElementById('gasto-valor').value = '';
+
+      carregarResumo();
+      carregarGastos();
+    } catch(e) { alert(e.message); }
+    btn.disabled = false; btn.textContent = 'Registrar Gasto';
+  }
+
   async function carregarResumo() {
     const res = await fetch('/api/pdv/relatorio/dia');
     const json = await res.json();
@@ -173,6 +219,7 @@
       <div class="kpi"><div class="num">${fmtMoeda(r.total_vendido)}</div><div class="desc">Total vendido</div></div>
       <div class="kpi"><div class="num">${r.quantidade_vendas}</div><div class="desc">Qtd. vendas</div></div>
       <div class="kpi"><div class="num">${fmtMoeda(r.ticket_medio)}</div><div class="desc">Ticket médio</div></div>
+      <div class="kpi"><div class="num" style="color:#ef4444">${fmtMoeda(r.total_gastos)}</div><div class="desc">Gastos</div></div>
     `;
     document.getElementById('formas-dia').innerHTML = Object.keys(LABELS_FORMA).map(f => `
       <div class="forma-card">
@@ -202,6 +249,35 @@
         </div>
       </div>
     `).join('');
+  }
+
+  async function carregarGastos() {
+    const res = await fetch('/api/pdv/gastos');
+    const lista = await res.json();
+    const el = document.getElementById('lista-gastos');
+    if (!lista.length) { el.innerHTML = '<div class="vazio">Nenhum gasto hoje</div>'; return; }
+    const isAdmin = nivelUsuario === 'admin';
+    el.innerHTML = lista.map(g => `
+      <div class="item ${g.cancelado ? 'cancelada' : ''}">
+        <div class="info">
+          <div class="hora">${fmtHora(g.criado_em)} ${g.cancelado ? '<span class="badge-cancelada">Cancelado</span>' : ''}</div>
+          <div class="desc-venda">${g.descricao}</div>
+          <div class="pag">${g.operador}</div>
+        </div>
+        <div class="lado-direito">
+          <div class="valor-gasto">- ${fmtMoeda(g.valor)}</div>
+          ${isAdmin && !g.cancelado ? `<button class="btn-cancelar-item" onclick="cancelarGasto(${g.id})">Cancelar</button>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function cancelarGasto(id) {
+    if (!confirm('Cancelar este gasto?')) return;
+    const res = await fetch(`/api/pdv/gasto/${id}/cancelar`, { method: 'PUT' });
+    const data = await res.json();
+    if (data.sucesso) { carregarResumo(); carregarGastos(); }
+    else alert(data.erro);
   }
 
   function renderCaixa() {
@@ -271,6 +347,20 @@
       return `<div class="linha-forma"><span>${LABELS_FORMA[f]}</span><span>${fp.quantidade}x — ${fmtMoeda(fp.total)}</span></div>`;
     }).join('');
 
+    const gastosValidos = (resumoAtual.gastos || []).filter(g => !g.cancelado);
+    const linhasGastos = gastosValidos.map(g => `
+      <div class="linha-forma"><span>${fmtHora(g.criado_em)} ${g.descricao}</span><span>- ${fmtMoeda(g.valor)}</span></div>
+    `).join('');
+
+    const blocoGastos = gastosValidos.length ? `
+      <div class="linha"></div>
+      <div class="info" style="font-weight:bold">Gastos / Saídas:</div>
+      ${linhasGastos}
+      <div class="totais">
+        <div class="linha-total destaque"><span>Total gastos (${gastosValidos.length}x):</span><span>- ${fmtMoeda(r.total_gastos)}</span></div>
+      </div>
+    ` : '';
+
     const blocoCaixa = r.abertura_caixa ? `
       <div class="linha"></div>
       <div class="totais">
@@ -321,6 +411,7 @@
       <div class="linha"></div>
       <div class="info" style="font-weight:bold">Por forma de pagamento:</div>
       ${linhasFormas}
+      ${blocoGastos}
       ${blocoCaixa}
       <div class="linha"></div>
       <div class="rodape">Impresso por ${nomeUsuario}<br>em ${dataFmt} às ${horaImpressao}</div>

@@ -130,6 +130,10 @@
       <div id="tabela-pdv"><div class="vazio">Carregando...</div></div>
     </div>
     <div class="card">
+      <h2>💸 Gastos / Saídas PDV</h2>
+      <div id="tabela-pdv-gastos"><div class="vazio">Carregando...</div></div>
+    </div>
+    <div class="card">
       <h2>📅 Resumo mensal</h2>
       <div class="filtro">
         <label>Mês:</label>
@@ -391,6 +395,7 @@
     const json = await res.json();
     renderPDVKPIs(json.resumo);
     renderPDVTabela(json.vendas);
+    renderPDVGastos(json.gastos);
   }
 
   function renderPDVKPIs(r) {
@@ -399,9 +404,13 @@
       caixaEl.innerHTML = `<div class="caixa-info">
         <span>Abertura de caixa: <strong>${fmtMoeda(r.abertura_caixa.valor_abertura)}</strong> (${fmtHora(r.abertura_caixa.criado_em)} por ${r.abertura_caixa.operador})</span>
         <span>Saldo esperado em dinheiro: <strong>${fmtMoeda(r.saldo_esperado_caixa)}</strong></span>
+        <span>Gastos/Saídas: <strong style="color:#dc2626">${fmtMoeda(r.total_gastos)}</strong></span>
       </div>`;
     } else {
-      caixaEl.innerHTML = `<div class="caixa-info">Caixa não foi aberto nesta data</div>`;
+      caixaEl.innerHTML = `<div class="caixa-info">
+        <span>Caixa não foi aberto nesta data</span>
+        <span>Gastos/Saídas: <strong style="color:#dc2626">${fmtMoeda(r.total_gastos)}</strong></span>
+      </div>`;
     }
     document.getElementById('pdv-kpis').innerHTML = `
       <div class="resumo-card"><div class="num">${fmtMoeda(r.total_vendido)}</div><div class="desc">Total vendido</div></div>
@@ -443,6 +452,30 @@
     else alert(data.erro);
   }
 
+  function renderPDVGastos(gastos) {
+    const el = document.getElementById('tabela-pdv-gastos');
+    if (!gastos.length) { el.innerHTML = '<div class="vazio">Nenhum gasto no período</div>'; return; }
+    const isAdmin = nivelUsuario === 'admin';
+    el.innerHTML = `<div style="overflow-x:auto"><table>
+      <thead><tr><th>Descrição</th><th>Valor</th><th>Operador</th><th>Status</th>${isAdmin ? '<th>Ações</th>' : ''}</tr></thead>
+      <tbody>${gastos.map(g => `<tr>
+        <td>${g.descricao}</td>
+        <td>${fmtMoeda(g.valor)}</td>
+        <td>${g.operador}</td>
+        <td><span class="badge ${g.cancelado ? 'badge-cancelado' : 'badge-entregue'}">${g.cancelado ? 'cancelado' : 'ok'}</span></td>
+        ${isAdmin ? `<td>${!g.cancelado ? `<button class="btn-cancelar-item" onclick="cancelarPDVGasto(${g.id})">Cancelar</button>` : ''}</td>` : ''}
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+
+  async function cancelarPDVGasto(id) {
+    if (!confirm('Cancelar este gasto?')) return;
+    const res = await fetch(`/api/pdv/gasto/${id}/cancelar`, { method: 'PUT' });
+    const data = await res.json();
+    if (data.sucesso) carregarPDV();
+    else alert(data.erro);
+  }
+
   async function carregarPDVMes() {
     const mes = document.getElementById('pdv-mes-filtro').value;
     const res = await fetch('/api/pdv/relatorio/mes?mes=' + mes);
@@ -457,6 +490,7 @@
     el.innerHTML = `
       <div style="margin-bottom:14px;font-size:14px;color:#555">
         Total do mês: <strong>${fmtMoeda(json.resumo.total_vendido)}</strong> em <strong>${json.resumo.quantidade_vendas}</strong> venda(s)
+        — Gastos/Saídas: <strong style="color:#dc2626">${fmtMoeda(json.resumo.total_gastos)}</strong>
       </div>
       <div style="overflow-x:auto"><table>
         <thead><tr><th>Data</th><th>Qtd.</th><th>Total</th><th></th></tr></thead>
