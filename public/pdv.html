@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDV - Frango Expresso</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f5f5f5; }
+  header { background: #f59e0b; color: white; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  header a { color: white; text-decoration: none; font-size: 20px; }
+  header h1 { font-size: 20px; }
+  .btn-logoff { padding: 10px 16px; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .container { max-width: 700px; margin: 24px auto; padding: 0 16px; }
+  .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .card h2 { font-size: 16px; color: #555; margin-bottom: 14px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+  .card-header h2 { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+  .btn-imprimir-resumo { padding: 10px 14px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; background: #eff6ff; color: #1e40af; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
+  label { display: block; font-size: 14px; color: #555; margin-bottom: 8px; margin-top: 16px; }
+  input, textarea { width: 100%; padding: 14px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; font-family: Arial; min-height: 48px; }
+  .pagamento-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 6px; }
+  .pagamento-btn { padding: 16px 10px; min-height: 56px; border: 2px solid #ddd; border-radius: 10px; background: white; cursor: pointer; font-size: 15px; font-weight: bold; text-align: center; transition: all 0.2s; }
+  .pagamento-btn.ativo { border-color: #f59e0b; background: #fef3c7; color: #92400e; }
+  .btn { width: 100%; padding: 16px; min-height: 52px; background: #f59e0b; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 18px; }
+  .btn:hover { background: #d97706; }
+  .btn:disabled { background: #ccc; cursor: not-allowed; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi { background: white; border-radius: 12px; padding: 14px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .kpi .num { font-size: 22px; font-weight: bold; color: #333; }
+  .kpi .desc { font-size: 11px; color: #888; margin-top: 4px; }
+  .formas-resumo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .forma-card { background: white; border-radius: 12px; padding: 12px 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center; }
+  .forma-card .valor { font-size: 15px; font-weight: bold; color: #333; }
+  .forma-card .qtd { font-size: 11px; color: #888; margin-top: 2px; }
+  .forma-card .label { font-size: 12px; color: #555; margin-top: 4px; font-weight: bold; }
+  .item { display: flex; justify-content: space-between; align-items: center; padding: 14px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 12px; }
+  .item.cancelada { opacity: 0.5; }
+  .item .info .hora { font-weight: bold; font-size: 15px; color: #333; }
+  .item .info .desc-venda { font-size: 13px; color: #555; margin-top: 2px; }
+  .item .info .pag { font-size: 12px; color: #888; margin-top: 2px; }
+  .item .lado-direito { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  .item .valor-venda { font-size: 17px; font-weight: bold; color: #10b981; }
+  .badge-cancelada { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: #fee2e2; color: #991b1b; }
+  .btn-cancelar-item { padding: 8px 12px; min-height: 40px; background: #fee2e2; color: #991b1b; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
+  .vazio { text-align: center; color: #aaa; padding: 20px; font-size: 14px; }
+  .caixa-status { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+  .caixa-status .valor-abertura { font-size: 28px; font-weight: bold; color: #10b981; }
+  .caixa-status .desc { font-size: 12px; color: #888; margin-top: 2px; }
+  .caixa-status .saldo-esperado { font-size: 15px; color: #333; margin-top: 6px; }
+  .btn-alterar-caixa { padding: 10px 16px; min-height: 44px; background: #f3f4f6; color: #333; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  @media (max-width: 600px) {
+    .formas-resumo { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-left">
+    <a href="/">&#8592;</a>
+    <h1>💰 PDV</h1>
+  </div>
+  <button class="btn-logoff" onclick="logoff()">Sair</button>
+</header>
+
+<div class="container">
+  <div class="card">
+    <h2>💵 Caixa</h2>
+    <div id="caixa-conteudo"><div class="vazio">Carregando...</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Nova Venda</h2>
+    <label>Descrição</label>
+    <input type="text" id="descricao" placeholder="Ex: Água mineral, refrigerante, troco...">
+    <label>Valor (R$)</label>
+    <input type="number" id="valor" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal">
+    <label>Forma de pagamento</label>
+    <div class="pagamento-grid" id="pagamento-grid">
+      <button class="pagamento-btn" onclick="selecionarPagamento('dinheiro', this)">💵 Dinheiro</button>
+      <button class="pagamento-btn" onclick="selecionarPagamento('pix', this)">📱 Pix</button>
+      <button class="pagamento-btn" onclick="selecionarPagamento('cartao_credito', this)">💳 Cartão Crédito</button>
+      <button class="pagamento-btn" onclick="selecionarPagamento('cartao_debito', this)">💳 Cartão Débito</button>
+    </div>
+    <button class="btn" id="btn-registrar" onclick="registrarVenda()">Registrar Venda</button>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Resumo do dia</h2>
+      <button class="btn-imprimir-resumo" onclick="imprimirResumo()">🖨️ Imprimir Resumo</button>
+    </div>
+    <div class="grid3" id="kpis-dia"></div>
+    <div class="formas-resumo" id="formas-dia"></div>
+  </div>
+
+  <div class="card">
+    <h2>Vendas de hoje</h2>
+    <div id="lista-vendas"><div class="vazio">Carregando...</div></div>
+  </div>
+</div>
+
+<script>
+  const LABELS_FORMA = { dinheiro: '💵 Dinheiro', pix: '📱 Pix', cartao_credito: '💳 Cartão Crédito', cartao_debito: '💳 Cartão Débito' };
+  let formaSelecionada = null;
+  let nivelUsuario = '';
+  let nomeUsuario = '';
+  let resumoAtual = null;
+
+  function fmtHora(str) {
+    if (!str) return '-';
+    const p = str.replace('T', ' ').split(/[- :]/);
+    return p[3].padStart(2,'0') + ':' + p[4].padStart(2,'0');
+  }
+
+  function fmtMoeda(v) {
+    return 'R$ ' + Number(v || 0).toFixed(2).replace('.', ',');
+  }
+
+  async function init() {
+    const res = await fetch('/api/auth/me');
+    const user = await res.json();
+    nivelUsuario = user.nivel;
+    nomeUsuario = user.nome;
+    await carregarResumo();
+    await carregarVendas();
+    setInterval(() => { carregarResumo(); carregarVendas(); }, 30000);
+  }
+
+  function selecionarPagamento(forma, btn) {
+    formaSelecionada = forma;
+    document.querySelectorAll('.pagamento-btn').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+  }
+
+  async function registrarVenda() {
+    const descricao = document.getElementById('descricao').value.trim();
+    const valor = document.getElementById('valor').value;
+    if (!descricao) { alert('Informe a descrição'); return; }
+    if (!valor || Number(valor) <= 0) { alert('Informe um valor válido'); return; }
+    if (!formaSelecionada) { alert('Selecione a forma de pagamento'); return; }
+
+    const btn = document.getElementById('btn-registrar');
+    btn.disabled = true; btn.textContent = 'Registrando...';
+    try {
+      const res = await fetch('/api/pdv/venda', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ descricao, valor: Number(valor), forma_pagamento: formaSelecionada })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro);
+
+      document.getElementById('descricao').value = '';
+      document.getElementById('valor').value = '';
+      document.querySelectorAll('.pagamento-btn').forEach(b => b.classList.remove('ativo'));
+      formaSelecionada = null;
+
+      carregarResumo();
+      carregarVendas();
+    } catch(e) { alert(e.message); }
+    btn.disabled = false; btn.textContent = 'Registrar Venda';
+  }
+
+  async function carregarResumo() {
+    const res = await fetch('/api/pdv/relatorio/dia');
+    const json = await res.json();
+    resumoAtual = json;
+    renderCaixa();
+    const r = json.resumo;
+    document.getElementById('kpis-dia').innerHTML = `
+      <div class="kpi"><div class="num">${fmtMoeda(r.total_vendido)}</div><div class="desc">Total vendido</div></div>
+      <div class="kpi"><div class="num">${r.quantidade_vendas}</div><div class="desc">Qtd. vendas</div></div>
+      <div class="kpi"><div class="num">${fmtMoeda(r.ticket_medio)}</div><div class="desc">Ticket médio</div></div>
+    `;
+    document.getElementById('formas-dia').innerHTML = Object.keys(LABELS_FORMA).map(f => `
+      <div class="forma-card">
+        <div class="valor">${fmtMoeda(r.por_forma_pagamento[f].total)}</div>
+        <div class="qtd">${r.por_forma_pagamento[f].quantidade} venda(s)</div>
+        <div class="label">${LABELS_FORMA[f]}</div>
+      </div>
+    `).join('');
+  }
+
+  async function carregarVendas() {
+    const res = await fetch('/api/pdv/vendas');
+    const lista = await res.json();
+    const el = document.getElementById('lista-vendas');
+    if (!lista.length) { el.innerHTML = '<div class="vazio">Nenhuma venda hoje</div>'; return; }
+    const isAdmin = nivelUsuario === 'admin';
+    el.innerHTML = lista.map(v => `
+      <div class="item ${v.cancelado ? 'cancelada' : ''}">
+        <div class="info">
+          <div class="hora">${fmtHora(v.criado_em)} ${v.cancelado ? '<span class="badge-cancelada">Cancelada</span>' : ''}</div>
+          <div class="desc-venda">${v.descricao}</div>
+          <div class="pag">${LABELS_FORMA[v.forma_pagamento] || v.forma_pagamento} • ${v.operador}</div>
+        </div>
+        <div class="lado-direito">
+          <div class="valor-venda">${fmtMoeda(v.valor)}</div>
+          ${isAdmin && !v.cancelado ? `<button class="btn-cancelar-item" onclick="cancelarVenda(${v.id})">Cancelar</button>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderCaixa() {
+    const el = document.getElementById('caixa-conteudo');
+    const caixa = resumoAtual && resumoAtual.resumo.abertura_caixa;
+    const isAdmin = nivelUsuario === 'admin';
+
+    if (!caixa) {
+      el.innerHTML = `
+        <label>Com quanto o caixa está começando hoje? (R$)</label>
+        <input type="number" id="valor-abertura" step="0.01" min="0" placeholder="0,00" inputmode="decimal">
+        <button class="btn" id="btn-abrir-caixa" onclick="salvarCaixa()">Abrir Caixa</button>
+      `;
+      return;
+    }
+
+    const saldo = resumoAtual.resumo.saldo_esperado_caixa;
+    el.innerHTML = `
+      <div class="caixa-status">
+        <div>
+          <div class="valor-abertura">${fmtMoeda(caixa.valor_abertura)}</div>
+          <div class="desc">Abertura às ${fmtHora(caixa.criado_em)} por ${caixa.operador}</div>
+          <div class="saldo-esperado">💰 Saldo esperado em dinheiro agora: <strong>${fmtMoeda(saldo)}</strong></div>
+        </div>
+        ${isAdmin ? `<button class="btn-alterar-caixa" onclick="alterarCaixa()">Alterar</button>` : ''}
+      </div>
+    `;
+  }
+
+  function alterarCaixa() {
+    const caixa = resumoAtual.resumo.abertura_caixa;
+    const el = document.getElementById('caixa-conteudo');
+    el.innerHTML = `
+      <label>Com quanto o caixa está começando hoje? (R$)</label>
+      <input type="number" id="valor-abertura" step="0.01" min="0" value="${caixa.valor_abertura}" inputmode="decimal">
+      <button class="btn" id="btn-abrir-caixa" onclick="salvarCaixa()">Salvar</button>
+    `;
+  }
+
+  async function salvarCaixa() {
+    const valor = document.getElementById('valor-abertura').value;
+    if (valor === '' || Number(valor) < 0) { alert('Informe um valor válido'); return; }
+
+    const btn = document.getElementById('btn-abrir-caixa');
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    try {
+      const res = await fetch('/api/pdv/caixa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ valor_abertura: Number(valor) })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro);
+      carregarResumo();
+    } catch(e) { alert(e.message); btn.disabled = false; btn.textContent = 'Salvar'; }
+  }
+
+  function imprimirResumo() {
+    if (!resumoAtual) return;
+    const r = resumoAtual.resumo;
+    const dataFmt = new Date(resumoAtual.data + 'T12:00:00').toLocaleDateString('pt-BR');
+    const agora = new Date();
+    const horaImpressao = agora.toLocaleTimeString('pt-BR');
+
+    const linhasFormas = Object.keys(LABELS_FORMA).map(f => {
+      const fp = r.por_forma_pagamento[f];
+      return `<div class="linha-forma"><span>${LABELS_FORMA[f]}</span><span>${fp.quantidade}x — ${fmtMoeda(fp.total)}</span></div>`;
+    }).join('');
+
+    const blocoCaixa = r.abertura_caixa ? `
+      <div class="linha"></div>
+      <div class="totais">
+        <div class="linha-total"><span>Abertura de caixa:</span><span>${fmtMoeda(r.abertura_caixa.valor_abertura)}</span></div>
+        <div class="linha-total destaque"><span>Saldo esperado (dinheiro):</span><span>${fmtMoeda(r.saldo_esperado_caixa)}</span></div>
+      </div>
+    ` : '';
+
+    const w = window.open('', '_blank', 'width=400,height=650');
+    w.document.write(`
+      <html><head><title>Resumo do dia</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: monospace; font-size: 12px; padding: 4px; width: 72mm; }
+        @media print {
+          @page { margin: 0; size: 72mm auto; }
+          body { width: 72mm; padding: 2mm; }
+        }
+        .cabecalho { text-align: center; margin-bottom: 4px; }
+        .cabecalho img { width: 24mm; }
+        .cabecalho h2 { font-size: 14px; margin: 2px 0; }
+        .cabecalho h3 { font-size: 10px; font-weight: normal; color: #333; margin: 1px 0; }
+        .linha { border-top: 1px dashed #000; margin: 5px 0; }
+        .titulo { text-align: center; font-size: 15px; font-weight: bold; margin: 4px 0; }
+        .info { margin: 2px 0; font-size: 11px; }
+        .totais .linha-total { display: flex; justify-content: space-between; font-size: 12px; margin: 3px 0; }
+        .totais .destaque { font-size: 15px; font-weight: bold; }
+        .linha-forma { display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0; }
+        .rodape { text-align: center; font-size: 10px; margin-top: 8px; }
+      </style>
+</head><body>
+      <div class="cabecalho">
+        <img src="/logo.jfif" onerror="this.style.display='none'">
+        <h2>FRANGO EXPRESSO</h2>
+        <h3>(38) 9912-2660</h3>
+        <h3>Av. das Americas, 15 - Dr. Joao Alves</h3>
+        <h3>Montes Claros - MG</h3>
+      </div>
+      <div class="linha"></div>
+      <div class="titulo">RESUMO DO DIA — PDV</div>
+      <div class="info">Data: ${dataFmt}</div>
+      <div class="linha"></div>
+      <div class="totais">
+        <div class="linha-total destaque"><span>Total vendido:</span><span>${fmtMoeda(r.total_vendido)}</span></div>
+        <div class="linha-total"><span>Qtd. de vendas:</span><span>${r.quantidade_vendas}</span></div>
+        <div class="linha-total"><span>Ticket médio:</span><span>${fmtMoeda(r.ticket_medio)}</span></div>
+      </div>
+      <div class="linha"></div>
+      <div class="info" style="font-weight:bold">Por forma de pagamento:</div>
+      ${linhasFormas}
+      ${blocoCaixa}
+      <div class="linha"></div>
+      <div class="rodape">Impresso por ${nomeUsuario}<br>em ${dataFmt} às ${horaImpressao}</div>
+
+      <script>window.onload=()=>{setTimeout(()=>{window.print();setTimeout(()=>{window.close();},3000);},300);}<\/script>
+      </body></html>
+    `);
+    w.document.close();
+  }
+
+  async function cancelarVenda(id) {
+    if (!confirm('Cancelar esta venda?')) return;
+    const res = await fetch(`/api/pdv/venda/${id}/cancelar`, { method: 'PUT' });
+    const data = await res.json();
+    if (data.sucesso) { carregarResumo(); carregarVendas(); }
+    else alert(data.erro);
+  }
+
+  async function logoff() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/login.html';
+  }
+
+  init();
+</script>
+</body>
+</html>

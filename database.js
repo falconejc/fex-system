@@ -149,6 +149,35 @@ db.exec(`
     ativo INTEGER DEFAULT 1,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS pdv_vendas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    codigo TEXT UNIQUE NOT NULL,
+    descricao TEXT NOT NULL,
+    valor REAL NOT NULL,
+    forma_pagamento TEXT NOT NULL,
+    operador TEXT NOT NULL,
+    usuario_id INTEGER,
+    cancelado INTEGER DEFAULT 0,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS pdv_clientes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    telefone TEXT,
+    saldo_fiado REAL DEFAULT 0,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS pdv_caixa (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    data TEXT UNIQUE NOT NULL,
+    valor_abertura REAL NOT NULL,
+    operador TEXT NOT NULL,
+    usuario_id INTEGER,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Migrations: adiciona colunas que podem não existir em bancos antigos

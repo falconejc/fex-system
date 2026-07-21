@@ -34,6 +34,24 @@
   .badge-entregue { background: #d1fae5; color: #065f46; }
   .badge-cancelado { background: #fee2e2; color: #991b1b; }
   .vazio { text-align: center; color: #aaa; padding: 20px; font-size: 14px; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: white; padding: 6px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+  .tab { flex-shrink: 0; padding: 10px 12px; border: none; background: transparent; cursor: pointer; border-radius: 8px; font-size: 14px; color: #666; font-family: Arial; transition: all 0.2s; white-space: nowrap; }
+  .tab.ativo { background: #10b981; color: white; font-weight: bold; }
+  .painel { display: none; }
+  .painel.ativo { display: block; }
+  .formas-resumo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+  .forma-card { background: white; border-radius: 12px; padding: 14px 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center; }
+  .forma-card .valor { font-size: 15px; font-weight: bold; color: #333; }
+  .forma-card .qtd { font-size: 11px; color: #888; margin-top: 2px; }
+  .forma-card .label { font-size: 12px; color: #555; margin-top: 4px; font-weight: bold; }
+  .bar-bg { background: #f3f4f6; border-radius: 99px; height: 8px; margin-top: 4px; }
+  .bar-fill { height: 8px; border-radius: 99px; background: #f59e0b; transition: width 0.3s; }
+  .caixa-info { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: #065f46; display: flex; gap: 20px; flex-wrap: wrap; }
+  .caixa-info strong { font-size: 15px; }
+  @media (max-width: 600px) {
+    .formas-resumo { grid-template-columns: repeat(2, 1fr); }
+    .tab { font-size: 13px; padding: 9px 10px; }
+  }
   .acoes { display: flex; gap: 6px; }
   .btn-editar { padding: 5px 10px; background: #eff6ff; color: #1e40af; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; }
   .btn-cancelar-item { padding: 5px 10px; background: #fee2e2; color: #991b1b; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; }
@@ -76,14 +94,50 @@
     <input type="date" id="data-filtro">
     <button onclick="carregar()">Buscar</button>
   </div>
-  <div class="resumo" id="resumo"></div>
-  <div class="card">
-    <h2>🍗 Vendas de Frango</h2>
-    <div id="tabela-frango"><div class="vazio">Carregando...</div></div>
+
+  <div class="tabs">
+    <button class="tab ativo" onclick="mudarTab('frango', this)">🍗 Frango</button>
+    <button class="tab" onclick="mudarTab('delivery', this)">🛵 Delivery</button>
+    <button class="tab" onclick="mudarTab('pdv', this)">💰 PDV</button>
   </div>
-  <div class="card">
-    <h2>🛵 Pedidos Delivery</h2>
-    <div id="tabela-delivery"><div class="vazio">Carregando...</div></div>
+
+  <div class="painel ativo" id="painel-frango">
+    <div class="resumo" id="resumo"></div>
+    <div class="card">
+      <h2>🍗 Vendas de Frango</h2>
+      <div id="tabela-frango"><div class="vazio">Carregando...</div></div>
+    </div>
+  </div>
+
+  <div class="painel" id="painel-delivery">
+    <div class="card">
+      <h2>🛵 Pedidos Delivery</h2>
+      <div id="tabela-delivery"><div class="vazio">Carregando...</div></div>
+    </div>
+  </div>
+
+  <div class="painel" id="painel-pdv">
+    <div class="filtro">
+      <label>Data:</label>
+      <input type="date" id="pdv-data-filtro">
+      <button onclick="carregarPDV()">Buscar</button>
+    </div>
+    <div id="pdv-caixa-info"></div>
+    <div class="resumo" id="pdv-kpis"></div>
+    <div class="formas-resumo" id="pdv-formas"></div>
+    <div class="card">
+      <h2>💰 Vendas PDV</h2>
+      <div id="tabela-pdv"><div class="vazio">Carregando...</div></div>
+    </div>
+    <div class="card">
+      <h2>📅 Resumo mensal</h2>
+      <div class="filtro">
+        <label>Mês:</label>
+        <input type="month" id="pdv-mes-filtro">
+        <button onclick="carregarPDVMes()">Buscar</button>
+      </div>
+      <div id="pdv-mensal"><div class="vazio">Carregando...</div></div>
+    </div>
   </div>
 </div>
 
@@ -164,15 +218,32 @@
     return p[3].padStart(2,'0') + ':' + p[4].padStart(2,'0');
   }
 
+  const LABELS_FORMA = { dinheiro: '💵 Dinheiro', pix: '📱 Pix', cartao_credito: '💳 Cartão Crédito', cartao_debito: '💳 Cartão Débito' };
+
+  function fmtMoeda(v) {
+    return 'R$ ' + Number(v || 0).toFixed(2).replace('.', ',');
+  }
+
   let nivelUsuario = '';
   const hoje = new Date().toISOString().split('T')[0];
   document.getElementById('data-filtro').value = hoje;
+  document.getElementById('pdv-data-filtro').value = hoje;
+  document.getElementById('pdv-mes-filtro').value = hoje.substring(0, 7);
+
+  function mudarTab(tab, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    document.querySelectorAll('.painel').forEach(p => p.classList.remove('ativo'));
+    document.getElementById('painel-' + tab).classList.add('ativo');
+  }
 
   async function init() {
     const res = await fetch('/api/auth/me');
     const user = await res.json();
     nivelUsuario = user.nivel;
     carregar();
+    carregarPDV();
+    carregarPDVMes();
   }
 
   async function carregar() {
@@ -312,6 +383,91 @@
     const data = await res.json();
     if (data.sucesso) carregar();
     else alert(data.erro);
+  }
+
+  async function carregarPDV() {
+    const data = document.getElementById('pdv-data-filtro').value;
+    const res = await fetch('/api/pdv/relatorio/dia?data=' + data);
+    const json = await res.json();
+    renderPDVKPIs(json.resumo);
+    renderPDVTabela(json.vendas);
+  }
+
+  function renderPDVKPIs(r) {
+    const caixaEl = document.getElementById('pdv-caixa-info');
+    if (r.abertura_caixa) {
+      caixaEl.innerHTML = `<div class="caixa-info">
+        <span>Abertura de caixa: <strong>${fmtMoeda(r.abertura_caixa.valor_abertura)}</strong> (${fmtHora(r.abertura_caixa.criado_em)} por ${r.abertura_caixa.operador})</span>
+        <span>Saldo esperado em dinheiro: <strong>${fmtMoeda(r.saldo_esperado_caixa)}</strong></span>
+      </div>`;
+    } else {
+      caixaEl.innerHTML = `<div class="caixa-info">Caixa não foi aberto nesta data</div>`;
+    }
+    document.getElementById('pdv-kpis').innerHTML = `
+      <div class="resumo-card"><div class="num">${fmtMoeda(r.total_vendido)}</div><div class="desc">Total vendido</div></div>
+      <div class="resumo-card"><div class="num">${r.quantidade_vendas}</div><div class="desc">Qtd. vendas</div></div>
+      <div class="resumo-card"><div class="num">${fmtMoeda(r.ticket_medio)}</div><div class="desc">Ticket médio</div></div>
+    `;
+    document.getElementById('pdv-formas').innerHTML = Object.keys(LABELS_FORMA).map(f => `
+      <div class="forma-card">
+        <div class="valor">${fmtMoeda(r.por_forma_pagamento[f].total)}</div>
+        <div class="qtd">${r.por_forma_pagamento[f].quantidade} venda(s)</div>
+        <div class="label">${LABELS_FORMA[f]}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderPDVTabela(vendas) {
+    const el = document.getElementById('tabela-pdv');
+    if (!vendas.length) { el.innerHTML = '<div class="vazio">Nenhuma venda no período</div>'; return; }
+    const isAdmin = nivelUsuario === 'admin';
+    el.innerHTML = `<div style="overflow-x:auto"><table>
+      <thead><tr><th>Código</th><th>Descrição</th><th>Valor</th><th>Pagamento</th><th>Operador</th><th>Status</th>${isAdmin ? '<th>Ações</th>' : ''}</tr></thead>
+      <tbody>${vendas.map(v => `<tr>
+        <td><strong>${v.codigo}</strong></td>
+        <td>${v.descricao}</td>
+        <td>${fmtMoeda(v.valor)}</td>
+        <td>${LABELS_FORMA[v.forma_pagamento] || v.forma_pagamento}</td>
+        <td>${v.operador}</td>
+        <td><span class="badge ${v.cancelado ? 'badge-cancelado' : 'badge-entregue'}">${v.cancelado ? 'cancelada' : 'ok'}</span></td>
+        ${isAdmin ? `<td>${!v.cancelado ? `<button class="btn-cancelar-item" onclick="cancelarPDV(${v.id})">Cancelar</button>` : ''}</td>` : ''}
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+
+  async function cancelarPDV(id) {
+    if (!confirm('Cancelar esta venda?')) return;
+    const res = await fetch(`/api/pdv/venda/${id}/cancelar`, { method: 'PUT' });
+    const data = await res.json();
+    if (data.sucesso) carregarPDV();
+    else alert(data.erro);
+  }
+
+  async function carregarPDVMes() {
+    const mes = document.getElementById('pdv-mes-filtro').value;
+    const res = await fetch('/api/pdv/relatorio/mes?mes=' + mes);
+    const json = await res.json();
+    renderPDVMensal(json);
+  }
+
+  function renderPDVMensal(json) {
+    const el = document.getElementById('pdv-mensal');
+    if (!json.por_dia.length) { el.innerHTML = '<div class="vazio">Nenhuma venda no mês</div>'; return; }
+    const maior = Math.max(...json.por_dia.map(d => d.total));
+    el.innerHTML = `
+      <div style="margin-bottom:14px;font-size:14px;color:#555">
+        Total do mês: <strong>${fmtMoeda(json.resumo.total_vendido)}</strong> em <strong>${json.resumo.quantidade_vendas}</strong> venda(s)
+      </div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Data</th><th>Qtd.</th><th>Total</th><th></th></tr></thead>
+        <tbody>${json.por_dia.map(d => `<tr>
+          <td>${new Date(d.data + 'T12:00:00').toLocaleDateString('pt-BR')}</td>
+          <td>${d.quantidade}</td>
+          <td>${fmtMoeda(d.total)}</td>
+          <td style="width:35%"><div class="bar-bg"><div class="bar-fill" style="width:${maior > 0 ? Math.round((d.total / maior) * 100) : 0}%"></div></div></td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    `;
   }
 
   async function logoff() {
