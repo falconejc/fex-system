@@ -121,6 +121,7 @@
       <label>Data:</label>
       <input type="date" id="pdv-data-filtro">
       <button onclick="carregarPDV()">Buscar</button>
+      <button id="btn-reimprimir-pdv" onclick="imprimirResumoPDV()">🖨️ Reimprimir Resumo</button>
     </div>
     <div id="pdv-caixa-info"></div>
     <div class="resumo" id="pdv-kpis"></div>
@@ -229,6 +230,8 @@
   }
 
   let nivelUsuario = '';
+  let nomeUsuario = '';
+  let resumoPDVAtual = null;
   const hoje = new Date().toISOString().split('T')[0];
   document.getElementById('data-filtro').value = hoje;
   document.getElementById('pdv-data-filtro').value = hoje;
@@ -250,11 +253,13 @@
     const res = await fetch('/api/auth/me');
     const user = await res.json();
     nivelUsuario = user.nivel;
+    nomeUsuario = user.nome;
     if (!podeVerResumoPDV()) {
       document.getElementById('pdv-caixa-info').style.display = 'none';
       document.getElementById('pdv-kpis').style.display = 'none';
       document.getElementById('pdv-formas').style.display = 'none';
       document.getElementById('card-pdv-mensal').style.display = 'none';
+      document.getElementById('btn-reimprimir-pdv').style.display = 'none';
     }
     carregar();
     carregarPDV();
@@ -404,9 +409,97 @@
     const data = document.getElementById('pdv-data-filtro').value;
     const res = await fetch('/api/pdv/relatorio/dia?data=' + data);
     const json = await res.json();
+    resumoPDVAtual = json;
     renderPDVKPIs(json.resumo);
     renderPDVTabela(json.vendas);
     renderPDVGastos(json.gastos);
+  }
+
+  function imprimirResumoPDV() {
+    if (!resumoPDVAtual) return;
+    const r = resumoPDVAtual.resumo;
+    const dataFmt = new Date(resumoPDVAtual.data + 'T12:00:00').toLocaleDateString('pt-BR');
+    const agora = new Date();
+    const horaImpressao = agora.toLocaleTimeString('pt-BR');
+
+    const linhasFormas = Object.keys(LABELS_FORMA).map(f => {
+      const fp = r.por_forma_pagamento[f];
+      return `<div class="linha-forma"><span>${LABELS_FORMA[f]}</span><span>${fp.quantidade}x — ${fmtMoeda(fp.total)}</span></div>`;
+    }).join('');
+
+    const gastosValidos = (resumoPDVAtual.gastos || []).filter(g => !g.cancelado);
+    const linhasGastos = gastosValidos.map(g => `
+      <div class="linha-forma"><span>${fmtHora(g.criado_em)} ${g.descricao}</span><span>- ${fmtMoeda(g.valor)}</span></div>
+    `).join('');
+
+    const blocoGastos = gastosValidos.length ? `
+      <div class="linha"></div>
+      <div class="info" style="font-weight:bold">Gastos / Saídas:</div>
+      ${linhasGastos}
+      <div class="totais">
+        <div class="linha-total destaque"><span>Total gastos (${gastosValidos.length}x):</span><span>- ${fmtMoeda(r.total_gastos)}</span></div>
+      </div>
+    ` : '';
+
+    const blocoCaixa = r.abertura_caixa ? `
+      <div class="linha"></div>
+      <div class="totais">
+        <div class="linha-total"><span>Abertura de caixa:</span><span>${fmtMoeda(r.abertura_caixa.valor_abertura)}</span></div>
+        <div class="linha-total destaque"><span>Saldo esperado (dinheiro):</span><span>${fmtMoeda(r.saldo_esperado_caixa)}</span></div>
+      </div>
+    ` : '';
+
+    const w = window.open('', '_blank', 'width=400,height=650');
+    w.document.write(`
+      <html><head><title>Resumo do dia</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: monospace; font-size: 12px; padding: 4px; width: 72mm; }
+        @media print {
+          @page { margin: 0; size: 72mm auto; }
+          body { width: 72mm; padding: 2mm; }
+        }
+        .cabecalho { text-align: center; margin-bottom: 4px; }
+        .cabecalho img { width: 24mm; }
+        .cabecalho h2 { font-size: 14px; margin: 2px 0; }
+        .cabecalho h3 { font-size: 10px; font-weight: normal; color: #333; margin: 1px 0; }
+        .linha { border-top: 1px dashed #000; margin: 5px 0; }
+        .titulo { text-align: center; font-size: 15px; font-weight: bold; margin: 4px 0; }
+        .info { margin: 2px 0; font-size: 11px; }
+        .totais .linha-total { display: flex; justify-content: space-between; font-size: 12px; margin: 3px 0; }
+        .totais .destaque { font-size: 15px; font-weight: bold; }
+        .linha-forma { display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0; }
+        .rodape { text-align: center; font-size: 10px; margin-top: 8px; }
+      </style>
+</head><body>
+      <div class="cabecalho">
+        <img src="/logo.jfif" onerror="this.style.display='none'">
+        <h2>FRANGO EXPRESSO</h2>
+        <h3>(38) 9912-2660</h3>
+        <h3>Av. das Americas, 15 - Dr. Joao Alves</h3>
+        <h3>Montes Claros - MG</h3>
+      </div>
+      <div class="linha"></div>
+      <div class="titulo">RESUMO DO DIA — PDV</div>
+      <div class="info">Data: ${dataFmt}</div>
+      <div class="linha"></div>
+      <div class="totais">
+        <div class="linha-total destaque"><span>Total vendido:</span><span>${fmtMoeda(r.total_vendido)}</span></div>
+        <div class="linha-total"><span>Qtd. de vendas:</span><span>${r.quantidade_vendas}</span></div>
+        <div class="linha-total"><span>Ticket médio:</span><span>${fmtMoeda(r.ticket_medio)}</span></div>
+      </div>
+      <div class="linha"></div>
+      <div class="info" style="font-weight:bold">Por forma de pagamento:</div>
+      ${linhasFormas}
+      ${blocoGastos}
+      ${blocoCaixa}
+      <div class="linha"></div>
+      <div class="rodape">Reimpresso por ${nomeUsuario}<br>em ${new Date().toLocaleDateString('pt-BR')} às ${horaImpressao}</div>
+
+      <script>window.onload=()=>{setTimeout(()=>{window.print();setTimeout(()=>{window.close();},3000);},300);}<\/script>
+      </body></html>
+    `);
+    w.document.close();
   }
 
   function renderPDVKPIs(r) {
