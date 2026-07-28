@@ -58,6 +58,12 @@
     .formas-resumo { grid-template-columns: repeat(2, 1fr); }
     .grid4 { grid-template-columns: repeat(2, 1fr); }
   }
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; background: white; padding: 6px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .tab { flex: 1; padding: 12px; min-height: 44px; border: none; background: transparent; cursor: pointer; border-radius: 8px; font-size: 15px; font-weight: bold; color: #666; font-family: Arial; transition: all 0.2s; }
+  .tab.ativo-venda { background: #10b981; color: white; }
+  .tab.ativo-gasto { background: #ef4444; color: white; }
+  .painel-aba { display: none; }
+  .painel-aba.ativo { display: block; }
 </style>
 </head>
 <body>
@@ -75,31 +81,6 @@
     <div id="caixa-conteudo"><div class="vazio">Carregando...</div></div>
   </div>
 
-  <div class="card">
-    <h2>Nova Venda</h2>
-    <label>Descrição</label>
-    <input type="text" id="descricao" placeholder="Ex: Água mineral, refrigerante, troco...">
-    <label>Valor (R$)</label>
-    <input type="number" id="valor" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal">
-    <label>Forma de pagamento</label>
-    <div class="pagamento-grid" id="pagamento-grid">
-      <button class="pagamento-btn" onclick="selecionarPagamento('dinheiro', this)">💵 Dinheiro</button>
-      <button class="pagamento-btn" onclick="selecionarPagamento('pix', this)">📱 Pix</button>
-      <button class="pagamento-btn" onclick="selecionarPagamento('cartao_credito', this)">💳 Cartão Crédito</button>
-      <button class="pagamento-btn" onclick="selecionarPagamento('cartao_debito', this)">💳 Cartão Débito</button>
-    </div>
-    <button class="btn" id="btn-registrar" onclick="registrarVenda()">Registrar Venda</button>
-  </div>
-
-  <div class="card">
-    <h2>💸 Gastos / Saídas</h2>
-    <label>Descrição</label>
-    <input type="text" id="gasto-descricao" placeholder="Ex: Compra de gelo, motoboy, troco...">
-    <label>Valor (R$)</label>
-    <input type="number" id="gasto-valor" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal">
-    <button class="btn btn-gasto" id="btn-registrar-gasto" onclick="registrarGasto()">Registrar Gasto</button>
-  </div>
-
   <div class="card" id="card-resumo-dia">
     <div class="card-header">
       <h2>Resumo do dia</h2>
@@ -109,14 +90,48 @@
     <div class="formas-resumo" id="formas-dia"></div>
   </div>
 
-  <div class="card">
-    <h2>Vendas de hoje</h2>
-    <div id="lista-vendas"><div class="vazio">Carregando...</div></div>
+  <div class="tabs">
+    <button class="tab ativo-venda" id="tab-venda" onclick="mudarAba('venda', this)">🛒 Vendas</button>
+    <button class="tab" id="tab-gasto" onclick="mudarAba('gasto', this)">💸 Gastos</button>
   </div>
 
-  <div class="card">
-    <h2>Gastos de hoje</h2>
-    <div id="lista-gastos"><div class="vazio">Carregando...</div></div>
+  <div class="painel-aba ativo" id="painel-venda">
+    <div class="card">
+      <h2>Nova Venda</h2>
+      <label>Descrição</label>
+      <input type="text" id="descricao" placeholder="Ex: Água mineral, refrigerante, troco...">
+      <label>Valor (R$)</label>
+      <input type="number" id="valor" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal">
+      <label>Forma de pagamento</label>
+      <div class="pagamento-grid" id="pagamento-grid">
+        <button class="pagamento-btn" onclick="selecionarPagamento('dinheiro', this)">💵 Dinheiro</button>
+        <button class="pagamento-btn" onclick="selecionarPagamento('pix', this)">📱 Pix</button>
+        <button class="pagamento-btn" onclick="selecionarPagamento('cartao_credito', this)">💳 Cartão Crédito</button>
+        <button class="pagamento-btn" onclick="selecionarPagamento('cartao_debito', this)">💳 Cartão Débito</button>
+      </div>
+      <button class="btn" id="btn-registrar" onclick="registrarVenda()">Registrar Venda</button>
+    </div>
+
+    <div class="card">
+      <h2>Vendas de hoje</h2>
+      <div id="lista-vendas"><div class="vazio">Carregando...</div></div>
+    </div>
+  </div>
+
+  <div class="painel-aba" id="painel-gasto">
+    <div class="card">
+      <h2>💸 Gastos / Saídas</h2>
+      <label>Descrição</label>
+      <input type="text" id="gasto-descricao" placeholder="Ex: Compra de gelo, motoboy, troco...">
+      <label>Valor (R$)</label>
+      <input type="number" id="gasto-valor" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal">
+      <button class="btn btn-gasto" id="btn-registrar-gasto" onclick="registrarGasto()">Registrar Gasto</button>
+    </div>
+
+    <div class="card">
+      <h2>Gastos de hoje</h2>
+      <div id="lista-gastos"><div class="vazio">Carregando...</div></div>
+    </div>
   </div>
 </div>
 
@@ -151,6 +166,13 @@
 
   function podeGerenciar() {
     return nivelUsuario === 'admin' || nivelUsuario === 'dono';
+  }
+
+  function mudarAba(aba, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativo-venda', 'ativo-gasto'));
+    btn.classList.add(aba === 'venda' ? 'ativo-venda' : 'ativo-gasto');
+    document.querySelectorAll('.painel-aba').forEach(p => p.classList.remove('ativo'));
+    document.getElementById('painel-' + aba).classList.add('ativo');
   }
 
   function selecionarPagamento(forma, btn) {
