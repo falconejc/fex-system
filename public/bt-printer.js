@@ -188,6 +188,124 @@ const BTPrinter = (() => {
     return new Uint8Array(bytes);
   }
 
+  function buildNotinha(venda, via) {
+    const LABELS_FORMA = { dinheiro: 'Dinheiro', pix: 'Pix', cartao_credito: 'Cartao Credito', cartao_debito: 'Cartao Debito', fiado: 'A Prazo' };
+    const fmtMoeda = v => 'R$ ' + Number(v || 0).toFixed(2).replace('.', ',');
+    const dt = new Date(venda.criado_em.replace(' ', 'T'));
+
+    const bytes = [];
+    const p = arr => arr.forEach(b => bytes.push(b));
+
+    p(CMD.INIT);
+    p(CMD.CENTER);
+    logoBytes().forEach(b => bytes.push(b));
+    p(ln(''));
+    p(ln('(38) 9912-2660'));
+    p(ln('Av. das Americas, 15 - Dr. Joao Alves'));
+    p(ln('Montes Claros - MG'));
+    p(div());
+    p(CMD.BOLD_ON); p(CMD.FONT_LARGE); p(ln('ATACADO')); p(CMD.FONT_NORMAL); p(CMD.BOLD_OFF);
+    p(CMD.BOLD_ON); p(ln(via === 'loja' ? '*** VIA LOJA ***' : '*** VIA CLIENTE ***')); p(CMD.BOLD_OFF);
+    p(div());
+
+    p(CMD.LEFT);
+    p(ln('Codigo: ' + venda.codigo));
+    p(ln('Data: ' + dt.toLocaleDateString('pt-BR') + '  Hora: ' + dt.toLocaleTimeString('pt-BR')));
+    p(ln('Cliente: ' + (venda.nome_cliente || '')));
+    p(ln('Entregador: ' + (venda.entregador || '')));
+    p(div());
+
+    p(CMD.BOLD_ON); p(ln('Descricao:')); p(CMD.BOLD_OFF);
+    p(ln(venda.descricao || ''));
+    p(CMD.BOLD_ON); p(ln('Peso: ' + (venda.peso != null ? venda.peso : '-') + ' kg')); p(CMD.BOLD_OFF);
+    if (venda.preco_kg != null) p(ln('Preco/kg: ' + fmtMoeda(venda.preco_kg)));
+    p(div());
+
+    p(CMD.BOLD_ON); p(CMD.FONT_MEDIUM);
+    p(ln('Valor: ' + fmtMoeda(venda.valor)));
+    p(CMD.FONT_NORMAL);
+    if (venda.forma_pagamento === 'fiado') {
+      p(ln('*** A PRAZO ***'));
+    } else {
+      p(ln('PAGO - ' + LABELS_FORMA[venda.forma_pagamento]));
+    }
+    p(CMD.BOLD_OFF);
+    p(div());
+
+    if (venda.forma_pagamento === 'fiado' && via === 'loja') {
+      p(CMD.LEFT);
+      p(ln('Assinatura do cliente:'));
+      p(ln(''));
+      p(ln('_______________________________'));
+      p(div());
+    }
+
+    p(CMD.CENTER);
+    p(ln('Sistema de Vendas'));
+    p(CMD.FEED); p(CMD.CUT);
+
+    return new Uint8Array(bytes);
+  }
+
+  function buildResumoPDV(resumoPDVAtual, nomeUsuario) {
+    const LABELS_FORMA = { dinheiro: 'Dinheiro', pix: 'Pix', cartao_credito: 'Cartao Credito', cartao_debito: 'Cartao Debito' };
+    const r = resumoPDVAtual.resumo;
+    const dataFmt = new Date(resumoPDVAtual.data + 'T12:00:00').toLocaleDateString('pt-BR');
+    const agoraDt = new Date();
+    const fmtMoeda = v => 'R$ ' + Number(v || 0).toFixed(2).replace('.', ',');
+    const linha2 = (a, b) => a + ' '.repeat(Math.max(1, 32 - a.length - b.length)) + b;
+
+    const bytes = [];
+    const p = arr => arr.forEach(b => bytes.push(b));
+
+    p(CMD.INIT);
+    p(CMD.CENTER);
+    logoBytes().forEach(b => bytes.push(b));
+    p(ln(''));
+    p(ln('(38) 9912-2660'));
+    p(ln('Av. das Americas, 15 - Dr. Joao Alves'));
+    p(ln('Montes Claros - MG'));
+    p(div());
+
+    p(CMD.BOLD_ON); p(ln('RESUMO DO DIA - PDV')); p(CMD.BOLD_OFF);
+    p(CMD.LEFT);
+    p(ln('Data: ' + dataFmt));
+    p(div());
+
+    p(CMD.BOLD_ON); p(ln(linha2('Total vendido:', fmtMoeda(r.total_vendido)))); p(CMD.BOLD_OFF);
+    p(ln(linha2('Qtd. de vendas:', String(r.quantidade_vendas))));
+    p(ln(linha2('Ticket medio:', fmtMoeda(r.ticket_medio))));
+    p(div());
+
+    p(ln('Por forma de pagamento:'));
+    Object.keys(LABELS_FORMA).forEach(f => {
+      const fp = r.por_forma_pagamento[f];
+      p(ln(linha2(LABELS_FORMA[f] + ':', fp.quantidade + 'x ' + fmtMoeda(fp.total))));
+    });
+
+    const gastosValidos = (resumoPDVAtual.gastos || []).filter(g => !g.cancelado);
+    if (gastosValidos.length) {
+      p(div());
+      p(ln('Gastos / Saidas:'));
+      gastosValidos.forEach(g => p(ln(linha2(norm(g.descricao), '-' + fmtMoeda(g.valor)))));
+      p(ln(linha2('Total gastos (' + gastosValidos.length + 'x):', '-' + fmtMoeda(r.total_gastos))));
+    }
+
+    if (r.abertura_caixa) {
+      p(div());
+      p(ln(linha2('Abertura de caixa:', fmtMoeda(r.abertura_caixa.valor_abertura))));
+      p(CMD.BOLD_ON); p(ln(linha2('Saldo esp. (dinheiro):', fmtMoeda(r.saldo_esperado_caixa)))); p(CMD.BOLD_OFF);
+    }
+
+    p(div());
+    p(CMD.CENTER);
+    p(ln('Reimpresso por ' + (nomeUsuario || '')));
+    p(ln(agoraDt.toLocaleDateString('pt-BR') + ' as ' + agoraDt.toLocaleTimeString('pt-BR')));
+    p(CMD.FEED); p(CMD.CUT);
+
+    return new Uint8Array(bytes);
+  }
+
   async function sendBytes(data) {
     const CHUNK = 100;
     for (let i = 0; i < data.length; i += CHUNK) {
@@ -239,6 +357,23 @@ const BTPrinter = (() => {
     catch(e) { alert('Erro ao imprimir: '+e.message); return false; }
   }
 
+  async function printResumoPDV(resumoPDVAtual, nomeUsuario) {
+    if (!characteristic) { alert('Impressora BT nao conectada.\nClique em "Conectar Impressora BT" primeiro.'); return false; }
+    try { await sendBytes(buildResumoPDV(resumoPDVAtual, nomeUsuario)); return true; }
+    catch(e) { alert('Erro ao imprimir: '+e.message); return false; }
+  }
+
+  async function printNotinha(venda) {
+    if (!characteristic) { alert('Impressora BT nao conectada.\nClique em "Conectar Impressora BT" primeiro.'); return false; }
+    try {
+      await sendBytes(buildNotinha(venda, 'loja'));
+      await new Promise(r => setTimeout(r, 1200));
+      await sendBytes(buildNotinha(venda, 'cliente'));
+      return true;
+    }
+    catch(e) { alert('Erro ao imprimir: '+e.message); return false; }
+  }
+
   function isConnected() { return !!(device && device.gatt.connected && characteristic); }
-  return { connect, disconnect, printComprovante, printComanda, isConnected, updateUI };
+  return { connect, disconnect, printComprovante, printComanda, printResumoPDV, printNotinha, isConnected, updateUI };
 })();

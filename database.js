@@ -188,6 +188,40 @@ db.exec(`
     cancelado INTEGER DEFAULT 0,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS atacado_clientes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    telefone TEXT,
+    saldo_fiado REAL DEFAULT 0,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS atacado_vendas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    codigo TEXT UNIQUE NOT NULL,
+    cliente_id INTEGER,
+    nome_cliente TEXT NOT NULL,
+    descricao TEXT NOT NULL,
+    peso REAL,
+    valor REAL NOT NULL,
+    forma_pagamento TEXT NOT NULL,
+    entregador TEXT NOT NULL,
+    operador TEXT NOT NULL,
+    usuario_id INTEGER,
+    cancelado INTEGER DEFAULT 0,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS atacado_pagamentos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cliente_id INTEGER NOT NULL,
+    valor REAL NOT NULL,
+    forma_pagamento TEXT NOT NULL,
+    operador TEXT NOT NULL,
+    usuario_id INTEGER,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Migrations: adiciona colunas que podem não existir em bancos antigos
@@ -195,6 +229,7 @@ const migrations = [
   "ALTER TABLE vendas ADD COLUMN telefone TEXT",
   "ALTER TABLE vendas ADD COLUMN ordem_tipo INTEGER DEFAULT 0",
   "ALTER TABLE tipos_frango ADD COLUMN icone TEXT DEFAULT '🍗'",
+  "ALTER TABLE atacado_vendas ADD COLUMN preco_kg REAL",
 ];
 migrations.forEach(sql => { try { db.exec(sql); } catch(e) {} });
 

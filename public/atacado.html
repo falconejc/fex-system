@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atacado - Frango Expresso</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f5f5f5; }
+  header { background: #ef4444; color: white; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  header a { color: white; text-decoration: none; font-size: 20px; }
+  header h1 { font-size: 20px; }
+  .btn-logoff { padding: 10px 16px; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .container { max-width: 700px; margin: 24px auto; padding: 0 16px; }
+  .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .card h2 { font-size: 16px; color: #555; margin-bottom: 14px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+  label { display: block; font-size: 14px; color: #555; margin-bottom: 8px; margin-top: 16px; }
+  input, select, textarea { width: 100%; padding: 14px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; font-family: Arial; min-height: 48px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .linha-cliente { display: flex; gap: 8px; align-items: flex-end; }
+  .linha-cliente select { flex: 1; }
+  .btn-novo-cliente { padding: 12px 14px; min-height: 48px; background: #f3f4f6; color: #333; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; white-space: nowrap; }
+  .box-novo-cliente { display: none; background: #f9fafb; border: 1px solid #eee; border-radius: 8px; padding: 12px; margin-top: 10px; }
+  .box-novo-cliente.aberto { display: block; }
+  .pagamento-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 6px; }
+  .pagamento-btn { padding: 16px 10px; min-height: 56px; border: 2px solid #ddd; border-radius: 10px; background: white; cursor: pointer; font-size: 15px; font-weight: bold; text-align: center; transition: all 0.2s; }
+  .pagamento-btn.ativo { border-color: #ef4444; background: #fee2e2; color: #991b1b; }
+  .pagamento-btn.fiado { grid-column: span 2; }
+  .btn { width: 100%; padding: 16px; min-height: 52px; background: #ef4444; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 18px; }
+  .btn:hover { background: #dc2626; }
+  .btn:disabled { background: #ccc; cursor: not-allowed; }
+  .btn-secundario { width: 100%; padding: 12px; min-height: 46px; background: #6b7280; color: white; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; margin-top: 10px; }
+  .btn-secundario.conectado { background: #1d4ed8; }
+  .item { display: flex; justify-content: space-between; align-items: center; padding: 14px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 12px; }
+  .item.cancelada { opacity: 0.5; }
+  .item .info .hora { font-weight: bold; font-size: 15px; color: #333; }
+  .item .info .desc-venda { font-size: 13px; color: #555; margin-top: 2px; }
+  .item .info .meta { font-size: 12px; color: #888; margin-top: 2px; }
+  .item .lado-direito { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .item .valor-venda { font-size: 17px; font-weight: bold; color: #10b981; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+  .badge-pago { background: #d1fae5; color: #065f46; }
+  .badge-fiado { background: #fef3c7; color: #92400e; }
+  .badge-cancelada { background: #fee2e2; color: #991b1b; }
+  .acoes-item { display: flex; gap: 6px; }
+  .btn-mini { padding: 8px 12px; min-height: 40px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
+  .btn-reimprimir-item { background: #eff6ff; color: #1e40af; }
+  .btn-cancelar-item { background: #fee2e2; color: #991b1b; }
+  .btn-pagamento-item { background: #d1fae5; color: #065f46; }
+  .vazio { text-align: center; color: #aaa; padding: 20px; font-size: 14px; }
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
+  .modal.aberto { display: flex; }
+  .modal-box { background: white; border-radius: 16px; padding: 24px; max-width: 380px; width: 90%; }
+  .modal-acoes { display: flex; gap: 12px; margin-top: 18px; }
+  .btn-salvar { flex: 1; padding: 14px; min-height: 48px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
+  .btn-fechar { flex: 1; padding: 14px; min-height: 48px; background: #f3f4f6; color: #333; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  @media (max-width: 600px) {
+    .grid2 { grid-template-columns: 1fr; }
+    .grid3 { grid-template-columns: 1fr; }
+  }
+</style>
+<script src="/bt-printer.js"></script>
+</head>
+<body>
+<header>
+  <div class="header-left">
+    <a href="/">&#8592;</a>
+    <h1>🚚 Atacado</h1>
+  </div>
+  <button class="btn-logoff" onclick="logoff()">Sair</button>
+</header>
+
+<div class="container">
+  <div class="card">
+    <h2>Nova venda</h2>
+
+    <label>Cliente cadastrado <span style="color:#aaa;font-weight:normal">(obrigatório se for a prazo)</span></label>
+    <div class="linha-cliente">
+      <select id="cliente-select" onchange="selecionarCliente()">
+        <option value="">Sem cadastro (venda avulsa)</option>
+      </select>
+      <button class="btn-novo-cliente" onclick="toggleNovoCliente()">+ Novo cliente</button>
+    </div>
+    <div class="box-novo-cliente" id="box-novo-cliente">
+      <label>Nome</label>
+      <input type="text" id="novo-cliente-nome">
+      <label>Telefone <span style="color:#aaa;font-weight:normal">(opcional)</span></label>
+      <input type="tel" id="novo-cliente-telefone">
+      <button class="btn-secundario" style="background:#10b981" onclick="cadastrarCliente()">Cadastrar cliente</button>
+    </div>
+
+    <label>Nome do cliente</label>
+    <input type="text" id="nome-cliente" placeholder="Nome de quem está comprando">
+
+    <label>Descrição</label>
+    <input type="text" id="descricao" placeholder="Ex: 20 frangos crus, 1 frango inteiro...">
+    <div class="grid3">
+      <div>
+        <label>Peso (kg)</label>
+        <input type="number" id="peso" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal" oninput="calcularValor()">
+      </div>
+      <div>
+        <label>Preço/kg (R$)</label>
+        <input type="number" id="preco-kg" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal" oninput="calcularValor()">
+      </div>
+      <div>
+        <label>Valor total (R$)</label>
+        <input type="number" id="valor" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal">
+      </div>
+    </div>
+
+    <label>Forma de pagamento</label>
+    <div class="pagamento-grid" id="pagamento-grid">
+      <button class="pagamento-btn" onclick="selecionarPagamento('dinheiro', this)">💵 Dinheiro</button>
+      <button class="pagamento-btn" onclick="selecionarPagamento('pix', this)">📱 Pix</button>
+      <button class="pagamento-btn" onclick="selecionarPagamento('cartao_credito', this)">💳 Cartão Crédito</button>
+      <button class="pagamento-btn" onclick="selecionarPagamento('cartao_debito', this)">💳 Cartão Débito</button>
+      <button class="pagamento-btn fiado" onclick="selecionarPagamento('fiado', this)">📝 A Prazo (assina e paga depois)</button>
+    </div>
+
+    <label>Entregador</label>
+    <input type="text" id="entregador" placeholder="Nome de quem vai entregar">
+
+    <button class="btn" id="btn-registrar" onclick="registrarVenda()">Registrar e Imprimir Notinha</button>
+    <button class="btn-secundario" id="btn-bt-connect" onclick="conectarBT()">🔌 Conectar Impressora BT</button>
+  </div>
+
+  <div class="card">
+    <h2>Vendas de hoje</h2>
+    <div id="lista-vendas"><div class="vazio">Carregando...</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Clientes / A Prazo</h2>
+    <div id="lista-clientes"><div class="vazio">Carregando...</div></div>
+  </div>
+</div>
+
+<div class="modal" id="modal-pagamento">
+  <div class="modal-box">
+    <h3 style="margin-bottom:6px">Registrar pagamento</h3>
+    <p id="pg-cliente-nome" style="font-size:13px;color:#888;margin-bottom:10px"></p>
+    <input type="hidden" id="pg-cliente-id">
+    <label>Valor recebido (R$)</label>
+    <input type="number" id="pg-valor" step="0.01" min="0.01" inputmode="decimal">
+    <label>Forma de pagamento</label>
+    <select id="pg-forma">
+      <option value="dinheiro">Dinheiro</option>
+      <option value="pix">Pix</option>
+      <option value="cartao_credito">Cartão Crédito</option>
+      <option value="cartao_debito">Cartão Débito</option>
+    </select>
+    <div class="modal-acoes">
+      <button class="btn-fechar" onclick="fecharModal('modal-pagamento')">Cancelar</button>
+      <button class="btn-salvar" onclick="salvarPagamento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const LABELS_FORMA = { dinheiro: '💵 Dinheiro', pix: '📱 Pix', cartao_credito: '💳 Cartão Crédito', cartao_debito: '💳 Cartão Débito', fiado: '📝 A Prazo' };
+  let formaSelecionada = null;
+  let nivelUsuario = '';
+  let clientesCache = [];
+
+  function fmtHora(str) {
+    if (!str) return '-';
+    const p = str.replace('T', ' ').split(/[- :]/);
+    return p[3].padStart(2,'0') + ':' + p[4].padStart(2,'0');
+  }
+
+  function fmtMoeda(v) {
+    return 'R$ ' + Number(v || 0).toFixed(2).replace('.', ',');
+  }
+
+  function podeGerenciar() {
+    return nivelUsuario === 'admin' || nivelUsuario === 'dono';
+  }
+
+  async function init() {
+    const res = await fetch('/api/auth/me');
+    const user = await res.json();
+    nivelUsuario = user.nivel;
+    await carregarClientes();
+    await carregarVendas();
+    setInterval(() => { carregarVendas(); carregarClientes(); }, 30000);
+  }
+
+  async function conectarBT() {
+    await BTPrinter.connect();
+  }
+
+  function selecionarPagamento(forma, btn) {
+    formaSelecionada = forma;
+    document.querySelectorAll('.pagamento-btn').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+  }
+
+  function calcularValor() {
+    const peso = Number(document.getElementById('peso').value);
+    const precoKg = Number(document.getElementById('preco-kg').value);
+    if (peso > 0 && precoKg > 0) {
+      document.getElementById('valor').value = (peso * precoKg).toFixed(2);
+    }
+  }
+
+  function toggleNovoCliente() {
+    document.getElementById('box-novo-cliente').classList.toggle('aberto');
+  }
+
+  async function cadastrarCliente() {
+    const nome = document.getElementById('novo-cliente-nome').value.trim();
+    if (!nome) { alert('Informe o nome do cliente'); return; }
+    const telefone = document.getElementById('novo-cliente-telefone').value.trim();
+    const res = await fetch('/api/atacado/clientes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, telefone })
+    });
+    const cliente = await res.json();
+    if (!res.ok) { alert(cliente.erro); return; }
+    document.getElementById('novo-cliente-nome').value = '';
+    document.getElementById('novo-cliente-telefone').value = '';
+    document.getElementById('box-novo-cliente').classList.remove('aberto');
+    await carregarClientes();
+    document.getElementById('cliente-select').value = cliente.id;
+    selecionarCliente();
+  }
+
+  function selecionarCliente() {
+    const id = document.getElementById('cliente-select').value;
+    const cliente = clientesCache.find(c => String(c.id) === id);
+    document.getElementById('nome-cliente').value = cliente ? cliente.nome : '';
+  }
+
+  async function carregarClientes() {
+    const res = await fetch('/api/atacado/clientes');
+    clientesCache = await res.json();
+
+    const select = document.getElementById('cliente-select');
+    const atual = select.value;
+    select.innerHTML = '<option value="">Sem cadastro (venda avulsa)</option>' +
+      clientesCache.map(c => `<option value="${c.id}">${c.nome}${c.saldo_fiado > 0 ? ' — deve ' + fmtMoeda(c.saldo_fiado) : ''}</option>`).join('');
+    select.value = atual;
+
+    const el = document.getElementById('lista-clientes');
+    if (!clientesCache.length) { el.innerHTML = '<div class="vazio">Nenhum cliente cadastrado</div>'; return; }
+    el.innerHTML = clientesCache.map(c => `
+      <div class="item">
+        <div class="info">
+          <div class="hora">${c.nome}</div>
+          <div class="meta">${c.telefone || 'sem telefone'}</div>
+        </div>
+        <div class="lado-direito">
+          <div class="valor-venda" style="color:${c.saldo_fiado > 0 ? '#dc2626' : '#10b981'}">${c.saldo_fiado > 0 ? 'Deve ' + fmtMoeda(c.saldo_fiado) : 'Sem débito'}</div>
+          ${c.saldo_fiado > 0 ? `<button class="btn-mini btn-pagamento-item" onclick='abrirPagamento(${JSON.stringify(c)})'>Registrar pagamento</button>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function abrirPagamento(cliente) {
+    document.getElementById('pg-cliente-id').value = cliente.id;
+    document.getElementById('pg-cliente-nome').textContent = cliente.nome + ' — deve ' + fmtMoeda(cliente.saldo_fiado);
+    document.getElementById('pg-valor').value = cliente.saldo_fiado;
+    document.getElementById('modal-pagamento').classList.add('aberto');
+  }
+
+  function fecharModal(id) { document.getElementById(id).classList.remove('aberto'); }
+
+  async function salvarPagamento() {
+    const id = document.getElementById('pg-cliente-id').value;
+    const valor = document.getElementById('pg-valor').value;
+    const forma_pagamento = document.getElementById('pg-forma').value;
+    if (!valor || Number(valor) <= 0) { alert('Informe um valor válido'); return; }
+    const res = await fetch(`/api/atacado/clientes/${id}/pagamento`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ valor: Number(valor), forma_pagamento })
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.erro); return; }
+    fecharModal('modal-pagamento');
+    carregarClientes();
+  }
+
+  async function registrarVenda() {
+    const cliente_id = document.getElementById('cliente-select').value || null;
+    const nome_cliente = document.getElementById('nome-cliente').value.trim();
+    const descricao = document.getElementById('descricao').value.trim();
+    const peso = document.getElementById('peso').value;
+    const precoKg = document.getElementById('preco-kg').value;
+    const valor = document.getElementById('valor').value;
+    const entregador = document.getElementById('entregador').value.trim();
+
+    if (!nome_cliente) { alert('Informe o nome do cliente'); return; }
+    if (!descricao) { alert('Informe a descrição'); return; }
+    if (!peso || Number(peso) <= 0) { alert('Informe o peso'); return; }
+    if (!precoKg || Number(precoKg) <= 0) { alert('Informe o preço por kg'); return; }
+    if (!valor || Number(valor) <= 0) { alert('Informe um valor válido'); return; }
+    if (!formaSelecionada) { alert('Selecione a forma de pagamento'); return; }
+    if (formaSelecionada === 'fiado' && !cliente_id) { alert('Venda a prazo exige cliente cadastrado'); return; }
+    if (!entregador) { alert('Informe o entregador'); return; }
+
+    const btn = document.getElementById('btn-registrar');
+    btn.disabled = true; btn.textContent = 'Registrando...';
+    try {
+      const res = await fetch('/api/atacado/venda', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cliente_id, nome_cliente, descricao, peso: Number(peso), preco_kg: Number(precoKg), valor: Number(valor), forma_pagamento: formaSelecionada, entregador })
+      });
+      const venda = await res.json();
+      if (!res.ok) throw new Error(venda.erro);
+
+      if (BTPrinter.isConnected()) {
+        await BTPrinter.printNotinha(venda);
+      } else {
+        alert('Venda registrada! Conecte a impressora BT para imprimir a notinha.');
+      }
+
+      document.getElementById('nome-cliente').value = '';
+      document.getElementById('descricao').value = '';
+      document.getElementById('peso').value = '';
+      document.getElementById('preco-kg').value = '';
+      document.getElementById('valor').value = '';
+      document.getElementById('entregador').value = '';
+      document.getElementById('cliente-select').value = '';
+      document.querySelectorAll('.pagamento-btn').forEach(b => b.classList.remove('ativo'));
+      formaSelecionada = null;
+
+      carregarVendas();
+      carregarClientes();
+    } catch(e) { alert(e.message); }
+    btn.disabled = false; btn.textContent = 'Registrar e Imprimir Notinha';
+  }
+
+  async function carregarVendas() {
+    const res = await fetch('/api/atacado/vendas');
+    const lista = await res.json();
+    const el = document.getElementById('lista-vendas');
+    if (!lista.length) { el.innerHTML = '<div class="vazio">Nenhuma venda hoje</div>'; return; }
+    const isAdmin = podeGerenciar();
+    el.innerHTML = lista.map(v => `
+      <div class="item ${v.cancelado ? 'cancelada' : ''}">
+        <div class="info">
+          <div class="hora">${fmtHora(v.criado_em)} ${v.cancelado ? '<span class="badge badge-cancelada">Cancelada</span>' : (v.forma_pagamento === 'fiado' ? '<span class="badge badge-fiado">A Prazo</span>' : '<span class="badge badge-pago">Pago</span>')}</div>
+          <div class="desc-venda">${v.nome_cliente} — ${v.descricao}${v.peso ? ' (' + v.peso + ' kg' + (v.preco_kg ? ' × ' + fmtMoeda(v.preco_kg) : '') + ')' : ''}</div>
+          <div class="meta">${LABELS_FORMA[v.forma_pagamento] || v.forma_pagamento} • Entregador: ${v.entregador} • ${v.operador}</div>
+        </div>
+        <div class="lado-direito">
+          <div class="valor-venda">${fmtMoeda(v.valor)}</div>
+          <div class="acoes-item">
+            <button class="btn-mini btn-reimprimir-item" onclick='reimprimirNotinha(${JSON.stringify(v)})'>🖨️ Reimprimir</button>
+            ${isAdmin && !v.cancelado ? `<button class="btn-mini btn-cancelar-item" onclick="cancelarVenda(${v.id})">Cancelar</button>` : ''}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function reimprimirNotinha(venda) {
+    if (!BTPrinter.isConnected()) { alert('Conecte a impressora BT primeiro.'); return; }
+    await BTPrinter.printNotinha(venda);
+  }
+
+  async function cancelarVenda(id) {
+    if (!confirm('Cancelar esta venda?')) return;
+    const res = await fetch(`/api/atacado/venda/${id}/cancelar`, { method: 'PUT' });
+    const data = await res.json();
+    if (data.sucesso) { carregarVendas(); carregarClientes(); }
+    else alert(data.erro);
+  }
+
+  async function logoff() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/login.html';
+  }
+
+  init();
+</script>
+</body>
+</html>

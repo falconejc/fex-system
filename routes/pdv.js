@@ -199,6 +199,21 @@ router.post('/gasto', (req, res) => {
   res.json(db.prepare('SELECT * FROM pdv_gastos WHERE id = ?').get(info.lastInsertRowid));
 });
 
+router.put('/gasto/:id', exigirNivel('admin', 'dono'), (req, res) => {
+  const gasto = db.prepare('SELECT * FROM pdv_gastos WHERE id = ?').get(req.params.id);
+  if (!gasto) return res.status(404).json({ erro: 'Gasto não encontrado' });
+
+  const { descricao, valor } = req.body;
+  if (!descricao || !descricao.trim()) return res.status(400).json({ erro: 'Descrição obrigatória' });
+  const valorNum = Number(valor);
+  if (!valorNum || valorNum <= 0) return res.status(400).json({ erro: 'Valor inválido' });
+
+  db.prepare('UPDATE pdv_gastos SET descricao = ?, valor = ? WHERE id = ?')
+    .run(descricao.trim(), valorNum, req.params.id);
+
+  res.json(db.prepare('SELECT * FROM pdv_gastos WHERE id = ?').get(req.params.id));
+});
+
 router.get('/gastos', (req, res) => {
   const data = hoje();
   res.json(db.prepare('SELECT * FROM pdv_gastos WHERE date(criado_em) = ? AND cancelado = 0 ORDER BY criado_em DESC').all(data));

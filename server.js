@@ -215,6 +215,7 @@ app.use('/api/tipos',         verificarToken, require('./routes/tipos'));
 app.use('/api/estoque_modulo',verificarToken, require('./routes/estoque_modulo'));
 app.use('/api/precos',        verificarToken, require('./routes/precos'));
 app.use('/api/pdv',           verificarToken, require('./routes/pdv'));
+app.use('/api/atacado',       verificarToken, require('./routes/atacado'));
 
 app.get('/api/eventos', verificarToken, (req, res) => {
   res.writeHead(200, {

@@ -18,6 +18,7 @@
   .filtro input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
   .filtro button { padding: 8px 20px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
   .resumo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  #atacado-kpis { grid-template-columns: repeat(4, 1fr); }
   .resumo-card { background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
   .resumo-card .num { font-size: 32px; font-weight: bold; color: #333; }
   .resumo-card .desc { font-size: 12px; color: #888; margin-top: 4px; }
@@ -71,6 +72,7 @@
     .filtro { padding: 14px 16px; gap: 8px; }
     .filtro input { width: 100%; }
     .resumo { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    #atacado-kpis { grid-template-columns: repeat(2, 1fr); }
     .resumo-card { padding: 12px 6px; }
     .resumo-card .num { font-size: 22px; }
     .resumo-card .desc { font-size: 10px; }
@@ -79,6 +81,7 @@
     .grid2 { grid-template-columns: 1fr; }
   }
 </style>
+<script src="/bt-printer.js"></script>
 </head>
 <body>
 <header>
@@ -89,16 +92,17 @@
   <button class="btn-logoff" onclick="logoff()">Sair</button>
 </header>
 <div class="container">
-  <div class="filtro" id="filtro-geral">
-    <label>Data:</label>
-    <input type="date" id="data-filtro">
-    <button onclick="carregar()">Buscar</button>
-  </div>
-
   <div class="tabs">
     <button class="tab ativo" onclick="mudarTab('frango', this)">🍗 Frango</button>
     <button class="tab" onclick="mudarTab('delivery', this)">🛵 Delivery</button>
     <button class="tab" onclick="mudarTab('pdv', this)">💰 PDV</button>
+    <button class="tab" onclick="mudarTab('atacado', this)">🚚 Atacado</button>
+  </div>
+
+  <div class="filtro" id="filtro-geral">
+    <label>Data:</label>
+    <input type="date" id="data-filtro">
+    <button onclick="carregar()">Buscar</button>
   </div>
 
   <div class="painel ativo" id="painel-frango">
@@ -122,6 +126,8 @@
       <input type="date" id="pdv-data-filtro">
       <button onclick="carregarPDV()">Buscar</button>
       <button id="btn-reimprimir-pdv" onclick="imprimirResumoPDV()">🖨️ Reimprimir Resumo</button>
+      <button id="btn-bt-connect" onclick="conectarBT()">🔌 Conectar Impressora BT</button>
+      <button id="btn-bt-print" onclick="imprimirResumoPDVBT()" style="display:none;background:#1d4ed8">🖨️ Imprimir via BT</button>
     </div>
     <div id="pdv-caixa-info"></div>
     <div class="resumo" id="pdv-kpis"></div>
@@ -142,6 +148,20 @@
         <button onclick="carregarPDVMes()">Buscar</button>
       </div>
       <div id="pdv-mensal"><div class="vazio">Carregando...</div></div>
+    </div>
+  </div>
+
+  <div class="painel" id="painel-atacado">
+    <div class="filtro">
+      <label>Data:</label>
+      <input type="date" id="atacado-data-filtro">
+      <button onclick="carregarAtacado()">Buscar</button>
+    </div>
+    <div class="resumo" id="atacado-kpis"></div>
+    <div class="formas-resumo" id="atacado-formas"></div>
+    <div class="card">
+      <h2>🚚 Vendas Atacado</h2>
+      <div id="tabela-atacado"><div class="vazio">Carregando...</div></div>
     </div>
   </div>
 </div>
@@ -165,6 +185,43 @@
     <div class="modal-acoes">
       <button class="btn-fechar" onclick="fechar('modal-frango')">Cancelar</button>
       <button class="btn-salvar" onclick="salvarFrango()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal-pdv">
+  <div class="modal-box">
+    <h3>Editar venda do PDV</h3>
+    <input type="hidden" id="pv-id">
+    <label>Descrição</label>
+    <input type="text" id="pv-descricao">
+    <label>Valor</label>
+    <input type="number" step="0.01" id="pv-valor">
+    <label>Forma de pagamento</label>
+    <select id="pv-forma">
+      <option value="dinheiro">Dinheiro</option>
+      <option value="pix">Pix</option>
+      <option value="cartao_credito">Cartão Crédito</option>
+      <option value="cartao_debito">Cartão Débito</option>
+    </select>
+    <div class="modal-acoes">
+      <button class="btn-fechar" onclick="fechar('modal-pdv')">Cancelar</button>
+      <button class="btn-salvar" onclick="salvarPDVEdicao()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal-pdv-gasto">
+  <div class="modal-box">
+    <h3>Editar gasto do PDV</h3>
+    <input type="hidden" id="pg-id">
+    <label>Descrição</label>
+    <input type="text" id="pg-descricao">
+    <label>Valor</label>
+    <input type="number" step="0.01" id="pg-valor">
+    <div class="modal-acoes">
+      <button class="btn-fechar" onclick="fechar('modal-pdv-gasto')">Cancelar</button>
+      <button class="btn-salvar" onclick="salvarPDVGastoEdicao()">Salvar</button>
     </div>
   </div>
 </div>
@@ -224,6 +281,7 @@
   }
 
   const LABELS_FORMA = { dinheiro: '💵 Dinheiro', pix: '📱 Pix', cartao_credito: '💳 Cartão Crédito', cartao_debito: '💳 Cartão Débito' };
+  const LABELS_FORMA_ATACADO = { dinheiro: '💵 Dinheiro', pix: '📱 Pix', cartao_credito: '💳 Cartão Crédito', cartao_debito: '💳 Cartão Débito', fiado: '📝 A Prazo' };
 
   function fmtMoeda(v) {
     return 'R$ ' + Number(v || 0).toFixed(2).replace('.', ',');
@@ -236,13 +294,14 @@
   document.getElementById('data-filtro').value = hoje;
   document.getElementById('pdv-data-filtro').value = hoje;
   document.getElementById('pdv-mes-filtro').value = hoje.substring(0, 7);
+  document.getElementById('atacado-data-filtro').value = hoje;
 
   function mudarTab(tab, btn) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativo'));
     btn.classList.add('ativo');
     document.querySelectorAll('.painel').forEach(p => p.classList.remove('ativo'));
     document.getElementById('painel-' + tab).classList.add('ativo');
-    document.getElementById('filtro-geral').style.display = tab === 'pdv' ? 'none' : '';
+    document.getElementById('filtro-geral').style.display = (tab === 'pdv' || tab === 'atacado') ? 'none' : '';
   }
 
   function podeVerResumoPDV() {
@@ -260,10 +319,13 @@
       document.getElementById('pdv-formas').style.display = 'none';
       document.getElementById('card-pdv-mensal').style.display = 'none';
       document.getElementById('btn-reimprimir-pdv').style.display = 'none';
+      document.getElementById('btn-bt-connect').style.display = 'none';
+      document.getElementById('btn-bt-print').style.display = 'none';
     }
     carregar();
     carregarPDV();
     carregarPDVMes();
+    carregarAtacado();
   }
 
   async function carregar() {
@@ -415,6 +477,15 @@
     renderPDVGastos(json.gastos);
   }
 
+  async function conectarBT() {
+    await BTPrinter.connect();
+  }
+
+  async function imprimirResumoPDVBT() {
+    if (!resumoPDVAtual) return;
+    await BTPrinter.printResumoPDV(resumoPDVAtual, nomeUsuario);
+  }
+
   function imprimirResumoPDV() {
     if (!resumoPDVAtual) return;
     const r = resumoPDVAtual.resumo;
@@ -543,9 +614,36 @@
         <td>${LABELS_FORMA[v.forma_pagamento] || v.forma_pagamento}</td>
         <td>${v.operador}</td>
         <td><span class="badge ${v.cancelado ? 'badge-cancelado' : 'badge-entregue'}">${v.cancelado ? 'cancelada' : 'ok'}</span></td>
-        ${isAdmin ? `<td>${!v.cancelado ? `<button class="btn-cancelar-item" onclick="cancelarPDV(${v.id})">Cancelar</button>` : ''}</td>` : ''}
+        ${isAdmin ? `<td><div class="acoes">
+          ${!v.cancelado ? `<button class="btn-editar" onclick='abrirPDVEdicao(${JSON.stringify(v)})'>Editar</button>
+          <button class="btn-cancelar-item" onclick="cancelarPDV(${v.id})">Cancelar</button>` : ''}
+        </div></td>` : ''}
       </tr>`).join('')}</tbody>
     </table></div>`;
+  }
+
+  function abrirPDVEdicao(v) {
+    document.getElementById('pv-id').value = v.id;
+    document.getElementById('pv-descricao').value = v.descricao;
+    document.getElementById('pv-valor').value = v.valor;
+    document.getElementById('pv-forma').value = v.forma_pagamento;
+    document.getElementById('modal-pdv').classList.add('aberto');
+  }
+
+  async function salvarPDVEdicao() {
+    const id = document.getElementById('pv-id').value;
+    const res = await fetch(`/api/pdv/venda/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        descricao: document.getElementById('pv-descricao').value,
+        valor: document.getElementById('pv-valor').value,
+        forma_pagamento: document.getElementById('pv-forma').value
+      })
+    });
+    const data = await res.json();
+    if (!data.erro) { fechar('modal-pdv'); carregarPDV(); }
+    else alert(data.erro);
   }
 
   async function cancelarPDV(id) {
@@ -567,9 +665,34 @@
         <td>${fmtMoeda(g.valor)}</td>
         <td>${g.operador}</td>
         <td><span class="badge ${g.cancelado ? 'badge-cancelado' : 'badge-entregue'}">${g.cancelado ? 'cancelado' : 'ok'}</span></td>
-        ${isAdmin ? `<td>${!g.cancelado ? `<button class="btn-cancelar-item" onclick="cancelarPDVGasto(${g.id})">Cancelar</button>` : ''}</td>` : ''}
+        ${isAdmin ? `<td><div class="acoes">
+          ${!g.cancelado ? `<button class="btn-editar" onclick='abrirPDVGastoEdicao(${JSON.stringify(g)})'>Editar</button>
+          <button class="btn-cancelar-item" onclick="cancelarPDVGasto(${g.id})">Cancelar</button>` : ''}
+        </div></td>` : ''}
       </tr>`).join('')}</tbody>
     </table></div>`;
+  }
+
+  function abrirPDVGastoEdicao(g) {
+    document.getElementById('pg-id').value = g.id;
+    document.getElementById('pg-descricao').value = g.descricao;
+    document.getElementById('pg-valor').value = g.valor;
+    document.getElementById('modal-pdv-gasto').classList.add('aberto');
+  }
+
+  async function salvarPDVGastoEdicao() {
+    const id = document.getElementById('pg-id').value;
+    const res = await fetch(`/api/pdv/gasto/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        descricao: document.getElementById('pg-descricao').value,
+        valor: document.getElementById('pg-valor').value
+      })
+    });
+    const data = await res.json();
+    if (!data.erro) { fechar('modal-pdv-gasto'); carregarPDV(); }
+    else alert(data.erro);
   }
 
   async function cancelarPDVGasto(id) {
@@ -606,6 +729,57 @@
         </tr>`).join('')}</tbody>
       </table></div>
     `;
+  }
+
+  async function carregarAtacado() {
+    const data = document.getElementById('atacado-data-filtro').value;
+    const res = await fetch('/api/atacado/relatorio/dia?data=' + data);
+    const json = await res.json();
+    renderAtacadoKPIs(json.resumo);
+    renderAtacadoTabela(json.vendas);
+  }
+
+  function renderAtacadoKPIs(r) {
+    document.getElementById('atacado-kpis').innerHTML = `
+      <div class="resumo-card"><div class="num">${fmtMoeda(r.total_vendido)}</div><div class="desc">Total vendido</div></div>
+      <div class="resumo-card"><div class="num">${r.quantidade_vendas}</div><div class="desc">Qtd. vendas</div></div>
+      <div class="resumo-card"><div class="num" style="color:#92400e">${fmtMoeda(r.total_fiado_gerado)}</div><div class="desc">Gerado a prazo</div></div>
+      <div class="resumo-card"><div class="num" style="color:#dc2626">${fmtMoeda(r.total_a_receber)}</div><div class="desc">Total a receber (todos os clientes)</div></div>
+    `;
+    document.getElementById('atacado-formas').innerHTML = Object.keys(LABELS_FORMA_ATACADO).map(f => `
+      <div class="forma-card">
+        <div class="valor">${fmtMoeda(r.por_forma_pagamento[f].total)}</div>
+        <div class="qtd">${r.por_forma_pagamento[f].quantidade} venda(s)</div>
+        <div class="label">${LABELS_FORMA_ATACADO[f]}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderAtacadoTabela(vendas) {
+    const el = document.getElementById('tabela-atacado');
+    if (!vendas.length) { el.innerHTML = '<div class="vazio">Nenhuma venda no período</div>'; return; }
+    const isAdmin = podeVerResumoPDV();
+    el.innerHTML = `<div style="overflow-x:auto"><table>
+      <thead><tr><th>Código</th><th>Cliente</th><th>Descrição</th><th>Valor</th><th>Forma</th><th>Entregador</th><th>Status</th>${isAdmin ? '<th>Ações</th>' : ''}</tr></thead>
+      <tbody>${vendas.map(v => `<tr>
+        <td><strong>${v.codigo}</strong></td>
+        <td>${v.nome_cliente}</td>
+        <td>${v.descricao}${v.peso ? ' (' + v.peso + ' kg' + (v.preco_kg ? ' × ' + fmtMoeda(v.preco_kg) : '') + ')' : ''}</td>
+        <td>${fmtMoeda(v.valor)}</td>
+        <td>${LABELS_FORMA_ATACADO[v.forma_pagamento] || v.forma_pagamento}</td>
+        <td>${v.entregador}</td>
+        <td><span class="badge ${v.cancelado ? 'badge-cancelado' : 'badge-entregue'}">${v.cancelado ? 'cancelada' : 'ok'}</span></td>
+        ${isAdmin ? `<td>${!v.cancelado ? `<button class="btn-cancelar-item" onclick="cancelarAtacado(${v.id})">Cancelar</button>` : ''}</td>` : ''}
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+
+  async function cancelarAtacado(id) {
+    if (!confirm('Cancelar esta venda?')) return;
+    const res = await fetch(`/api/atacado/venda/${id}/cancelar`, { method: 'PUT' });
+    const data = await res.json();
+    if (data.sucesso) carregarAtacado();
+    else alert(data.erro);
   }
 
   async function logoff() {

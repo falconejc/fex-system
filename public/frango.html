@@ -28,6 +28,9 @@
   .tipo-btn .tipo-nome { font-weight: bold; font-size: 15px; }
   .tipo-btn .tipo-est { font-size: 11px; margin-top: 4px; }
   .tipo-btn .tipo-aviso { font-size: 11px; color: #f59e0b; margin-top: 2px; }
+  .pagamento-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 6px; }
+  .pagamento-btn { padding: 16px 10px; min-height: 56px; border: 2px solid #ddd; border-radius: 10px; background: white; cursor: pointer; font-size: 15px; font-weight: bold; text-align: center; transition: all 0.2s; }
+  .pagamento-btn.ativo { border-color: #f59e0b; background: #fef3c7; color: #92400e; }
   .btn-estoque { padding: 10px 16px; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; background: #eff6ff; color: #1e40af; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
   .btn { width: 100%; padding: 16px; min-height: 52px; background: #f59e0b; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 16px; }
   .btn:hover { background: #d97706; }
@@ -117,6 +120,13 @@
     <input type="tel" id="telefone" placeholder="Ex: 38999999999">
     <label>Observações <span style="color:#aaa;font-weight:normal">(opcional)</span></label>
     <textarea id="observacao" placeholder="Ex: sem sal, bem passado..."></textarea>
+    <label>Forma de pagamento</label>
+    <div class="pagamento-grid" id="pagamento-grid">
+      <button class="pagamento-btn" onclick="selecionarFormaPagamento('dinheiro', this)">💵 Dinheiro</button>
+      <button class="pagamento-btn" onclick="selecionarFormaPagamento('pix', this)">📱 Pix</button>
+      <button class="pagamento-btn" onclick="selecionarFormaPagamento('cartao_credito', this)">💳 Cartão Crédito</button>
+      <button class="pagamento-btn" onclick="selecionarFormaPagamento('cartao_debito', this)">💳 Cartão Débito</button>
+    </div>
     <button class="btn" id="btn-vender" onclick="registrarVenda()">Registrar Venda e Imprimir</button>
   </div>
 
@@ -200,6 +210,13 @@
   let infoLoteAtual = null;
   let scannerStream = null;
   let codigoQRLido = null;
+  let formaPagamentoSelecionada = null;
+
+  function selecionarFormaPagamento(forma, btn) {
+    formaPagamentoSelecionada = forma;
+    document.querySelectorAll('.pagamento-btn').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+  }
 
   async function conectarBT() {
     await BTPrinter.connect();
@@ -301,13 +318,14 @@
 
   async function registrarVenda() {
     if (!tipoSelecionado) { alert('Selecione o tipo de frango'); return; }
+    if (!formaPagamentoSelecionada) { alert('Selecione a forma de pagamento'); return; }
     const btn = document.getElementById('btn-vender');
     btn.disabled = true; btn.textContent = 'Registrando...';
     try {
       const res = await fetch('/api/frango/venda', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipo_id: tipoSelecionado, observacao: document.getElementById('observacao').value.trim(), telefone: document.getElementById('telefone').value.trim() })
+        body: JSON.stringify({ tipo_id: tipoSelecionado, observacao: document.getElementById('observacao').value.trim(), telefone: document.getElementById('telefone').value.trim(), forma_pagamento: formaPagamentoSelecionada })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro);
@@ -341,6 +359,8 @@
       else { btnWpp.style.display = 'none'; }
       document.getElementById('observacao').value = '';
       document.getElementById('telefone').value = '';
+      document.querySelectorAll('.pagamento-btn').forEach(b => b.classList.remove('ativo'));
+      formaPagamentoSelecionada = null;
       carregarEstoque();
       carregarPendentes();
 
