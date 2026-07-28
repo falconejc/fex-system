@@ -24,12 +24,31 @@ function gerarCodigo() {
   return 'V' + Math.random().toString(36).substring(2, 7).toUpperCase();
 }
 
+// Valida uma data/hora retroativa vinda do front (formato 'YYYY-MM-DDTHH:MM' ou com segundos)
+// e garante que não é uma data futura. Retorna null se inválida.
+function validarDataRetroativa(dataHora) {
+  if (typeof dataHora !== 'string' || !/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(dataHora)) return null;
+  let formatada = dataHora.replace('T', ' ');
+  if (formatada.length === 16) formatada += ':00';
+  if (formatada > agora()) return null;
+  return formatada;
+}
+
 router.post('/venda', (req, res) => {
-  const { descricao, valor, forma_pagamento } = req.body;
+  const { descricao, valor, forma_pagamento, data_hora } = req.body;
   if (!descricao || !descricao.trim()) return res.status(400).json({ erro: 'Descrição obrigatória' });
   const valorNum = Number(valor);
   if (!valorNum || valorNum <= 0) return res.status(400).json({ erro: 'Valor inválido' });
   if (!FORMAS_PAGAMENTO.includes(forma_pagamento)) return res.status(400).json({ erro: 'Forma de pagamento inválida' });
+
+  let criadoEm = agora();
+  if (data_hora) {
+    if (!['admin', 'dono'].includes(req.usuario.nivel)) {
+      return res.status(403).json({ erro: 'Apenas admin ou dono podem lançar vendas retroativas' });
+    }
+    criadoEm = validarDataRetroativa(data_hora);
+    if (!criadoEm) return res.status(400).json({ erro: 'Data/hora retroativa inválida' });
+  }
 
   let codigo, tentativas = 0;
   do {
@@ -39,14 +58,14 @@ router.post('/venda', (req, res) => {
 
   db.prepare(`INSERT INTO pdv_vendas (codigo, descricao, valor, forma_pagamento, operador, usuario_id, criado_em)
     VALUES (?, ?, ?, ?, ?, ?, ?)`)
-    .run(codigo, descricao.trim(), valorNum, forma_pagamento, req.usuario.nome, req.usuario.id, agora());
+    .run(codigo, descricao.trim(), valorNum, forma_pagamento, req.usuario.nome, req.usuario.id, criadoEm);
 
   res.json(db.prepare('SELECT * FROM pdv_vendas WHERE codigo = ?').get(codigo));
 });
 
 router.get('/vendas', (req, res) => {
   const data = hoje();
-  res.json(db.prepare('SELECT * FROM pdv_vendas WHERE date(criado_em) = ? ORDER BY criado_em DESC').all(data));
+  res.json(db.prepare('SELECT * FROM pdv_vendas WHERE date(criado_em) = ? AND cancelado = 0 ORDER BY criado_em DESC').all(data));
 });
 
 router.get('/relatorio/dia', (req, res) => {
@@ -134,6 +153,22 @@ router.post('/caixa', (req, res) => {
   res.json(db.prepare('SELECT * FROM pdv_caixa WHERE data = ?').get(data));
 });
 
+router.put('/venda/:id', exigirNivel('admin', 'dono'), (req, res) => {
+  const venda = db.prepare('SELECT * FROM pdv_vendas WHERE id = ?').get(req.params.id);
+  if (!venda) return res.status(404).json({ erro: 'Venda não encontrada' });
+
+  const { descricao, valor, forma_pagamento } = req.body;
+  if (!descricao || !descricao.trim()) return res.status(400).json({ erro: 'Descrição obrigatória' });
+  const valorNum = Number(valor);
+  if (!valorNum || valorNum <= 0) return res.status(400).json({ erro: 'Valor inválido' });
+  if (!FORMAS_PAGAMENTO.includes(forma_pagamento)) return res.status(400).json({ erro: 'Forma de pagamento inválida' });
+
+  db.prepare('UPDATE pdv_vendas SET descricao = ?, valor = ?, forma_pagamento = ? WHERE id = ?')
+    .run(descricao.trim(), valorNum, forma_pagamento, req.params.id);
+
+  res.json(db.prepare('SELECT * FROM pdv_vendas WHERE id = ?').get(req.params.id));
+});
+
 router.put('/venda/:id/cancelar', exigirNivel('admin', 'dono'), (req, res) => {
   const venda = db.prepare('SELECT * FROM pdv_vendas WHERE id = ?').get(req.params.id);
   if (!venda) return res.status(404).json({ erro: 'Venda não encontrada' });
@@ -143,21 +178,30 @@ router.put('/venda/:id/cancelar', exigirNivel('admin', 'dono'), (req, res) => {
 });
 
 router.post('/gasto', (req, res) => {
-  const { descricao, valor } = req.body;
+  const { descricao, valor, data_hora } = req.body;
   if (!descricao || !descricao.trim()) return res.status(400).json({ erro: 'Descrição obrigatória' });
   const valorNum = Number(valor);
   if (!valorNum || valorNum <= 0) return res.status(400).json({ erro: 'Valor inválido' });
 
+  let criadoEm = agora();
+  if (data_hora) {
+    if (!['admin', 'dono'].includes(req.usuario.nivel)) {
+      return res.status(403).json({ erro: 'Apenas admin ou dono podem lançar gastos retroativos' });
+    }
+    criadoEm = validarDataRetroativa(data_hora);
+    if (!criadoEm) return res.status(400).json({ erro: 'Data/hora retroativa inválida' });
+  }
+
   const info = db.prepare(`INSERT INTO pdv_gastos (descricao, valor, operador, usuario_id, criado_em)
     VALUES (?, ?, ?, ?, ?)`)
-    .run(descricao.trim(), valorNum, req.usuario.nome, req.usuario.id, agora());
+    .run(descricao.trim(), valorNum, req.usuario.nome, req.usuario.id, criadoEm);
 
   res.json(db.prepare('SELECT * FROM pdv_gastos WHERE id = ?').get(info.lastInsertRowid));
 });
 
 router.get('/gastos', (req, res) => {
   const data = hoje();
-  res.json(db.prepare('SELECT * FROM pdv_gastos WHERE date(criado_em) = ? ORDER BY criado_em DESC').all(data));
+  res.json(db.prepare('SELECT * FROM pdv_gastos WHERE date(criado_em) = ? AND cancelado = 0 ORDER BY criado_em DESC').all(data));
 });
 
 router.put('/gasto/:id/cancelar', exigirNivel('admin', 'dono'), (req, res) => {

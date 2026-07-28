@@ -98,6 +98,13 @@
   <div class="painel-aba ativo" id="painel-venda">
     <div class="card">
       <h2>Nova Venda</h2>
+      <div id="retroativo-venda-area" style="display:none;">
+        <label style="display:flex;align-items:center;gap:8px;margin-top:0;">
+          <input type="checkbox" id="chk-retroativo-venda" style="width:auto;min-height:auto;" onchange="toggleRetroativoVenda()">
+          🕐 Lançamento retroativo
+        </label>
+        <input type="datetime-local" id="data-hora-venda" style="display:none;">
+      </div>
       <label>Descrição</label>
       <input type="text" id="descricao" placeholder="Ex: Água mineral, refrigerante, troco...">
       <label>Valor (R$)</label>
@@ -121,6 +128,13 @@
   <div class="painel-aba" id="painel-gasto">
     <div class="card">
       <h2>💸 Gastos / Saídas</h2>
+      <div id="retroativo-gasto-area" style="display:none;">
+        <label style="display:flex;align-items:center;gap:8px;margin-top:0;">
+          <input type="checkbox" id="chk-retroativo-gasto" style="width:auto;min-height:auto;" onchange="toggleRetroativoGasto()">
+          🕐 Lançamento retroativo
+        </label>
+        <input type="datetime-local" id="data-hora-gasto" style="display:none;">
+      </div>
       <label>Descrição</label>
       <input type="text" id="gasto-descricao" placeholder="Ex: Compra de gelo, motoboy, troco...">
       <label>Valor (R$)</label>
@@ -158,6 +172,13 @@
     nivelUsuario = user.nivel;
     nomeUsuario = user.nome;
     if (!podeGerenciar()) document.getElementById('card-resumo-dia').style.display = 'none';
+    if (podeGerenciar()) {
+      document.getElementById('retroativo-venda-area').style.display = 'block';
+      document.getElementById('retroativo-gasto-area').style.display = 'block';
+      const maxDataHora = nowLocalForInput();
+      document.getElementById('data-hora-venda').max = maxDataHora;
+      document.getElementById('data-hora-gasto').max = maxDataHora;
+    }
     await carregarResumo();
     await carregarVendas();
     await carregarGastos();
@@ -166,6 +187,22 @@
 
   function podeGerenciar() {
     return nivelUsuario === 'admin' || nivelUsuario === 'dono';
+  }
+
+  function nowLocalForInput() {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function toggleRetroativoVenda() {
+    const chk = document.getElementById('chk-retroativo-venda');
+    document.getElementById('data-hora-venda').style.display = chk.checked ? 'block' : 'none';
+  }
+
+  function toggleRetroativoGasto() {
+    const chk = document.getElementById('chk-retroativo-gasto');
+    document.getElementById('data-hora-gasto').style.display = chk.checked ? 'block' : 'none';
   }
 
   function mudarAba(aba, btn) {
@@ -188,13 +225,21 @@
     if (!valor || Number(valor) <= 0) { alert('Informe um valor válido'); return; }
     if (!formaSelecionada) { alert('Selecione a forma de pagamento'); return; }
 
+    let dataHora = null;
+    if (document.getElementById('chk-retroativo-venda')?.checked) {
+      dataHora = document.getElementById('data-hora-venda').value;
+      if (!dataHora) { alert('Informe a data/hora do lançamento retroativo'); return; }
+    }
+
     const btn = document.getElementById('btn-registrar');
     btn.disabled = true; btn.textContent = 'Registrando...';
     try {
+      const body = { descricao, valor: Number(valor), forma_pagamento: formaSelecionada };
+      if (dataHora) body.data_hora = dataHora;
       const res = await fetch('/api/pdv/venda', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ descricao, valor: Number(valor), forma_pagamento: formaSelecionada })
+        body: JSON.stringify(body)
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro);
@@ -203,6 +248,12 @@
       document.getElementById('valor').value = '';
       document.querySelectorAll('.pagamento-btn').forEach(b => b.classList.remove('ativo'));
       formaSelecionada = null;
+      if (dataHora) {
+        document.getElementById('chk-retroativo-venda').checked = false;
+        document.getElementById('data-hora-venda').value = '';
+        toggleRetroativoVenda();
+        alert('Venda retroativa registrada com sucesso.');
+      }
 
       carregarResumo();
       carregarVendas();
@@ -216,19 +267,33 @@
     if (!descricao) { alert('Informe a descrição'); return; }
     if (!valor || Number(valor) <= 0) { alert('Informe um valor válido'); return; }
 
+    let dataHora = null;
+    if (document.getElementById('chk-retroativo-gasto')?.checked) {
+      dataHora = document.getElementById('data-hora-gasto').value;
+      if (!dataHora) { alert('Informe a data/hora do lançamento retroativo'); return; }
+    }
+
     const btn = document.getElementById('btn-registrar-gasto');
     btn.disabled = true; btn.textContent = 'Registrando...';
     try {
+      const body = { descricao, valor: Number(valor) };
+      if (dataHora) body.data_hora = dataHora;
       const res = await fetch('/api/pdv/gasto', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ descricao, valor: Number(valor) })
+        body: JSON.stringify(body)
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro);
 
       document.getElementById('gasto-descricao').value = '';
       document.getElementById('gasto-valor').value = '';
+      if (dataHora) {
+        document.getElementById('chk-retroativo-gasto').checked = false;
+        document.getElementById('data-hora-gasto').value = '';
+        toggleRetroativoGasto();
+        alert('Gasto retroativo registrado com sucesso.');
+      }
 
       carregarResumo();
       carregarGastos();
