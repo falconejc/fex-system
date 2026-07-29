@@ -222,6 +222,17 @@ db.exec(`
     usuario_id INTEGER,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS pdv_pagamentos_misto (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    referencia TEXT NOT NULL,
+    forma_pagamento TEXT NOT NULL,
+    valor REAL NOT NULL,
+    operador TEXT NOT NULL,
+    usuario_id INTEGER,
+    cancelado INTEGER DEFAULT 0,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Migrations: adiciona colunas que podem não existir em bancos antigos
@@ -230,6 +241,7 @@ const migrations = [
   "ALTER TABLE vendas ADD COLUMN ordem_tipo INTEGER DEFAULT 0",
   "ALTER TABLE tipos_frango ADD COLUMN icone TEXT DEFAULT '🍗'",
   "ALTER TABLE atacado_vendas ADD COLUMN preco_kg REAL",
+  "ALTER TABLE pdv_vendas ADD COLUMN referencia_pagamento TEXT",
 ];
 migrations.forEach(sql => { try { db.exec(sql); } catch(e) {} });
 

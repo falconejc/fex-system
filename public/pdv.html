@@ -19,7 +19,7 @@
   .card-header h2 { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
   .btn-imprimir-resumo { padding: 10px 14px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; background: #eff6ff; color: #1e40af; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
   label { display: block; font-size: 14px; color: #555; margin-bottom: 8px; margin-top: 16px; }
-  input, textarea { width: 100%; padding: 14px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; font-family: Arial; min-height: 48px; }
+  input, textarea, select { width: 100%; padding: 14px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; font-family: Arial; min-height: 48px; }
   .pagamento-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 6px; }
   .pagamento-btn { padding: 16px 10px; min-height: 56px; border: 2px solid #ddd; border-radius: 10px; background: white; cursor: pointer; font-size: 15px; font-weight: bold; text-align: center; transition: all 0.2s; }
   .pagamento-btn.ativo { border-color: #f59e0b; background: #fef3c7; color: #92400e; }
@@ -64,7 +64,67 @@
   .tab.ativo-gasto { background: #ef4444; color: white; }
   .painel-aba { display: none; }
   .painel-aba.ativo { display: block; }
+  .busca-produto-wrap { position: relative; }
+  .sugestoes-produto { display: none; position: absolute; left: 0; right: 0; top: calc(100% + 2px); background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 260px; overflow-y: auto; z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+  .sugestoes-produto.aberta { display: block; }
+  .sugestao-produto { padding: 12px; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+  .sugestao-produto:last-child { border-bottom: none; }
+  .sugestao-produto:hover, .sugestao-produto:active { background: #fef3c7; }
+  .sugestao-produto .sug-preco { color: #10b981; font-weight: bold; white-space: nowrap; }
+  .sugestao-esgotada { opacity: 0.55; }
+  .sugestao-esgotada:hover, .sugestao-esgotada:active { background: transparent; }
+  .sug-esgotado { color: #ef4444; font-weight: bold; white-space: nowrap; font-size: 12px; }
+  .sugestao-vazia { padding: 12px; color: #aaa; font-size: 13px; text-align: center; }
+  #troco-resultado { margin-top: 10px; font-size: 22px; font-weight: bold; text-align: center; min-height: 28px; }
+  #troco-resultado .troco-ok { color: #10b981; }
+  #troco-resultado .troco-insuficiente { color: #ef4444; }
+  .btn-troco { background: #10b981; }
+  .btn-troco:hover { background: #059669; }
+  .btn-add-item { background: #3b82f6; }
+  .btn-add-item:hover { background: #2563eb; }
+  .btn-dividir-pagamento { width: 100%; padding: 12px; min-height: 44px; background: #f3f4f6; color: #555; border: 1px dashed #ccc; border-radius: 8px; font-size: 13px; cursor: pointer; margin-top: 14px; }
+  .divisao-add-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px; }
+  .pagamento-btn-mini { padding: 10px; min-height: 40px; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-size: 13px; }
+  .divisao-linha { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+  .divisao-linha span { font-size: 13px; color: #555; flex-shrink: 0; width: 90px; }
+  .divisao-linha input { flex: 1; padding: 10px; min-height: 40px; }
+  .divisao-linha .ci-remover { flex-shrink: 0; }
+  #divisao-status { text-align: center; font-size: 15px; font-weight: bold; margin: 10px 0; }
+  #carrinho-lista { border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
+  .carrinho-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #f0f0f0; gap: 8px; }
+  .carrinho-item:last-child { border-bottom: none; }
+  .carrinho-item .ci-desc { font-size: 14px; color: #333; flex: 1; }
+  .carrinho-item .ci-valor { font-size: 14px; font-weight: bold; color: #10b981; white-space: nowrap; }
+  .carrinho-item .ci-remover { background: #fee2e2; color: #991b1b; border: none; border-radius: 6px; padding: 8px 10px; min-height: 36px; cursor: pointer; font-size: 12px; }
+  #carrinho-total { text-align: right; font-size: 16px; font-weight: bold; color: #333; padding: 10px 4px; }
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 200; }
+  .modal.aberto { display: flex; }
+  .modal-box { background: white; border-radius: 16px; padding: 24px; max-width: 380px; width: 90%; text-align: center; }
+  .modal-codigo { font-size: 44px; font-weight: bold; color: #f59e0b; letter-spacing: 4px; margin: 10px 0; }
+  .modal-info { font-size: 14px; color: #666; margin-bottom: 6px; }
+  .modal-aviso { font-size: 13px; color: #f59e0b; font-weight: bold; margin-bottom: 14px; }
+  .btn-imprimir { width: 100%; padding: 14px; min-height: 48px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; margin-bottom: 10px; }
+  .btn-fechar { width: 100%; padding: 14px; min-height: 48px; background: #f3f4f6; color: #333; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  #qr-canvas { margin: 10px auto 0; display: block; }
+  .modal-wizard .modal-box { max-width: 480px; width: 94%; text-align: left; max-height: 88vh; overflow-y: auto; }
+  #modal-troco { z-index: 250; }
+  .wizard-steps { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 16px; }
+  .wizard-step-dot { width: 28px; height: 28px; border-radius: 50%; background: #eee; color: #999; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; flex-shrink: 0; }
+  .wizard-step-dot.ativo { background: #f59e0b; color: white; }
+  .wizard-step-dot.concluido { background: #10b981; color: white; }
+  .wizard-step-linha { width: 24px; height: 2px; background: #eee; flex-shrink: 0; }
+  .wizard-titulo { font-size: 17px; font-weight: bold; color: #333; margin-bottom: 14px; text-align: center; }
+  .wizard-footer { display: flex; gap: 10px; margin-top: 18px; }
+  .wizard-footer .btn { margin-top: 0; }
+  .btn-voltar { background: #f3f4f6; color: #333; }
+  .btn-voltar:hover { background: #e5e7eb; }
+  .wizard-total { text-align: center; font-size: 14px; color: #666; margin-bottom: 10px; }
+  .resumo-linha { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+  .resumo-linha:last-child { border-bottom: none; }
+  .resumo-total { font-size: 19px; font-weight: bold; text-align: right; padding: 12px 0 4px; }
+  .resumo-secao-titulo { font-size: 13px; color: #888; font-weight: bold; margin: 14px 0 4px; text-transform: uppercase; }
 </style>
+<script src="/bt-printer.js"></script>
 </head>
 <body>
 <header>
@@ -98,25 +158,7 @@
   <div class="painel-aba ativo" id="painel-venda">
     <div class="card">
       <h2>Nova Venda</h2>
-      <div id="retroativo-venda-area" style="display:none;">
-        <label style="display:flex;align-items:center;gap:8px;margin-top:0;">
-          <input type="checkbox" id="chk-retroativo-venda" style="width:auto;min-height:auto;" onchange="toggleRetroativoVenda()">
-          🕐 Lançamento retroativo
-        </label>
-        <input type="datetime-local" id="data-hora-venda" style="display:none;">
-      </div>
-      <label>Descrição</label>
-      <input type="text" id="descricao" placeholder="Ex: Água mineral, refrigerante, troco...">
-      <label>Valor (R$)</label>
-      <input type="number" id="valor" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal">
-      <label>Forma de pagamento</label>
-      <div class="pagamento-grid" id="pagamento-grid">
-        <button class="pagamento-btn" onclick="selecionarPagamento('dinheiro', this)">💵 Dinheiro</button>
-        <button class="pagamento-btn" onclick="selecionarPagamento('pix', this)">📱 Pix</button>
-        <button class="pagamento-btn" onclick="selecionarPagamento('cartao_credito', this)">💳 Cartão Crédito</button>
-        <button class="pagamento-btn" onclick="selecionarPagamento('cartao_debito', this)">💳 Cartão Débito</button>
-      </div>
-      <button class="btn" id="btn-registrar" onclick="registrarVenda()">Registrar Venda</button>
+      <button type="button" class="btn btn-add-item" onclick="abrirWizardVenda()">➕ Iniciar nova venda</button>
     </div>
 
     <div class="card">
@@ -149,12 +191,168 @@
   </div>
 </div>
 
+<div class="modal" id="modal-troco">
+  <div class="modal-box">
+    <h2 style="margin-bottom:14px;">💵 Calcular troco</h2>
+    <label style="margin-top:0;">Valor recebido (R$)</label>
+    <input type="text" id="valor-recebido" inputmode="decimal" placeholder="0,00" oninput="calcularTroco()">
+    <div id="troco-resultado"></div>
+    <button class="btn" onclick="fecharModal('modal-troco')">Fechar</button>
+  </div>
+</div>
+
+<div class="modal" id="modal-ficha">
+  <div class="modal-box">
+    <div style="font-size:15px;color:#555">🍗 Ficha de retirada</div>
+    <div class="modal-codigo" id="ficha-codigo"></div>
+    <div class="modal-info" id="ficha-info"></div>
+    <div class="modal-aviso" id="ficha-aviso-lote"></div>
+    <canvas id="qr-canvas"></canvas>
+    <button class="btn-imprimir" onclick="imprimirEFecharFicha()" style="background:#f59e0b;font-weight:bold">✅ Imprimir e Fechar</button>
+    <button class="btn-imprimir" onclick="imprimirFicha()">🖨️ Imprimir Comprovante</button>
+    <button class="btn-imprimir" onclick="conectarBTFicha()" style="background:#6b7280">🔌 Conectar Impressora BT</button>
+    <button class="btn-imprimir" onclick="imprimirBTFicha()" style="background:#1d4ed8">🖨️ Imprimir via BT</button>
+    <button class="btn-fechar" onclick="fecharModalFicha()">Fechar</button>
+  </div>
+</div>
+
+<div class="modal modal-wizard" id="modal-wizard-itens">
+  <div class="modal-box">
+    <div class="wizard-steps">
+      <div class="wizard-step-dot ativo" id="dot-1">1</div>
+      <div class="wizard-step-linha"></div>
+      <div class="wizard-step-dot" id="dot-2">2</div>
+      <div class="wizard-step-linha"></div>
+      <div class="wizard-step-dot" id="dot-3">3</div>
+    </div>
+    <div class="wizard-titulo">🛒 Itens da venda</div>
+
+    <div id="retroativo-venda-area" style="display:none;">
+      <label style="display:flex;align-items:center;gap:8px;margin-top:0;">
+        <input type="checkbox" id="chk-retroativo-venda" style="width:auto;min-height:auto;" onchange="toggleRetroativoVenda()">
+        🕐 Lançamento retroativo
+      </label>
+      <input type="datetime-local" id="data-hora-venda" style="display:none;">
+    </div>
+    <label>Produto (opcional, buscar no catálogo)</label>
+    <div class="busca-produto-wrap">
+      <input type="text" id="produto-busca" placeholder="Digite pra buscar..." autocomplete="off"
+        oninput="filtrarProdutos()" onfocus="filtrarProdutos()" onblur="fecharSugestoesComAtraso()">
+      <div class="sugestoes-produto" id="produto-sugestoes"></div>
+    </div>
+    <div id="peso-kg-area" style="display:none;">
+      <label>Peso (kg)</label>
+      <input type="text" id="peso-kg" placeholder="0,000" inputmode="decimal" oninput="recalcularValorKg()">
+    </div>
+    <div id="quantidade-area" style="display:none;">
+      <label>Quantidade</label>
+      <input type="number" id="quantidade" step="1" min="1" placeholder="1" inputmode="numeric" oninput="recalcularValorQuantidade()">
+      <div id="quantidade-hint" style="font-size:12px;color:#888;margin-top:6px;"></div>
+    </div>
+    <label>Descrição</label>
+    <input type="text" id="descricao" placeholder="Ex: Água mineral, refrigerante, troco...">
+    <label>Valor (R$)</label>
+    <input type="number" id="valor" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal">
+    <button type="button" class="btn btn-add-item" id="btn-add-item" onclick="adicionarItemCarrinho()">➕ Adicionar item</button>
+
+    <div id="carrinho-area" style="display:none;">
+      <label>Itens adicionados</label>
+      <div id="carrinho-lista"></div>
+      <div id="carrinho-total"></div>
+    </div>
+
+    <div class="wizard-footer">
+      <button type="button" class="btn btn-voltar" onclick="fecharWizardVenda()">Cancelar</button>
+      <button type="button" class="btn" onclick="irParaPagamento()">Continuar →</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal modal-wizard" id="modal-wizard-pagamento">
+  <div class="modal-box">
+    <div class="wizard-steps">
+      <div class="wizard-step-dot concluido" id="dot-p-1">✓</div>
+      <div class="wizard-step-linha"></div>
+      <div class="wizard-step-dot ativo" id="dot-p-2">2</div>
+      <div class="wizard-step-linha"></div>
+      <div class="wizard-step-dot" id="dot-p-3">3</div>
+    </div>
+    <div class="wizard-titulo">💳 Forma de pagamento</div>
+    <div class="wizard-total">Total da venda: <strong id="wizard-pagamento-total"></strong></div>
+
+    <div id="pagamento-normal-area">
+      <div class="pagamento-grid" id="pagamento-grid">
+        <button class="pagamento-btn" onclick="selecionarPagamento('dinheiro', this)">💵 Dinheiro</button>
+        <button class="pagamento-btn" onclick="selecionarPagamento('pix', this)">📱 Pix</button>
+        <button class="pagamento-btn" onclick="selecionarPagamento('cartao_credito', this)">💳 Cartão Crédito</button>
+        <button class="pagamento-btn" onclick="selecionarPagamento('cartao_debito', this)">💳 Cartão Débito</button>
+      </div>
+      <button type="button" class="btn-dividir-pagamento" onclick="ativarDivisaoPagamento()">🔀 Dividir pagamento entre formas diferentes</button>
+    </div>
+
+    <div id="divisao-pagamento-area" style="display:none;">
+      <label style="margin-top:0;">Pagamento dividido</label>
+      <div id="divisao-linhas"></div>
+      <div class="divisao-add-grid">
+        <button type="button" class="pagamento-btn-mini" onclick="adicionarLinhaPagamento('dinheiro')">💵 Dinheiro</button>
+        <button type="button" class="pagamento-btn-mini" onclick="adicionarLinhaPagamento('pix')">📱 Pix</button>
+        <button type="button" class="pagamento-btn-mini" onclick="adicionarLinhaPagamento('cartao_credito')">💳 Créd.</button>
+        <button type="button" class="pagamento-btn-mini" onclick="adicionarLinhaPagamento('cartao_debito')">💳 Déb.</button>
+      </div>
+      <div id="divisao-status"></div>
+      <button type="button" class="btn-fechar" onclick="cancelarDivisaoPagamento()">Cancelar divisão</button>
+    </div>
+
+    <div id="troco-btn-area" style="display:none;">
+      <button type="button" class="btn btn-troco" onclick="abrirModalTroco()">🧮 Calcular troco</button>
+    </div>
+
+    <div class="wizard-footer">
+      <button type="button" class="btn btn-voltar" onclick="voltarParaItens()">← Voltar</button>
+      <button type="button" class="btn" onclick="irParaResumo()">Continuar →</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal modal-wizard" id="modal-wizard-resumo">
+  <div class="modal-box">
+    <div class="wizard-steps">
+      <div class="wizard-step-dot concluido">✓</div>
+      <div class="wizard-step-linha"></div>
+      <div class="wizard-step-dot concluido">✓</div>
+      <div class="wizard-step-linha"></div>
+      <div class="wizard-step-dot ativo">3</div>
+    </div>
+    <div class="wizard-titulo">✅ Resumo da venda</div>
+
+    <div class="resumo-secao-titulo">Itens</div>
+    <div id="resumo-wizard-itens"></div>
+
+    <div class="resumo-secao-titulo">Pagamento</div>
+    <div id="resumo-wizard-pagamento"></div>
+
+    <div class="wizard-footer">
+      <button type="button" class="btn btn-voltar" onclick="voltarParaPagamento()">← Voltar</button>
+      <button class="btn" id="btn-registrar" onclick="registrarVenda()">Finalizar Venda</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const LABELS_FORMA = { dinheiro: '💵 Dinheiro', pix: '📱 Pix', cartao_credito: '💳 Cartão Crédito', cartao_debito: '💳 Cartão Débito' };
   let formaSelecionada = null;
   let nivelUsuario = '';
   let nomeUsuario = '';
   let resumoAtual = null;
+  let catalogoCombinado = [];
+  let produtoKgAtual = null;
+  let produtoUnitAtual = null;
+  let produtoFrangoAtual = null;
+  let carrinho = [];
+  let filaFichas = [];
+  let divisaoPagamentos = [];
+  let vendaAtual = null;
+  let infoLoteAtual = null;
 
   function fmtHora(str) {
     if (!str) return '-';
@@ -179,10 +377,130 @@
       document.getElementById('data-hora-venda').max = maxDataHora;
       document.getElementById('data-hora-gasto').max = maxDataHora;
     }
+    await carregarProdutos();
     await carregarResumo();
     await carregarVendas();
     await carregarGastos();
     setInterval(() => { carregarResumo(); carregarVendas(); carregarGastos(); }, 30000);
+  }
+
+  async function carregarProdutos() {
+    try {
+      const [resProdutos, resTipos, resEstoque] = await Promise.all([
+        fetch('/api/precos'), fetch('/api/tipos'), fetch('/api/estoque/hoje')
+      ]);
+      const produtos = await resProdutos.json();
+      const tipos = await resTipos.json();
+      const estoque = await resEstoque.json();
+      const estoquePorTipo = {};
+      estoque.forEach(e => { estoquePorTipo[e.tipo_id] = e; });
+
+      catalogoCombinado = [
+        ...produtos.map(p => ({ uid: 'produto-' + p.id, id: p.id, nome: p.nome, preco: p.preco, emoji: p.emoji || '📦', unidade: p.unidade, origem: 'produto' })),
+        ...tipos.map(t => {
+          const est = estoquePorTipo[t.id];
+          const esgotado = !!(est && est.total > 0 && est.restantes <= 0);
+          return { uid: 'frango-' + t.id, id: t.id, nome: t.nome, preco: t.preco, emoji: t.icone || '🍗', unidade: 'un', origem: 'frango', esgotado, restantes: est ? est.restantes : null };
+        })
+      ];
+    } catch (e) {
+      catalogoCombinado = [];
+    }
+  }
+
+  function filtrarProdutos() {
+    const termo = document.getElementById('produto-busca').value.trim().toLowerCase();
+    const caixa = document.getElementById('produto-sugestoes');
+    if (!termo) { caixa.classList.remove('aberta'); caixa.innerHTML = ''; return; }
+
+    const encontrados = catalogoCombinado.filter(p => p.nome.toLowerCase().includes(termo)).slice(0, 8);
+    if (!encontrados.length) {
+      caixa.innerHTML = '<div class="sugestao-vazia">Nenhum produto encontrado</div>';
+    } else {
+      caixa.innerHTML = encontrados.map(p => `
+        <div class="sugestao-produto${p.esgotado ? ' sugestao-esgotada' : ''}" onmousedown="selecionarProduto('${p.uid}')">
+          <span>${p.emoji || '📦'} ${p.nome}${p.origem === 'frango' ? ' <small style="color:#f59e0b;">· assado</small>' : ''}</span>
+          <span class="sug-preco">${p.esgotado ? '<span class="sug-esgotado">Esgotado</span>' : (p.preco ? fmtMoeda(p.preco) : '—')}</span>
+        </div>
+      `).join('');
+    }
+    caixa.classList.add('aberta');
+  }
+
+  function fecharSugestoesComAtraso() {
+    setTimeout(() => {
+      document.getElementById('produto-sugestoes').classList.remove('aberta');
+    }, 150);
+  }
+
+  function selecionarProduto(uid) {
+    const produto = catalogoCombinado.find(p => p.uid === uid);
+    if (!produto) return;
+    if (produto.esgotado) { alert(`${produto.nome} está esgotado hoje.`); return; }
+    document.getElementById('produto-busca').value = '';
+    document.getElementById('produto-sugestoes').classList.remove('aberta');
+    document.getElementById('produto-sugestoes').innerHTML = '';
+    document.getElementById('descricao').value = produto.nome;
+
+    if (produto.origem === 'frango') {
+      produtoKgAtual = null;
+      produtoUnitAtual = null;
+      produtoFrangoAtual = produto;
+      document.getElementById('peso-kg-area').style.display = 'none';
+      document.getElementById('quantidade-area').style.display = 'block';
+      document.getElementById('peso-kg').value = '';
+      document.getElementById('quantidade').value = 1;
+      if (produto.restantes != null) document.getElementById('quantidade').max = produto.restantes;
+      document.getElementById('quantidade-hint').textContent = produto.restantes != null ? `Disponível hoje: ${produto.restantes}` : '';
+      document.getElementById('valor').value = produto.preco ? produto.preco.toFixed(2) : '';
+    } else if (produto.unidade === 'kg') {
+      produtoKgAtual = produto;
+      produtoUnitAtual = null;
+      produtoFrangoAtual = null;
+      document.getElementById('peso-kg-area').style.display = 'block';
+      document.getElementById('quantidade-area').style.display = 'none';
+      document.getElementById('quantidade').removeAttribute('max');
+      document.getElementById('quantidade-hint').textContent = '';
+      document.getElementById('peso-kg').value = '';
+      document.getElementById('quantidade').value = '';
+      document.getElementById('valor').value = '';
+      document.getElementById('peso-kg').focus();
+    } else {
+      produtoKgAtual = null;
+      produtoUnitAtual = produto;
+      produtoFrangoAtual = null;
+      document.getElementById('peso-kg-area').style.display = 'none';
+      document.getElementById('peso-kg').value = '';
+      document.getElementById('quantidade-area').style.display = 'block';
+      document.getElementById('quantidade').removeAttribute('max');
+      document.getElementById('quantidade-hint').textContent = '';
+      document.getElementById('quantidade').value = 1;
+      document.getElementById('valor').value = produto.preco ? produto.preco.toFixed(2) : '';
+    }
+  }
+
+  function recalcularValorKg() {
+    if (!produtoKgAtual) return;
+    const pesoStr = document.getElementById('peso-kg').value;
+    const peso = Number(pesoStr.replace(',', '.'));
+    if (!peso || peso <= 0) {
+      document.getElementById('descricao').value = produtoKgAtual.nome;
+      return;
+    }
+    document.getElementById('descricao').value = `${produtoKgAtual.nome} (${pesoStr} kg)`;
+    if (produtoKgAtual.preco) {
+      document.getElementById('valor').value = (peso * produtoKgAtual.preco).toFixed(2);
+    }
+  }
+
+  function recalcularValorQuantidade() {
+    const atual = produtoUnitAtual || produtoFrangoAtual;
+    if (!atual) return;
+    const qtd = Math.max(1, parseInt(document.getElementById('quantidade').value, 10) || 1);
+    document.getElementById('descricao').value = qtd > 1 ? `${atual.nome} (x${qtd})` : atual.nome;
+    if (atual.preco) {
+      document.getElementById('valor').value = (atual.preco * qtd).toFixed(2);
+    }
   }
 
   function podeGerenciar() {
@@ -212,42 +530,321 @@
     document.getElementById('painel-' + aba).classList.add('ativo');
   }
 
+  function abrirWizardVenda() {
+    document.getElementById('modal-wizard-itens').classList.add('aberto');
+    document.getElementById('descricao').focus();
+  }
+
+  function fecharWizardVenda() {
+    if (carrinho.length && !confirm('Cancelar a venda e descartar os itens adicionados?')) return;
+    carrinho = [];
+    renderCarrinho();
+    cancelarDivisaoPagamento();
+    document.querySelectorAll('.pagamento-btn').forEach(b => b.classList.remove('ativo'));
+    formaSelecionada = null;
+    document.getElementById('troco-btn-area').style.display = 'none';
+    document.getElementById('valor-recebido').value = '';
+    document.getElementById('troco-resultado').innerHTML = '';
+    document.querySelectorAll('.modal-wizard').forEach(m => m.classList.remove('aberto'));
+  }
+
+  function irParaPagamento() {
+    if (!carrinho.length) { alert('Adicione ao menos um item à venda'); return; }
+    document.getElementById('wizard-pagamento-total').textContent = fmtMoeda(totalCarrinho());
+    document.getElementById('modal-wizard-itens').classList.remove('aberto');
+    document.getElementById('modal-wizard-pagamento').classList.add('aberto');
+  }
+
+  function voltarParaItens() {
+    document.getElementById('modal-wizard-pagamento').classList.remove('aberto');
+    document.getElementById('modal-wizard-itens').classList.add('aberto');
+  }
+
+  function irParaResumo() {
+    if (formaSelecionada === 'misto') {
+      if (!divisaoPagamentos.length) { alert('Adicione ao menos uma forma de pagamento'); return; }
+      const total = totalCarrinho();
+      const soma = totalDivisaoPagamento();
+      if (Math.abs(total - soma) > 0.005) {
+        alert(`A soma dos pagamentos (${fmtMoeda(soma)}) não bate com o total da venda (${fmtMoeda(total)}).`);
+        return;
+      }
+    } else if (!formaSelecionada) {
+      alert('Selecione a forma de pagamento');
+      return;
+    }
+    renderResumoWizard();
+    document.getElementById('modal-wizard-pagamento').classList.remove('aberto');
+    document.getElementById('modal-wizard-resumo').classList.add('aberto');
+  }
+
+  function voltarParaPagamento() {
+    document.getElementById('modal-wizard-resumo').classList.remove('aberto');
+    document.getElementById('modal-wizard-pagamento').classList.add('aberto');
+  }
+
+  function renderResumoWizard() {
+    document.getElementById('resumo-wizard-itens').innerHTML = carrinho.map(item => `
+      <div class="resumo-linha"><span>${item.descricao}</span><span>${fmtMoeda(item.valor)}</span></div>
+    `).join('') + `<div class="resumo-total">Total: ${fmtMoeda(totalCarrinho())}</div>`;
+
+    let pagHtml;
+    if (formaSelecionada === 'misto') {
+      pagHtml = divisaoPagamentos.map(p => `
+        <div class="resumo-linha"><span>${LABELS_FORMA[p.forma_pagamento]}</span><span>${fmtMoeda(Number(String(p.valor).replace(',', '.')))}</span></div>
+      `).join('');
+    } else {
+      pagHtml = `<div class="resumo-linha"><span>Forma de pagamento</span><span>${LABELS_FORMA[formaSelecionada]}</span></div>`;
+      if (formaSelecionada === 'dinheiro') {
+        const recebido = Number((document.getElementById('valor-recebido').value || '').replace(',', '.'));
+        if (recebido) {
+          pagHtml += `<div class="resumo-linha"><span>Valor recebido</span><span>${fmtMoeda(recebido)}</span></div>`;
+          pagHtml += `<div class="resumo-linha"><span>Troco</span><span>${fmtMoeda(recebido - totalCarrinho())}</span></div>`;
+        }
+      }
+    }
+    document.getElementById('resumo-wizard-pagamento').innerHTML = pagHtml;
+  }
+
   function selecionarPagamento(forma, btn) {
+    fecharDivisaoPagamento();
     formaSelecionada = forma;
     document.querySelectorAll('.pagamento-btn').forEach(b => b.classList.remove('ativo'));
     btn.classList.add('ativo');
+
+    const trocoBtnArea = document.getElementById('troco-btn-area');
+    if (forma === 'dinheiro') {
+      trocoBtnArea.style.display = 'block';
+      abrirModalTroco();
+    } else {
+      trocoBtnArea.style.display = 'none';
+      document.getElementById('valor-recebido').value = '';
+      document.getElementById('troco-resultado').innerHTML = '';
+    }
   }
 
-  async function registrarVenda() {
+  function ativarDivisaoPagamento() {
+    if (!carrinho.length) { alert('Adicione itens ao carrinho antes de dividir o pagamento'); return; }
+    formaSelecionada = 'misto';
+    document.querySelectorAll('.pagamento-btn').forEach(b => b.classList.remove('ativo'));
+    document.getElementById('troco-btn-area').style.display = 'none';
+    document.getElementById('valor-recebido').value = '';
+    document.getElementById('troco-resultado').innerHTML = '';
+    divisaoPagamentos = [];
+    document.getElementById('pagamento-normal-area').style.display = 'none';
+    document.getElementById('divisao-pagamento-area').style.display = 'block';
+    renderDivisaoPagamento();
+  }
+
+  function fecharDivisaoPagamento() {
+    divisaoPagamentos = [];
+    document.getElementById('pagamento-normal-area').style.display = 'block';
+    document.getElementById('divisao-pagamento-area').style.display = 'none';
+  }
+
+  function cancelarDivisaoPagamento() {
+    formaSelecionada = null;
+    fecharDivisaoPagamento();
+  }
+
+  function adicionarLinhaPagamento(forma) {
+    divisaoPagamentos.push({ forma_pagamento: forma, valor: '' });
+    renderDivisaoPagamento();
+  }
+
+  let timerStatusDivisao = null;
+  function atualizarValorDivisao(i, valor) {
+    // Só atualiza o estado + texto de status — nunca redesenha os inputs aqui,
+    // senão o campo perde o foco e o teclado do celular fecha a cada dígito digitado.
+    // A atualização do texto roda depois (setTimeout 0) pra não mexer no DOM ainda
+    // dentro do próprio evento de digitação — em alguns Android isso já é suficiente
+    // pra derrubar o teclado, mesmo mudando um elemento diferente do campo.
+    divisaoPagamentos[i].valor = valor;
+    clearTimeout(timerStatusDivisao);
+    timerStatusDivisao = setTimeout(atualizarStatusDivisao, 0);
+  }
+
+  function removerLinhaPagamento(i) {
+    divisaoPagamentos.splice(i, 1);
+    renderDivisaoPagamento();
+  }
+
+  function totalDivisaoPagamento() {
+    return divisaoPagamentos.reduce((s, p) => s + (Number(String(p.valor).replace(',', '.')) || 0), 0);
+  }
+
+  function atualizarStatusDivisao() {
+    const total = totalCarrinho();
+    const somaAtual = totalDivisaoPagamento();
+    const restante = Math.round((total - somaAtual) * 100) / 100;
+    const statusEl = document.getElementById('divisao-status');
+    if (!divisaoPagamentos.length) {
+      statusEl.innerHTML = `<span style="color:#888;font-weight:normal;font-size:13px;">Adicione as formas usadas e o valor de cada uma</span>`;
+    } else if (Math.abs(restante) < 0.005) {
+      statusEl.innerHTML = `<span class="troco-ok">✓ Soma confere: ${fmtMoeda(total)}</span>`;
+    } else if (restante > 0) {
+      statusEl.innerHTML = `<span class="troco-insuficiente">Falta alocar: ${fmtMoeda(restante)}</span>`;
+    } else {
+      statusEl.innerHTML = `<span class="troco-insuficiente">Passou ${fmtMoeda(-restante)} do total</span>`;
+    }
+  }
+
+  function renderDivisaoPagamento() {
+    document.getElementById('divisao-linhas').innerHTML = divisaoPagamentos.map((p, i) => `
+      <div class="divisao-linha">
+        <span>${LABELS_FORMA[p.forma_pagamento]}</span>
+        <input type="text" inputmode="decimal" placeholder="0,00" value="${p.valor}" oninput="atualizarValorDivisao(${i}, this.value)">
+        <button type="button" class="ci-remover" onclick="removerLinhaPagamento(${i})">✕</button>
+      </div>
+    `).join('');
+    atualizarStatusDivisao();
+  }
+
+  function abrirModalTroco() {
+    calcularTroco();
+    document.getElementById('modal-troco').classList.add('aberto');
+  }
+
+  function fecharModal(id) {
+    document.getElementById(id).classList.remove('aberto');
+  }
+
+  function calcularTroco() {
+    const resultado = document.getElementById('troco-resultado');
+    if (formaSelecionada !== 'dinheiro') { resultado.innerHTML = ''; return; }
+
+    const valor = totalCarrinho();
+    const recebidoStr = document.getElementById('valor-recebido').value;
+    const recebido = Number(recebidoStr.replace(',', '.'));
+
+    if (!recebidoStr || isNaN(recebido)) { resultado.innerHTML = ''; return; }
+
+    const troco = recebido - valor;
+    if (troco < 0) {
+      resultado.innerHTML = `<span class="troco-insuficiente">Falta ${fmtMoeda(-troco)}</span>`;
+    } else {
+      resultado.innerHTML = `<span class="troco-ok">Troco: ${fmtMoeda(troco)}</span>`;
+    }
+  }
+
+  function totalCarrinho() {
+    return carrinho.reduce((s, item) => s + item.valor, 0);
+  }
+
+  function renderCarrinho() {
+    const area = document.getElementById('carrinho-area');
+    if (!carrinho.length) { area.style.display = 'none'; return; }
+    area.style.display = 'block';
+    document.getElementById('carrinho-lista').innerHTML = carrinho.map((item, i) => `
+      <div class="carrinho-item">
+        <span class="ci-desc">${item.descricao}${item.origem === 'frango' ? ' <small style="color:#f59e0b;">· assado</small>' : ''}</span>
+        <span class="ci-valor">${fmtMoeda(item.valor)}</span>
+        <button type="button" class="ci-remover" onclick="removerItemCarrinho(${i})">✕</button>
+      </div>
+    `).join('');
+    document.getElementById('carrinho-total').textContent = `Total: ${fmtMoeda(totalCarrinho())}`;
+  }
+
+  function adicionarItemCarrinho() {
     const descricao = document.getElementById('descricao').value.trim();
     const valor = document.getElementById('valor').value;
     if (!descricao) { alert('Informe a descrição'); return; }
     if (!valor || Number(valor) <= 0) { alert('Informe um valor válido'); return; }
+
+    if (produtoFrangoAtual) {
+      // Cada frango vira um lançamento próprio: senha/QR de retirada individual por unidade.
+      const qtd = Math.max(1, parseInt(document.getElementById('quantidade').value, 10) || 1);
+      for (let i = 0; i < qtd; i++) {
+        carrinho.push({ descricao: produtoFrangoAtual.nome, valor: produtoFrangoAtual.preco, origem: 'frango', tipo_id: produtoFrangoAtual.id });
+      }
+    } else {
+      carrinho.push({ descricao, valor: Number(valor) });
+    }
+
+    document.getElementById('descricao').value = '';
+    document.getElementById('valor').value = '';
+    document.getElementById('produto-busca').value = '';
+    document.getElementById('peso-kg-area').style.display = 'none';
+    document.getElementById('peso-kg').value = '';
+    produtoKgAtual = null;
+    document.getElementById('quantidade-area').style.display = 'none';
+    document.getElementById('quantidade').removeAttribute('max');
+    document.getElementById('quantidade-hint').textContent = '';
+    document.getElementById('quantidade').value = '';
+    produtoUnitAtual = null;
+    produtoFrangoAtual = null;
+
+    renderCarrinho();
+    calcularTroco();
+    document.getElementById('descricao').focus();
+  }
+
+  function removerItemCarrinho(i) {
+    carrinho.splice(i, 1);
+    renderCarrinho();
+    calcularTroco();
+  }
+
+  async function registrarVenda() {
+    if (!carrinho.length) { alert('Adicione ao menos um item à venda'); return; }
     if (!formaSelecionada) { alert('Selecione a forma de pagamento'); return; }
 
     let dataHora = null;
     if (document.getElementById('chk-retroativo-venda')?.checked) {
       dataHora = document.getElementById('data-hora-venda').value;
       if (!dataHora) { alert('Informe a data/hora do lançamento retroativo'); return; }
+      if (carrinho.some(i => i.origem === 'frango')) {
+        alert('Itens de frango assado não podem ser lançados de forma retroativa (ficam na fila de retirada do dia). Remova-os do carrinho ou desmarque o lançamento retroativo.');
+        return;
+      }
+    }
+
+    if (formaSelecionada === 'misto') {
+      await registrarVendaDividida(dataHora);
+      return;
     }
 
     const btn = document.getElementById('btn-registrar');
     btn.disabled = true; btn.textContent = 'Registrando...';
     try {
-      const body = { descricao, valor: Number(valor), forma_pagamento: formaSelecionada };
-      if (dataHora) body.data_hora = dataHora;
-      const res = await fetch('/api/pdv/venda', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.erro);
+      while (carrinho.length) {
+        const item = carrinho[0];
+        let res;
+        if (item.origem === 'frango') {
+          res = await fetch('/api/frango/venda', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tipo_id: item.tipo_id, forma_pagamento: formaSelecionada })
+          });
+          const vendaFrango = await res.json();
+          if (!res.ok) throw new Error(vendaFrango.erro);
+          const loteRes = await fetch('/api/lotes/proximo/' + item.tipo_id);
+          const lote = await loteRes.json();
+          filaFichas.push({ venda: vendaFrango, lote });
+          carrinho.shift();
+          continue;
+        } else {
+          const body = { descricao: item.descricao, valor: item.valor, forma_pagamento: formaSelecionada };
+          if (dataHora) body.data_hora = dataHora;
+          res = await fetch('/api/pdv/venda', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+        }
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.erro);
+        carrinho.shift();
+      }
 
-      document.getElementById('descricao').value = '';
-      document.getElementById('valor').value = '';
+      renderCarrinho();
+      document.getElementById('troco-btn-area').style.display = 'none';
+      document.getElementById('valor-recebido').value = '';
+      document.getElementById('troco-resultado').innerHTML = '';
+      fecharModal('modal-troco');
       document.querySelectorAll('.pagamento-btn').forEach(b => b.classList.remove('ativo'));
       formaSelecionada = null;
+      document.querySelectorAll('.modal-wizard').forEach(m => m.classList.remove('aberto'));
       if (dataHora) {
         document.getElementById('chk-retroativo-venda').checked = false;
         document.getElementById('data-hora-venda').value = '';
@@ -257,8 +854,199 @@
 
       carregarResumo();
       carregarVendas();
-    } catch(e) { alert(e.message); }
-    btn.disabled = false; btn.textContent = 'Registrar Venda';
+      if (filaFichas.length) mostrarProximaFicha();
+    } catch(e) {
+      renderCarrinho();
+      document.getElementById('modal-wizard-resumo').classList.remove('aberto');
+      document.getElementById('modal-wizard-pagamento').classList.remove('aberto');
+      document.getElementById('modal-wizard-itens').classList.add('aberto');
+      alert(`Erro ao registrar item: ${e.message}. Os itens já enviados foram salvos; os restantes continuam no carrinho.`);
+    }
+    btn.disabled = false; btn.textContent = 'Finalizar Venda';
+  }
+
+  async function registrarVendaDividida(dataHora) {
+    if (!divisaoPagamentos.length) { alert('Adicione ao menos uma forma de pagamento'); return; }
+    const total = totalCarrinho();
+    const soma = totalDivisaoPagamento();
+    if (Math.abs(total - soma) > 0.005) {
+      alert(`A soma dos pagamentos (${fmtMoeda(soma)}) não bate com o total da venda (${fmtMoeda(total)}).`);
+      return;
+    }
+
+    const itens = carrinho.filter(i => i.origem !== 'frango').map(i => ({ descricao: i.descricao, valor: i.valor }));
+    const frangoTipoIds = carrinho.filter(i => i.origem === 'frango').map(i => i.tipo_id);
+    const pagamentos = divisaoPagamentos.map(p => ({ forma_pagamento: p.forma_pagamento, valor: Number(String(p.valor).replace(',', '.')) }));
+
+    const btn = document.getElementById('btn-registrar');
+    btn.disabled = true; btn.textContent = 'Registrando...';
+    try {
+      const body = { itens, frango_tipo_ids: frangoTipoIds, pagamentos };
+      if (dataHora) body.data_hora = dataHora;
+      const res = await fetch('/api/pdv/venda-dividida', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro);
+
+      for (const vendaFrango of data.frangos) {
+        const loteRes = await fetch('/api/lotes/proximo/' + vendaFrango.tipo_id);
+        const lote = await loteRes.json();
+        filaFichas.push({ venda: vendaFrango, lote });
+      }
+
+      carrinho = [];
+      renderCarrinho();
+      fecharDivisaoPagamento();
+      document.getElementById('troco-btn-area').style.display = 'none';
+      document.getElementById('valor-recebido').value = '';
+      document.getElementById('troco-resultado').innerHTML = '';
+      fecharModal('modal-troco');
+      document.querySelectorAll('.pagamento-btn').forEach(b => b.classList.remove('ativo'));
+      formaSelecionada = null;
+      document.querySelectorAll('.modal-wizard').forEach(m => m.classList.remove('aberto'));
+      if (dataHora) {
+        document.getElementById('chk-retroativo-venda').checked = false;
+        document.getElementById('data-hora-venda').value = '';
+        toggleRetroativoVenda();
+        alert('Venda retroativa registrada com sucesso.');
+      }
+
+      carregarResumo();
+      carregarVendas();
+      if (filaFichas.length) mostrarProximaFicha();
+    } catch(e) {
+      document.getElementById('modal-wizard-resumo').classList.remove('aberto');
+      document.getElementById('modal-wizard-pagamento').classList.add('aberto');
+      alert(`Erro ao registrar venda dividida: ${e.message}`);
+    }
+    btn.disabled = false; btn.textContent = 'Finalizar Venda';
+  }
+
+  function mostrarProximaFicha() {
+    if (!filaFichas.length) return;
+    const { venda, lote } = filaFichas.shift();
+    vendaAtual = venda;
+    infoLoteAtual = lote;
+
+    document.getElementById('ficha-codigo').textContent = venda.codigo;
+    document.getElementById('ficha-info').textContent = '🍗 ' + (venda.tipo_nome || venda.tipo) + ' • ' + venda.atendente;
+
+    const avisoEl = document.getElementById('ficha-aviso-lote');
+    if (lote && lote.status === 'assando') {
+      avisoEl.textContent = '🔥 Pronto às ' + lote.hora_formatada + ' (~' + lote.minutos_restantes + ' min)';
+      avisoEl.style.display = 'block';
+    } else {
+      avisoEl.style.display = 'none';
+    }
+
+    const canvas = document.getElementById('qr-canvas');
+    canvas.width = 150; canvas.height = 150;
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0, 150, 150);
+    img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(venda.codigo);
+
+    document.getElementById('modal-ficha').classList.add('aberto');
+  }
+
+  function fecharModalFicha() {
+    fecharModal('modal-ficha');
+    vendaAtual = null;
+    infoLoteAtual = null;
+    if (filaFichas.length) mostrarProximaFicha();
+  }
+
+  async function conectarBTFicha() {
+    await BTPrinter.connect();
+  }
+
+  async function imprimirBTFicha() {
+    if (!vendaAtual) return;
+    await BTPrinter.printComprovante(vendaAtual, infoLoteAtual);
+  }
+
+  async function imprimirEFecharFicha() {
+    if (!vendaAtual) return;
+    if (BTPrinter.isConnected()) {
+      await BTPrinter.printComprovante(vendaAtual, infoLoteAtual);
+    } else {
+      imprimirFicha();
+    }
+    fecharModalFicha();
+  }
+
+  async function imprimirFicha() {
+    if (!vendaAtual) return;
+    const qrDataUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(vendaAtual.codigo);
+    const w = window.open('', '_blank', 'width=400,height=650');
+    const p = vendaAtual.horario_compra.replace('T',' ').split(/[- :]/);
+    const hora = p[3].padStart(2,'0') + ':' + p[4].padStart(2,'0') + ':' + (p[5]||'00').padStart(2,'0');
+    const data = p[2].padStart(2,'0') + '/' + p[1].padStart(2,'0') + '/' + p[0];
+    const diaSemana = new Date(new Date().toLocaleString('en-US', {timeZone:'America/Sao_Paulo'})).getDay();
+    const isDomingo = diaSemana === 0;
+    const horarioLimite = isDomingo ? '13:45' : '18:30';
+    const diaTexto = isDomingo ? 'Domingo' : 'Dia de semana';
+    const loteInfo = infoLoteAtual && infoLoteAtual.status === 'assando'
+      ? `<div class="aviso" style="background:#fff8e1">
+          <strong>PREVISÃO DE RETIRADA</strong><br>
+          Às <strong>${infoLoteAtual.hora_formatada}</strong> (~${infoLoteAtual.minutos_restantes} min)
+         </div>`
+      : `<div class="aviso" style="background:#f0fff4"><strong>Frango pronto para retirada!</strong></div>`;
+
+    w.document.write(`
+      <html><head><title>Comprovante</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: monospace; font-size: 12px; padding: 4px; width: 72mm; }
+        @media print {
+          @page { margin: 0; size: 72mm auto; }
+          body { width: 72mm; padding: 2mm; }
+        }
+        .cabecalho { text-align: center; margin-bottom: 4px; }
+        .cabecalho img { width: 24mm; }
+        .cabecalho h2 { font-size: 14px; margin: 2px 0; }
+        .cabecalho h3 { font-size: 10px; font-weight: normal; color: #333; margin: 1px 0; }
+        .linha { border-top: 1px dashed #000; margin: 5px 0; }
+        .codigo { text-align: center; font-size: 26px; font-weight: bold; letter-spacing: 3px; margin: 5px 0; }
+        .info { margin: 2px 0; font-size: 11px; }
+        .obs { font-style: italic; font-size: 10px; margin-top: 3px; }
+        .qr { text-align: center; margin: 5px 0; }
+        .aviso { border: 1px solid #000; padding: 5px; margin: 5px 0; text-align: center; font-size: 10px; line-height: 1.5; }
+        .rodape { text-align: center; font-size: 10px; margin-top: 5px; }
+      </style>
+</head><body>
+      <div class="cabecalho">
+        <img src="/logo.jfif" onerror="this.style.display='none'">
+        <h2>FRANGO EXPRESSO</h2>
+        <h3>(38) 9912-2660</h3>
+        <h3>Av. das Americas, 15 - Dr. Joao Alves</h3>
+        <h3>Montes Claros - MG</h3>
+      </div>
+      <div class="linha"></div>
+      <div class="info">Data: ${data}  Hora: ${hora}</div>
+      <div class="info">Atendente: ${vendaAtual.atendente}</div>
+      <div class="info" style="font-size:16px;font-weight:bold">Produto: ${vendaAtual.tipo_nome || vendaAtual.tipo}</div>
+      <div class="linha"></div>
+      <div style="text-align:center;font-size:13px">Seu código:</div>
+      <div class="codigo">${vendaAtual.codigo}</div>
+      <div class="qr"><img src="${qrDataUrl}" width="120"></div>
+      <div class="linha"></div>
+      ${loteInfo}
+      <div class="aviso">
+        <strong>ATENÇÃO</strong><br>
+        Retire seu frango <strong>hoje</strong>.<br>
+        ${diaTexto}: retire até as <strong>${horarioLimite}</strong>.<br>
+        Não nos responsabilizamos<br>por retiradas fora do prazo.
+      </div>
+      <div class="rodape">Guarde este comprovante<br>Apresente na retirada</div>
+
+      <script>window.onload=()=>{setTimeout(()=>{window.print();setTimeout(()=>{window.close();},3000);},300);}<\/script>
+      </body></html>
+    `);
+    w.document.close();
   }
 
   async function registrarGasto() {

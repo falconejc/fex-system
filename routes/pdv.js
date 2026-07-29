@@ -9,6 +9,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database');
 const { exigirNivel } = require('../auth');
+const { broadcast } = require('../events');
+const { registrarVendaFrango } = require('./frango');
 
 const FORMAS_PAGAMENTO = ['dinheiro', 'pix', 'cartao_credito', 'cartao_debito'];
 
@@ -22,6 +24,10 @@ function hoje() {
 
 function gerarCodigo() {
   return 'V' + Math.random().toString(36).substring(2, 7).toUpperCase();
+}
+
+function gerarReferenciaMisto() {
+  return 'MX' + Math.random().toString(36).substring(2, 7).toUpperCase();
 }
 
 // Valida uma data/hora retroativa vinda do front (formato 'YYYY-MM-DDTHH:MM' ou com segundos)
@@ -63,6 +69,115 @@ router.post('/venda', (req, res) => {
   res.json(db.prepare('SELECT * FROM pdv_vendas WHERE codigo = ?').get(codigo));
 });
 
+// Venda com pagamento dividido entre duas ou mais formas (ex.: parte no cartão, parte no dinheiro).
+// Cada item/frango é registrado normalmente (mantendo ficha, baixa de estoque e insumos),
+// só que marcado com forma_pagamento='misto' — o de-para real de quanto foi pago em cada
+// forma fica em pdv_pagamentos_misto, somado no relatório do dia.
+router.post('/venda-dividida', (req, res) => {
+  const listaItens = Array.isArray(req.body.itens) ? req.body.itens : [];
+  const listaFrangos = Array.isArray(req.body.frango_tipo_ids) ? req.body.frango_tipo_ids : [];
+  const listaPagamentos = Array.isArray(req.body.pagamentos) ? req.body.pagamentos : [];
+  const { data_hora } = req.body;
+
+  if (!listaItens.length && !listaFrangos.length) {
+    return res.status(400).json({ erro: 'Nenhum item na venda' });
+  }
+  if (!listaPagamentos.length) {
+    return res.status(400).json({ erro: 'Informe ao menos uma forma de pagamento' });
+  }
+  for (const p of listaPagamentos) {
+    if (!FORMAS_PAGAMENTO.includes(p.forma_pagamento)) return res.status(400).json({ erro: 'Forma de pagamento inválida' });
+    if (!(Number(p.valor) > 0)) return res.status(400).json({ erro: 'Valor de pagamento inválido' });
+  }
+  for (const it of listaItens) {
+    if (!it.descricao || !String(it.descricao).trim()) return res.status(400).json({ erro: 'Descrição obrigatória' });
+    if (!(Number(it.valor) > 0)) return res.status(400).json({ erro: 'Valor inválido' });
+  }
+
+  let criadoEm = agora();
+  if (data_hora) {
+    if (listaFrangos.length) {
+      return res.status(400).json({ erro: 'Itens de frango assado não podem ser lançados de forma retroativa' });
+    }
+    if (!['admin', 'dono'].includes(req.usuario.nivel)) {
+      return res.status(403).json({ erro: 'Apenas admin ou dono podem lançar vendas retroativas' });
+    }
+    criadoEm = validarDataRetroativa(data_hora);
+    if (!criadoEm) return res.status(400).json({ erro: 'Data/hora retroativa inválida' });
+  }
+
+  const tiposFrango = listaFrangos.map(id => db.prepare('SELECT * FROM tipos_frango WHERE id = ? AND ativo = 1').get(id));
+  if (tiposFrango.some(t => !t)) return res.status(400).json({ erro: 'Tipo de frango inválido' });
+
+  const totalItens = listaItens.reduce((s, it) => s + Number(it.valor), 0);
+  const totalFrangos = tiposFrango.reduce((s, t) => s + t.preco, 0);
+  const totalPagamentos = listaPagamentos.reduce((s, p) => s + Number(p.valor), 0);
+  if (Math.abs(totalPagamentos - (totalItens + totalFrangos)) > 0.01) {
+    return res.status(400).json({ erro: 'A soma dos pagamentos não bate com o total da venda' });
+  }
+
+  const referencia = gerarReferenciaMisto();
+  const atendente = req.usuario.nome;
+  const usuario_id = req.usuario.id;
+
+  const executar = db.transaction(() => {
+    const itensRegistrados = [];
+    for (const it of listaItens) {
+      let codigo, tentativas = 0;
+      do {
+        codigo = gerarCodigo();
+        if (++tentativas > 10) throw new Error('Erro ao gerar código');
+      } while (db.prepare('SELECT id FROM pdv_vendas WHERE codigo = ?').get(codigo));
+
+      db.prepare(`INSERT INTO pdv_vendas (codigo, descricao, valor, forma_pagamento, operador, usuario_id, criado_em, referencia_pagamento)
+        VALUES (?, ?, ?, 'misto', ?, ?, ?, ?)`)
+        .run(codigo, String(it.descricao).trim(), Number(it.valor), atendente, usuario_id, criadoEm, referencia);
+      itensRegistrados.push(db.prepare('SELECT * FROM pdv_vendas WHERE codigo = ?').get(codigo));
+    }
+
+    const frangosRegistrados = [];
+    for (const tipo_id of listaFrangos) {
+      const resultado = registrarVendaFrango({
+        tipo_id, atendente, usuario_id, forma_pagamento: 'misto', referencia_pagamento: referencia
+      });
+      if (resultado.erro) throw new Error(resultado.erro);
+      frangosRegistrados.push(resultado.venda);
+    }
+
+    listaPagamentos.forEach(p => {
+      db.prepare(`INSERT INTO pdv_pagamentos_misto (referencia, forma_pagamento, valor, operador, usuario_id, criado_em)
+        VALUES (?, ?, ?, ?, ?, ?)`)
+        .run(referencia, p.forma_pagamento, Number(p.valor), atendente, usuario_id, criadoEm);
+    });
+
+    return { itensRegistrados, frangosRegistrados };
+  });
+
+  try {
+    const { itensRegistrados, frangosRegistrados } = executar();
+    res.json({ referencia, itens: itensRegistrados, frangos: frangosRegistrados });
+    if (frangosRegistrados.length) broadcast('atualizar');
+  } catch (e) {
+    res.status(400).json({ erro: e.message });
+  }
+});
+
+// Cancela todos os itens (e pagamentos) de uma venda com pagamento dividido, pelo código de referência.
+router.put('/venda-dividida/:referencia/cancelar', exigirNivel('admin', 'dono'), (req, res) => {
+  const { referencia } = req.params;
+  const itens = db.prepare('SELECT * FROM pdv_vendas WHERE referencia_pagamento = ?').all(referencia);
+  const pagamentos = db.prepare('SELECT * FROM pdv_pagamentos_misto WHERE referencia = ?').all(referencia);
+  if (!itens.length && !pagamentos.length) return res.status(404).json({ erro: 'Venda dividida não encontrada' });
+
+  db.transaction(() => {
+    db.prepare('UPDATE pdv_vendas SET cancelado = 1 WHERE referencia_pagamento = ?').run(referencia);
+    db.prepare("UPDATE vendas SET cancelado = 1, status = 'cancelado' WHERE codigo IN (SELECT codigo FROM pdv_vendas WHERE referencia_pagamento = ?)").run(referencia);
+    db.prepare('UPDATE pdv_pagamentos_misto SET cancelado = 1 WHERE referencia = ?').run(referencia);
+  })();
+
+  res.json({ sucesso: true });
+});
+
 router.get('/vendas', (req, res) => {
   const data = hoje();
   res.json(db.prepare('SELECT * FROM pdv_vendas WHERE date(criado_em) = ? AND cancelado = 0 ORDER BY criado_em DESC').all(data));
@@ -80,8 +195,18 @@ router.get('/relatorio/dia', (req, res) => {
   const porFormaPagamento = {};
   FORMAS_PAGAMENTO.forEach(f => { porFormaPagamento[f] = { quantidade: 0, total: 0 }; });
   validas.forEach(v => {
+    // Vendas com pagamento dividido ('misto') não têm uma forma única — a baixa por
+    // forma de pagamento real vem de pdv_pagamentos_misto, somada logo abaixo.
+    if (v.forma_pagamento === 'misto') return;
     porFormaPagamento[v.forma_pagamento].quantidade++;
     porFormaPagamento[v.forma_pagamento].total += v.valor;
+  });
+
+  const pagamentosMistos = db.prepare('SELECT * FROM pdv_pagamentos_misto WHERE date(criado_em) = ? AND cancelado = 0').all(data);
+  pagamentosMistos.forEach(p => {
+    if (!porFormaPagamento[p.forma_pagamento]) porFormaPagamento[p.forma_pagamento] = { quantidade: 0, total: 0 };
+    porFormaPagamento[p.forma_pagamento].quantidade++;
+    porFormaPagamento[p.forma_pagamento].total += p.valor;
   });
 
   const totalVendido = validas.reduce((s, v) => s + v.valor, 0);
@@ -101,7 +226,8 @@ router.get('/relatorio/dia', (req, res) => {
       saldo_esperado_caixa: saldoEsperadoCaixa
     },
     vendas,
-    gastos
+    gastos,
+    pagamentos_mistos: pagamentosMistos
   });
 });
 

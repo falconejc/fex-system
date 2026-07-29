@@ -25,29 +25,29 @@ function agora() {
   return new Date().toLocaleString('sv-SE', {timeZone:'America/Sao_Paulo'}).replace('T', ' ');
 }
 
-router.post('/venda', (req, res) => {
-  const { tipo_id, observacao, telefone } = req.body;
-  const atendente = req.usuario.nome;
-  if (!tipo_id) return res.status(400).json({ erro: 'Tipo obrigatório' });
-
-  const forma_pagamento = FORMAS_PAGAMENTO.includes(req.body.forma_pagamento) ? req.body.forma_pagamento : 'dinheiro';
+// Registra uma venda de frango (estoque, ficha, insumos, espelho no PDV).
+// Reaproveitada tanto pela rota /venda quanto pelo fluxo de pagamento dividido do PDV.
+// forma_pagamento já deve vir sanitizada pelo chamador (não valida contra FORMAS_PAGAMENTO aqui,
+// pra permitir o marcador interno 'misto' sem expor esse valor como opção pública).
+function registrarVendaFrango({ tipo_id, atendente, usuario_id, observacao, telefone, forma_pagamento, referencia_pagamento }) {
+  if (!tipo_id) return { erro: 'Tipo obrigatório' };
 
   const tipo = db.prepare('SELECT * FROM tipos_frango WHERE id = ? AND ativo = 1').get(tipo_id);
-  if (!tipo) return res.status(400).json({ erro: 'Tipo inválido' });
+  if (!tipo) return { erro: 'Tipo inválido' };
 
   const data = hoje();
   const est = db.prepare('SELECT * FROM estoque WHERE data = ? AND tipo_id = ?').get(data, tipo_id);
   if (est && est.quantidade > 0) {
     const vendidos = db.prepare("SELECT COUNT(*) as c FROM vendas WHERE tipo_id=? AND cancelado=0 AND date(horario_compra)=?").get(tipo_id, data).c;
     if (vendidos >= est.quantidade) {
-      return res.status(400).json({ erro: `Estoque esgotado para ${tipo.nome}!` });
+      return { erro: `Estoque esgotado para ${tipo.nome}!` };
     }
   }
 
   let codigo, tentativas = 0;
   do {
     codigo = gerarCodigo();
-    if (++tentativas > 10) return res.status(500).json({ erro: 'Erro ao gerar código' });
+    if (++tentativas > 10) return { erro: 'Erro ao gerar código' };
   } while (db.prepare('SELECT id FROM vendas WHERE codigo = ?').get(codigo));
 
   // Calcula ordem sequencial do tipo no dia
@@ -59,12 +59,12 @@ router.post('/venda', (req, res) => {
   const ordem_tipo = (ordemRow.total || 0) + 1;
 
   db.prepare('INSERT INTO vendas (codigo, tipo, tipo_id, atendente, usuario_id, observacao, telefone, horario_compra, ordem_tipo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .run(codigo, tipo.nome, tipo_id, atendente, req.usuario.id, observacao || '', telefone || '', agora(), ordem_tipo);
+    .run(codigo, tipo.nome, tipo_id, atendente, usuario_id, observacao || '', telefone || '', agora(), ordem_tipo);
 
   // Espelha a venda no PDV pra entrar no saldo esperado do caixa
-  db.prepare(`INSERT INTO pdv_vendas (codigo, descricao, valor, forma_pagamento, operador, usuario_id, criado_em)
-    VALUES (?, ?, ?, ?, ?, ?, ?)`)
-    .run(codigo, tipo.nome, tipo.preco, forma_pagamento, atendente, req.usuario.id, agora());
+  db.prepare(`INSERT INTO pdv_vendas (codigo, descricao, valor, forma_pagamento, operador, usuario_id, criado_em, referencia_pagamento)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(codigo, tipo.nome, tipo.preco, forma_pagamento, atendente, usuario_id, agora(), referencia_pagamento || null);
 
   // Baixa automatica de insumos vinculados ao tipo
   const insumos_vinculados = db.prepare('SELECT ti.*, i.nome, i.quantidade_atual FROM tipo_insumos ti LEFT JOIN insumos i ON ti.insumo_id = i.id WHERE ti.tipo_id = ?').all(tipo_id);
@@ -72,12 +72,24 @@ router.post('/venda', (req, res) => {
   insumos_vinculados.forEach(iv => {
     const nova_qtd = iv.quantidade_atual - iv.quantidade;
     db.prepare('UPDATE insumos SET quantidade_atual = ? WHERE id = ?').run(nova_qtd, iv.insumo_id);
-    db.prepare('INSERT INTO movimentacoes_insumos (insumo_id, tipo, quantidade, observacao, usuario_id) VALUES (?, ?, ?, ?, ?)').run(iv.insumo_id, 'saida', iv.quantidade, 'Venda automatica - ' + codigo, req.usuario.id);
+    db.prepare('INSERT INTO movimentacoes_insumos (insumo_id, tipo, quantidade, observacao, usuario_id) VALUES (?, ?, ?, ?, ?)').run(iv.insumo_id, 'saida', iv.quantidade, 'Venda automatica - ' + codigo, usuario_id);
     if (nova_qtd <= 0) alertas_insumos.push({ nome: iv.nome, quantidade_atual: nova_qtd });
   });
 
   const venda = db.prepare('SELECT * FROM vendas WHERE codigo = ?').get(codigo);
-  res.json({ ...venda, tipo_nome: tipo.nome, alertas_insumos });
+  return { venda: { ...venda, tipo_nome: tipo.nome, alertas_insumos } };
+}
+
+router.post('/venda', (req, res) => {
+  const { tipo_id, observacao, telefone } = req.body;
+  const forma_pagamento = FORMAS_PAGAMENTO.includes(req.body.forma_pagamento) ? req.body.forma_pagamento : 'dinheiro';
+
+  const resultado = registrarVendaFrango({
+    tipo_id, atendente: req.usuario.nome, usuario_id: req.usuario.id, observacao, telefone, forma_pagamento
+  });
+  if (resultado.erro) return res.status(400).json({ erro: resultado.erro });
+
+  res.json(resultado.venda);
   broadcast('atualizar');
 });
 
@@ -124,7 +136,7 @@ router.put('/:id', exigirNivel('admin'), (req, res) => {
 router.delete('/:id', exigirNivel('admin'), (req, res) => {
   const venda = db.prepare('SELECT * FROM vendas WHERE id = ?').get(req.params.id);
   if (!venda) return res.status(404).json({ erro: 'Venda não encontrada' });
-  db.prepare('UPDATE vendas SET cancelado=1, status="cancelado" WHERE id=?').run(req.params.id);
+  db.prepare("UPDATE vendas SET cancelado=1, status='cancelado' WHERE id=?").run(req.params.id);
   db.prepare('UPDATE pdv_vendas SET cancelado=1 WHERE codigo=?').run(venda.codigo);
   res.json({ sucesso: true });
 });
@@ -135,9 +147,10 @@ router.post('/:codigo/cancelar', exigirNivel('admin'), (req, res) => {
   if (!venda) return res.status(404).json({ erro: 'Venda não encontrada' });
   if (venda.status === 'entregue') return res.status(400).json({ erro: 'Venda já entregue' });
   if (venda.cancelado) return res.status(400).json({ erro: 'Venda já cancelada' });
-  db.prepare('UPDATE vendas SET cancelado=1, status="cancelado" WHERE codigo=?').run(req.params.codigo);
+  db.prepare("UPDATE vendas SET cancelado=1, status='cancelado' WHERE codigo=?").run(req.params.codigo);
   db.prepare('UPDATE pdv_vendas SET cancelado=1 WHERE codigo=?').run(req.params.codigo);
   res.json({ sucesso: true });
 });
 
 module.exports = router;
+module.exports.registrarVendaFrango = registrarVendaFrango;

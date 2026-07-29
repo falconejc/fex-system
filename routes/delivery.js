@@ -63,7 +63,7 @@ router.put('/:id', exigirNivel('admin'), (req, res) => {
 router.delete('/:id', exigirNivel('admin'), (req, res) => {
   const pedido = db.prepare('SELECT * FROM delivery WHERE id = ?').get(req.params.id);
   if (!pedido) return res.status(404).json({ erro: 'Pedido não encontrado' });
-  db.prepare('UPDATE delivery SET cancelado=1, status="cancelado" WHERE id=?').run(req.params.id);
+  db.prepare("UPDATE delivery SET cancelado=1, status='cancelado' WHERE id=?").run(req.params.id);
   res.json({ sucesso: true });
 });
 
