@@ -408,12 +408,22 @@
     }
   }
 
+  function normalizarBusca(txt) {
+    return txt.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  }
+
   function filtrarProdutos() {
-    const termo = document.getElementById('produto-busca').value.trim().toLowerCase();
+    const termo = normalizarBusca(document.getElementById('produto-busca').value.trim());
     const caixa = document.getElementById('produto-sugestoes');
     if (!termo) { caixa.classList.remove('aberta'); caixa.innerHTML = ''; return; }
 
-    const encontrados = catalogoCombinado.filter(p => p.nome.toLowerCase().includes(termo)).slice(0, 8);
+    const comecaComTermo = p => normalizarBusca(p.nome).startsWith(termo);
+    const comecaPalavraComTermo = p => normalizarBusca(p.nome).split(/\s+/).some(palavra => palavra.startsWith(termo));
+
+    const porNome = catalogoCombinado.filter(comecaComTermo).sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
+    const porPalavra = catalogoCombinado.filter(p => !comecaComTermo(p) && comecaPalavraComTermo(p)).sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
+
+    const encontrados = [...porNome, ...porPalavra].slice(0, 8);
     if (!encontrados.length) {
       caixa.innerHTML = '<div class="sugestao-vazia">Nenhum produto encontrado</div>';
     } else {
