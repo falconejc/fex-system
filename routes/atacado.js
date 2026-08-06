@@ -151,4 +151,51 @@ router.get('/relatorio/dia', (req, res) => {
   });
 });
 
+// Relatório financeiro do atacado por período (usado pelo dashboard) — mesma lógica
+// do /relatorio/dia, agregado por intervalo de datas.
+router.get('/relatorio/periodo', (req, res) => {
+  const ini = req.query.ini || hoje();
+  const fim = req.query.fim || hoje();
+  const vendas = db.prepare('SELECT * FROM atacado_vendas WHERE date(criado_em) BETWEEN ? AND ? ORDER BY criado_em ASC').all(ini, fim);
+  const validas = vendas.filter(v => !v.cancelado);
+
+  const porFormaPagamento = {};
+  FORMAS_PAGAMENTO.forEach(f => { porFormaPagamento[f] = { quantidade: 0, total: 0 }; });
+  validas.forEach(v => {
+    porFormaPagamento[v.forma_pagamento].quantidade++;
+    porFormaPagamento[v.forma_pagamento].total += v.valor;
+  });
+
+  const totalVendido = validas.reduce((s, v) => s + v.valor, 0);
+  const totalFiado = porFormaPagamento.fiado.total;
+
+  const pagamentos = db.prepare('SELECT * FROM atacado_pagamentos WHERE date(criado_em) BETWEEN ? AND ? ORDER BY criado_em ASC').all(ini, fim);
+  const totalRecebidoFiado = pagamentos.reduce((s, p) => s + p.valor, 0);
+
+  const totalAReceber = db.prepare('SELECT COALESCE(SUM(saldo_fiado), 0) as total FROM atacado_clientes').get().total;
+
+  const diasMap = {};
+  let cur = new Date(ini + 'T12:00:00');
+  const fimDate = new Date(fim + 'T12:00:00');
+  while (cur <= fimDate) {
+    const d = cur.toISOString().split('T')[0];
+    diasMap[d] = { data: d, quantidade: 0, total_vendido: 0 };
+    cur.setDate(cur.getDate() + 1);
+  }
+  validas.forEach(v => { const d = v.criado_em.split(' ')[0]; if (diasMap[d]) { diasMap[d].quantidade++; diasMap[d].total_vendido += v.valor; } });
+
+  res.json({
+    ini, fim,
+    resumo: {
+      total_vendido: totalVendido,
+      quantidade_vendas: validas.length,
+      total_fiado_gerado: totalFiado,
+      total_recebido_pagamentos: totalRecebidoFiado,
+      total_a_receber: totalAReceber,
+      por_forma_pagamento: porFormaPagamento
+    },
+    por_dia: Object.values(diasMap)
+  });
+});
+
 module.exports = router;

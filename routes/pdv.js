@@ -231,6 +231,70 @@ router.get('/relatorio/dia', (req, res) => {
   });
 });
 
+// Relatório financeiro do PDV por período (usado pelo dashboard) — mesma lógica do
+// /relatorio/dia (soma pagamentos mistos por forma real), mas agregado por intervalo de datas.
+router.get('/relatorio/periodo', (req, res) => {
+  const ini = req.query.ini || hoje();
+  const fim = req.query.fim || hoje();
+  const vendas = db.prepare('SELECT * FROM pdv_vendas WHERE date(criado_em) BETWEEN ? AND ? ORDER BY criado_em ASC').all(ini, fim);
+  const validas = vendas.filter(v => !v.cancelado);
+
+  const gastos = db.prepare('SELECT * FROM pdv_gastos WHERE date(criado_em) BETWEEN ? AND ? ORDER BY criado_em ASC').all(ini, fim);
+  const gastosValidos = gastos.filter(g => !g.cancelado);
+  const totalGastos = gastosValidos.reduce((s, g) => s + g.valor, 0);
+
+  const porFormaPagamento = {};
+  FORMAS_PAGAMENTO.forEach(f => { porFormaPagamento[f] = { quantidade: 0, total: 0 }; });
+  validas.forEach(v => {
+    if (v.forma_pagamento === 'misto') return;
+    porFormaPagamento[v.forma_pagamento].quantidade++;
+    porFormaPagamento[v.forma_pagamento].total += v.valor;
+  });
+
+  const pagamentosMistos = db.prepare('SELECT * FROM pdv_pagamentos_misto WHERE date(criado_em) BETWEEN ? AND ? AND cancelado = 0').all(ini, fim);
+  pagamentosMistos.forEach(p => {
+    if (!porFormaPagamento[p.forma_pagamento]) porFormaPagamento[p.forma_pagamento] = { quantidade: 0, total: 0 };
+    porFormaPagamento[p.forma_pagamento].quantidade++;
+    porFormaPagamento[p.forma_pagamento].total += p.valor;
+  });
+
+  const totalVendido = validas.reduce((s, v) => s + v.valor, 0);
+
+  const diasMap = {};
+  let cur = new Date(ini + 'T12:00:00');
+  const fimDate = new Date(fim + 'T12:00:00');
+  while (cur <= fimDate) {
+    const d = cur.toISOString().split('T')[0];
+    diasMap[d] = { data: d, quantidade: 0, total_vendido: 0, total_gastos: 0 };
+    cur.setDate(cur.getDate() + 1);
+  }
+  validas.forEach(v => { const d = v.criado_em.split(' ')[0]; if (diasMap[d]) { diasMap[d].quantidade++; diasMap[d].total_vendido += v.valor; } });
+  gastosValidos.forEach(g => { const d = g.criado_em.split(' ')[0]; if (diasMap[d]) diasMap[d].total_gastos += g.valor; });
+
+  const produtosMap = {};
+  validas.forEach(v => {
+    if (!produtosMap[v.descricao]) produtosMap[v.descricao] = { descricao: v.descricao, quantidade: 0, total: 0 };
+    produtosMap[v.descricao].quantidade++;
+    produtosMap[v.descricao].total += v.valor;
+  });
+  const topProdutos = Object.values(produtosMap).sort((a, b) => b.total - a.total).slice(0, 8);
+
+  res.json({
+    ini, fim,
+    resumo: {
+      total_vendido: totalVendido,
+      quantidade_vendas: validas.length,
+      ticket_medio: validas.length ? totalVendido / validas.length : 0,
+      por_forma_pagamento: porFormaPagamento,
+      total_gastos: totalGastos,
+      quantidade_gastos: gastosValidos.length,
+      saldo_liquido: totalVendido - totalGastos
+    },
+    por_dia: Object.values(diasMap),
+    top_produtos: topProdutos
+  });
+});
+
 router.get('/relatorio/mes', (req, res) => {
   const mes = req.query.mes || hoje().substring(0, 7);
   const vendas = db.prepare("SELECT * FROM pdv_vendas WHERE strftime('%Y-%m', criado_em) = ? AND cancelado = 0 ORDER BY criado_em ASC").all(mes);
