@@ -279,6 +279,14 @@ router.get('/relatorio/periodo', (req, res) => {
   });
   const topProdutos = Object.values(produtosMap).sort((a, b) => b.total - a.total).slice(0, 8);
 
+  const gastosMap = {};
+  gastosValidos.forEach(g => {
+    if (!gastosMap[g.descricao]) gastosMap[g.descricao] = { descricao: g.descricao, quantidade: 0, total: 0 };
+    gastosMap[g.descricao].quantidade++;
+    gastosMap[g.descricao].total += g.valor;
+  });
+  const topGastos = Object.values(gastosMap).sort((a, b) => b.total - a.total).slice(0, 8);
+
   res.json({
     ini, fim,
     resumo: {
@@ -291,7 +299,8 @@ router.get('/relatorio/periodo', (req, res) => {
       saldo_liquido: totalVendido - totalGastos
     },
     por_dia: Object.values(diasMap),
-    top_produtos: topProdutos
+    top_produtos: topProdutos,
+    top_gastos: topGastos
   });
 });
 

@@ -125,8 +125,16 @@
         <canvas id="grafico-top-produtos"></canvas>
       </div>
       <div class="grafico-card full">
-        <h3>Faturamento diário</h3>
+        <h3>Faturamento diário (vendido x gastos)</h3>
         <canvas id="grafico-pdv-dia"></canvas>
+      </div>
+      <div class="grafico-card">
+        <h3>Gastos por dia</h3>
+        <canvas id="grafico-gastos-dia"></canvas>
+      </div>
+      <div class="grafico-card">
+        <h3>Maiores gastos</h3>
+        <canvas id="grafico-top-gastos"></canvas>
       </div>
     </div>
   </div>
@@ -255,11 +263,13 @@
       <div class="kpi azul"><div class="num">${fmtR$(pdv.resumo.saldo_liquido)}</div><div class="desc">Saldo líquido</div></div>
     `;
     renderGraficoFormasPagamento('formas-pdv', pdv.resumo.por_forma_pagamento);
-    renderGraficoTopProdutos(pdv.top_produtos);
+    renderGraficoTopItens('top-produtos', pdv.top_produtos, '#f59e0b');
     renderGraficoLinhaDia('pdv-dia', pdv.por_dia, [
       { key: 'total_vendido', label: 'Vendido', cor: '#f59e0b' },
       { key: 'total_gastos', label: 'Gastos', cor: '#ef4444' }
     ]);
+    renderGraficoBarDia('gastos-dia', pdv.por_dia, 'total_gastos', '#ef4444');
+    renderGraficoTopItens('top-gastos', pdv.top_gastos, '#ef4444');
   }
 
   function renderAtacado() {
@@ -404,29 +414,45 @@
     });
   }
 
-  function renderGraficoTopProdutos(topProdutos) {
-    destruir('top-produtos');
-    const el = document.getElementById('grafico-top-produtos');
+  function renderGraficoTopItens(id, itens, cor) {
+    destruir(id);
+    const el = document.getElementById('grafico-' + id);
     el.parentElement.querySelector('.vazio')?.remove();
-    if (!topProdutos || !topProdutos.length) {
+    if (!itens || !itens.length) {
       const vazio = document.createElement('div');
       vazio.className = 'vazio';
-      vazio.textContent = 'Sem vendas no período';
+      vazio.textContent = 'Sem dados no período';
       el.style.display = 'none';
       el.parentElement.appendChild(vazio);
       return;
     }
     el.style.display = '';
-    charts['top-produtos'] = new Chart(el, {
+    charts[id] = new Chart(el, {
       type: 'bar',
       data: {
-        labels: topProdutos.map(p => p.descricao),
-        datasets: [{ label: 'Faturamento', data: topProdutos.map(p => p.total), backgroundColor: '#f59e0b', borderRadius: 6 }]
+        labels: itens.map(p => p.descricao),
+        datasets: [{ label: 'Total', data: itens.map(p => p.total), backgroundColor: cor, borderRadius: 6 }]
       },
       options: {
         indexAxis: 'y',
         plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmtR$(ctx.parsed.x) } } },
         scales: { x: { ticks: { callback: v => fmtR$(v) } } }
+      }
+    });
+  }
+
+  function renderGraficoBarDia(id, porDia, key, cor) {
+    destruir(id);
+    const labels = porDia.map(d => new Date(d.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
+    charts[id] = new Chart(document.getElementById('grafico-' + id), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{ label: 'Total', data: porDia.map(d => d[key]), backgroundColor: cor, borderRadius: 6 }]
+      },
+      options: {
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmtR$(ctx.parsed.y) } } },
+        scales: { y: { ticks: { callback: v => fmtR$(v) } } }
       }
     });
   }
