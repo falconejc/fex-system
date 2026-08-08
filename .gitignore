@@ -2,3 +2,4 @@ node_modules/
 frango.db
 *.db
 .env
+public/uploads/

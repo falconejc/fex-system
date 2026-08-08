@@ -49,6 +49,11 @@
   .badge-cancelada { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: #fee2e2; color: #991b1b; }
   .btn-cancelar-item { padding: 8px 12px; min-height: 40px; background: #fee2e2; color: #991b1b; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
   .vazio { text-align: center; color: #aaa; padding: 20px; font-size: 14px; }
+  .categoria-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+  .categoria-item.inativa { opacity: 0.45; }
+  .categoria-item input[type=text] { flex: 1; padding: 8px 10px; min-height: 38px; font-size: 13px; }
+  .categoria-item input.emoji-input { width: 50px; flex: 0 0 50px; text-align: center; padding: 8px 4px; }
+  .categoria-item button { padding: 6px 10px; min-height: 36px; width: auto; border: none; border-radius: 6px; cursor: pointer; font-size: 11px; flex-shrink: 0; }
   .caixa-status { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
   .caixa-status .valor-abertura { font-size: 28px; font-weight: bold; color: #10b981; }
   .caixa-status .desc { font-size: 12px; color: #888; margin-top: 2px; }
@@ -179,8 +184,27 @@
       </div>
       <label>Descrição</label>
       <input type="text" id="gasto-descricao" placeholder="Ex: Compra de gelo, motoboy, troco...">
+      <label style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Categoria</span>
+        <button type="button" id="btn-gerenciar-categorias" onclick="abrirModalCategorias()" style="display:none;padding:4px 10px;min-height:auto;width:auto;background:#f3f4f6;color:#555;border:none;border-radius:6px;cursor:pointer;font-size:12px;">⚙️ Gerenciar</button>
+      </label>
+      <select id="gasto-categoria"></select>
       <label>Valor (R$)</label>
       <input type="number" id="gasto-valor" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal">
+      <label>Saiu de onde?</label>
+      <div class="pagamento-grid" id="gasto-forma-grid">
+        <button type="button" class="pagamento-btn ativo" onclick="selecionarFormaGasto('dinheiro', this)">💵 Dinheiro</button>
+        <button type="button" class="pagamento-btn" onclick="selecionarFormaGasto('pix', this)">📱 Pix</button>
+        <button type="button" class="pagamento-btn" onclick="selecionarFormaGasto('cartao_credito', this)">💳 Cartão Crédito</button>
+        <button type="button" class="pagamento-btn" onclick="selecionarFormaGasto('cartao_debito', this)">💳 Cartão Débito</button>
+      </div>
+      <div style="font-size:12px;color:#888;margin-top:6px;" id="gasto-forma-aviso"></div>
+      <label>Comprovante (opcional)</label>
+      <input type="file" id="gasto-comprovante" accept="image/*" capture="environment" onchange="previewComprovante(event)">
+      <div id="gasto-comprovante-preview" style="display:none;margin-top:10px;align-items:center;gap:10px;">
+        <img id="gasto-comprovante-img" style="max-width:110px;border-radius:8px;border:1px solid #ddd;display:block;">
+        <button type="button" onclick="removerComprovante()" style="margin-top:8px;padding:8px 12px;min-height:auto;width:auto;background:#fee2e2;color:#991b1b;border:none;border-radius:6px;cursor:pointer;font-size:12px;">Remover foto</button>
+      </div>
       <button class="btn btn-gasto" id="btn-registrar-gasto" onclick="registrarGasto()">Registrar Gasto</button>
     </div>
 
@@ -198,6 +222,22 @@
     <input type="text" id="valor-recebido" inputmode="decimal" placeholder="0,00" oninput="calcularTroco()">
     <div id="troco-resultado"></div>
     <button class="btn" onclick="fecharModal('modal-troco')">Fechar</button>
+  </div>
+</div>
+
+<div class="modal" id="modal-categorias">
+  <div class="modal-box" style="max-width:420px;text-align:left;">
+    <h2 style="margin-bottom:14px;">⚙️ Categorias de gasto</h2>
+    <div id="lista-categorias"><div class="vazio">Carregando...</div></div>
+    <div style="border-top:1px solid #eee;margin-top:16px;padding-top:14px;">
+      <label style="margin-top:0;">Nova categoria</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="nova-categoria-emoji" placeholder="📦" style="width:70px;flex-shrink:0;text-align:center;">
+        <input type="text" id="nova-categoria-nome" placeholder="Nome da categoria">
+      </div>
+      <button class="btn" style="background:#10b981" onclick="criarCategoria()">Adicionar categoria</button>
+    </div>
+    <button class="btn-fechar" style="margin-top:14px;" onclick="fecharModal('modal-categorias')">Fechar</button>
   </div>
 </div>
 
@@ -340,7 +380,10 @@
 
 <script>
   const LABELS_FORMA = { dinheiro: '💵 Dinheiro', pix: '📱 Pix', cartao_credito: '💳 Cartão Crédito', cartao_debito: '💳 Cartão Débito' };
+  let categoriasGasto = [];
   let formaSelecionada = null;
+  let formaSaidaGasto = 'dinheiro';
+  let comprovanteGastoBase64 = null;
   let nivelUsuario = '';
   let nomeUsuario = '';
   let resumoAtual = null;
@@ -373,11 +416,13 @@
     if (podeGerenciar()) {
       document.getElementById('retroativo-venda-area').style.display = 'block';
       document.getElementById('retroativo-gasto-area').style.display = 'block';
+      document.getElementById('btn-gerenciar-categorias').style.display = 'inline-block';
       const maxDataHora = nowLocalForInput();
       document.getElementById('data-hora-venda').max = maxDataHora;
       document.getElementById('data-hora-gasto').max = maxDataHora;
     }
     await carregarProdutos();
+    await carregarCategoriasGasto();
     await carregarResumo();
     await carregarVendas();
     await carregarGastos();
@@ -406,6 +451,83 @@
     } catch (e) {
       catalogoCombinado = [];
     }
+  }
+
+  async function carregarCategoriasGasto() {
+    const res = await fetch('/api/pdv/categorias-gasto');
+    categoriasGasto = await res.json();
+    const select = document.getElementById('gasto-categoria');
+    const valorAtual = select.value;
+    select.innerHTML = categoriasGasto.map(c => `<option value="${c.id}">${c.emoji} ${c.nome}</option>`).join('');
+    if (categoriasGasto.some(c => String(c.id) === valorAtual)) select.value = valorAtual;
+  }
+
+  function abrirModalCategorias() {
+    document.getElementById('modal-categorias').classList.add('aberto');
+    carregarCategoriasAdmin();
+  }
+
+  async function carregarCategoriasAdmin() {
+    const res = await fetch('/api/pdv/categorias-gasto/todas');
+    const lista = await res.json();
+    const el = document.getElementById('lista-categorias');
+    if (!lista.length) { el.innerHTML = '<div class="vazio">Nenhuma categoria cadastrada</div>'; return; }
+    el.innerHTML = lista.map(c => `
+      <div class="categoria-item ${c.ativo ? '' : 'inativa'}">
+        <input type="text" class="emoji-input" id="cat-emoji-${c.id}" value="${c.emoji}">
+        <input type="text" id="cat-nome-${c.id}" value="${c.nome}">
+        <button onclick="salvarCategoria(${c.id})" style="background:#eff6ff;color:#1e40af;">Salvar</button>
+        <button onclick="alternarCategoria(${c.id}, ${c.ativo ? 0 : 1})" style="background:${c.ativo ? '#fee2e2' : '#d1fae5'};color:${c.ativo ? '#991b1b' : '#065f46'};">${c.ativo ? 'Desativar' : 'Ativar'}</button>
+      </div>
+    `).join('');
+  }
+
+  async function salvarCategoria(id) {
+    const nome = document.getElementById(`cat-nome-${id}`).value.trim();
+    const emoji = document.getElementById(`cat-emoji-${id}`).value.trim();
+    if (!nome) { alert('Informe o nome da categoria'); return; }
+    const ativoAtual = !document.querySelector(`#cat-nome-${id}`).closest('.categoria-item').classList.contains('inativa');
+    const res = await fetch(`/api/pdv/categorias-gasto/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, emoji: emoji || '📦', ativo: ativoAtual })
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.erro); return; }
+    await carregarCategoriasAdmin();
+    await carregarCategoriasGasto();
+    carregarGastos();
+  }
+
+  async function alternarCategoria(id, novoAtivo) {
+    const nome = document.getElementById(`cat-nome-${id}`).value.trim();
+    const emoji = document.getElementById(`cat-emoji-${id}`).value.trim();
+    const res = await fetch(`/api/pdv/categorias-gasto/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, emoji: emoji || '📦', ativo: novoAtivo })
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.erro); return; }
+    await carregarCategoriasAdmin();
+    await carregarCategoriasGasto();
+  }
+
+  async function criarCategoria() {
+    const nome = document.getElementById('nova-categoria-nome').value.trim();
+    const emoji = document.getElementById('nova-categoria-emoji').value.trim();
+    if (!nome) { alert('Informe o nome da categoria'); return; }
+    const res = await fetch('/api/pdv/categorias-gasto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, emoji: emoji || '📦' })
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.erro); return; }
+    document.getElementById('nova-categoria-nome').value = '';
+    document.getElementById('nova-categoria-emoji').value = '';
+    await carregarCategoriasAdmin();
+    await carregarCategoriasGasto();
   }
 
   function normalizarBusca(txt) {
@@ -531,6 +653,46 @@
   function toggleRetroativoGasto() {
     const chk = document.getElementById('chk-retroativo-gasto');
     document.getElementById('data-hora-gasto').style.display = chk.checked ? 'block' : 'none';
+  }
+
+  function selecionarFormaGasto(forma, btn) {
+    formaSaidaGasto = forma;
+    document.querySelectorAll('#gasto-forma-grid .pagamento-btn').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    document.getElementById('gasto-forma-aviso').textContent = forma === 'dinheiro'
+      ? ''
+      : 'Esse gasto não sai do dinheiro da gaveta — não afeta a conferência do caixa, só aparece no relatório de gastos.';
+  }
+
+  function previewComprovante(event) {
+    const file = event.target.files[0];
+    if (!file) { comprovanteGastoBase64 = null; document.getElementById('gasto-comprovante-preview').style.display = 'none'; return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const maxLado = 1000;
+        let w = img.width, h = img.height;
+        if (w > maxLado || h > maxLado) {
+          if (w > h) { h = Math.round(h * maxLado / w); w = maxLado; }
+          else { w = Math.round(w * maxLado / h); h = maxLado; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        comprovanteGastoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+        document.getElementById('gasto-comprovante-img').src = comprovanteGastoBase64;
+        document.getElementById('gasto-comprovante-preview').style.display = 'flex';
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removerComprovante() {
+    comprovanteGastoBase64 = null;
+    document.getElementById('gasto-comprovante').value = '';
+    document.getElementById('gasto-comprovante-preview').style.display = 'none';
   }
 
   function mudarAba(aba, btn) {
@@ -1062,8 +1224,10 @@
   async function registrarGasto() {
     const descricao = document.getElementById('gasto-descricao').value.trim();
     const valor = document.getElementById('gasto-valor').value;
+    const categoriaId = document.getElementById('gasto-categoria').value;
     if (!descricao) { alert('Informe a descrição'); return; }
     if (!valor || Number(valor) <= 0) { alert('Informe um valor válido'); return; }
+    if (!categoriaId) { alert('Selecione uma categoria'); return; }
 
     let dataHora = null;
     if (document.getElementById('chk-retroativo-gasto')?.checked) {
@@ -1074,7 +1238,8 @@
     const btn = document.getElementById('btn-registrar-gasto');
     btn.disabled = true; btn.textContent = 'Registrando...';
     try {
-      const body = { descricao, valor: Number(valor) };
+      const body = { descricao, valor: Number(valor), categoria_id: Number(categoriaId), forma_saida: formaSaidaGasto };
+      if (comprovanteGastoBase64) body.comprovante = comprovanteGastoBase64;
       if (dataHora) body.data_hora = dataHora;
       const res = await fetch('/api/pdv/gasto', {
         method: 'POST',
@@ -1086,6 +1251,8 @@
 
       document.getElementById('gasto-descricao').value = '';
       document.getElementById('gasto-valor').value = '';
+      selecionarFormaGasto('dinheiro', document.querySelector('#gasto-forma-grid .pagamento-btn'));
+      removerComprovante();
       if (dataHora) {
         document.getElementById('chk-retroativo-gasto').checked = false;
         document.getElementById('data-hora-gasto').value = '';
@@ -1152,7 +1319,8 @@
         <div class="info">
           <div class="hora">${fmtHora(g.criado_em)} ${g.cancelado ? '<span class="badge-cancelada">Cancelado</span>' : ''}</div>
           <div class="desc-venda">${g.descricao}</div>
-          <div class="pag">${g.operador}</div>
+          <div class="pag">${g.categoria_emoji || ''} ${g.categoria_nome || 'Sem categoria'} • ${LABELS_FORMA[g.forma_saida] || g.forma_saida || ''} • ${g.operador}</div>
+          ${g.comprovante ? `<a href="${g.comprovante}" target="_blank"><img src="${g.comprovante}" style="max-width:56px;border-radius:6px;margin-top:6px;border:1px solid #eee;display:block;"></a>` : ''}
         </div>
         <div class="lado-direito">
           <div class="valor-gasto">- ${fmtMoeda(g.valor)}</div>
@@ -1239,7 +1407,7 @@
 
     const gastosValidos = (resumoAtual.gastos || []).filter(g => !g.cancelado);
     const linhasGastos = gastosValidos.map(g => `
-      <div class="linha-forma"><span>${fmtHora(g.criado_em)} ${g.descricao}</span><span>- ${fmtMoeda(g.valor)}</span></div>
+      <div class="linha-forma"><span>${fmtHora(g.criado_em)} ${g.descricao}${g.forma_saida && g.forma_saida !== 'dinheiro' ? ' (' + (LABELS_FORMA[g.forma_saida] || g.forma_saida).replace(/^\S+\s/, '') + ')' : ''}</span><span>- ${fmtMoeda(g.valor)}</span></div>
     `).join('');
 
     const blocoGastos = gastosValidos.length ? `

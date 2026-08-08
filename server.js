@@ -167,7 +167,7 @@ function injetarBanner(filePath) {
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '8mb' })); // acomoda a foto do comprovante de gasto (base64)
 app.use(cookieParser());
 
 app.get('/api/env', (req, res) => res.json({ env: APP_ENV }));

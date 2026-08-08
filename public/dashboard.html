@@ -133,7 +133,7 @@
         <canvas id="grafico-gastos-dia"></canvas>
       </div>
       <div class="grafico-card">
-        <h3>Maiores gastos</h3>
+        <h3>Gastos por categoria</h3>
         <canvas id="grafico-top-gastos"></canvas>
       </div>
     </div>
@@ -269,7 +269,8 @@
       { key: 'total_gastos', label: 'Gastos', cor: '#ef4444' }
     ]);
     renderGraficoBarDia('gastos-dia', pdv.por_dia, 'total_gastos', '#ef4444');
-    renderGraficoTopItens('top-gastos', pdv.top_gastos, '#ef4444');
+    const gastosPorCategoria = pdv.top_gastos.map(g => ({ descricao: `${g.emoji} ${g.categoria}`, total: g.total }));
+    renderGraficoTopItens('top-gastos', gastosPorCategoria, '#ef4444');
   }
 
   function renderAtacado() {

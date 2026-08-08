@@ -183,6 +183,9 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     descricao TEXT NOT NULL,
     valor REAL NOT NULL,
+    categoria TEXT DEFAULT 'outros',
+    forma_saida TEXT DEFAULT 'dinheiro',
+    comprovante TEXT,
     operador TEXT NOT NULL,
     usuario_id INTEGER,
     cancelado INTEGER DEFAULT 0,
@@ -233,6 +236,14 @@ db.exec(`
     cancelado INTEGER DEFAULT 0,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS pdv_categorias_gasto (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    emoji TEXT DEFAULT '📦',
+    ativo INTEGER DEFAULT 1,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Migrations: adiciona colunas que podem não existir em bancos antigos
@@ -242,8 +253,39 @@ const migrations = [
   "ALTER TABLE tipos_frango ADD COLUMN icone TEXT DEFAULT '🍗'",
   "ALTER TABLE atacado_vendas ADD COLUMN preco_kg REAL",
   "ALTER TABLE pdv_vendas ADD COLUMN referencia_pagamento TEXT",
+  "ALTER TABLE pdv_gastos ADD COLUMN categoria TEXT DEFAULT 'outros'",
+  "ALTER TABLE pdv_gastos ADD COLUMN forma_saida TEXT DEFAULT 'dinheiro'",
+  "ALTER TABLE pdv_gastos ADD COLUMN comprovante TEXT",
+  "ALTER TABLE pdv_gastos ADD COLUMN categoria_id INTEGER",
 ];
 migrations.forEach(sql => { try { db.exec(sql); } catch(e) {} });
+
+// Categorias de gasto do PDV: antes era uma lista fixa no código (routes/pdv.js),
+// agora é uma tabela editável (tela de gerenciamento em pdv.html). Semeia as 5
+// categorias originais na primeira execução e migra os gastos antigos, que guardavam
+// só o slug em texto (ex.: 'insumos'), pra apontar pro id da categoria correspondente.
+const categoriasGastoExistem = db.prepare('SELECT id FROM pdv_categorias_gasto LIMIT 1').get();
+if (!categoriasGastoExistem) {
+  const insCategoria = db.prepare('INSERT INTO pdv_categorias_gasto (nome, emoji) VALUES (?, ?)');
+  insCategoria.run('Insumos/Compras', '🧊');
+  insCategoria.run('Motoboy/Transporte', '🛵');
+  insCategoria.run('Manutenção', '🔧');
+  insCategoria.run('Troco', '💰');
+  insCategoria.run('Outros', '📦');
+}
+
+const gastosSemCategoriaId = db.prepare('SELECT id, categoria FROM pdv_gastos WHERE categoria_id IS NULL').all();
+if (gastosSemCategoriaId.length) {
+  const slugParaNome = { insumos: 'Insumos/Compras', transporte: 'Motoboy/Transporte', manutencao: 'Manutenção', troco: 'Troco', outros: 'Outros' };
+  const categoriasPorNome = {};
+  db.prepare('SELECT id, nome FROM pdv_categorias_gasto').all().forEach(c => { categoriasPorNome[c.nome] = c.id; });
+  const idPadrao = categoriasPorNome['Outros'];
+  const atualizarCategoriaId = db.prepare('UPDATE pdv_gastos SET categoria_id = ? WHERE id = ?');
+  gastosSemCategoriaId.forEach(g => {
+    const nome = slugParaNome[g.categoria] || 'Outros';
+    atualizarCategoriaId.run(categoriasPorNome[nome] || idPadrao, g.id);
+  });
+}
 
 const produtosExistem = db.prepare('SELECT id FROM produtos LIMIT 1').get();
 if (!produtosExistem) {

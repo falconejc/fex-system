@@ -7,12 +7,32 @@
 
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
 const db = require('../database');
 const { exigirNivel } = require('../auth');
 const { broadcast } = require('../events');
 const { registrarVendaFrango } = require('./frango');
 
 const FORMAS_PAGAMENTO = ['dinheiro', 'pix', 'cartao_credito', 'cartao_debito'];
+const UPLOADS_GASTOS_DIR = path.join(__dirname, '..', 'public', 'uploads', 'gastos');
+
+// Decodifica uma foto de comprovante enviada como data URL (base64) e salva em disco.
+// Evita adicionar multer/dependência de upload só pra isso — o front já redimensiona
+// a imagem antes de enviar, então o payload fica pequeno o suficiente pro express.json().
+function salvarComprovante(dataUrl) {
+  if (!dataUrl) return null;
+  const match = /^data:image\/(png|jpe?g|webp);base64,([a-zA-Z0-9+/=]+)$/.exec(dataUrl);
+  if (!match) throw new Error('Formato de comprovante inválido');
+  const ext = match[1] === 'jpg' ? 'jpeg' : match[1];
+  const buffer = Buffer.from(match[2], 'base64');
+  if (buffer.length > 5 * 1024 * 1024) throw new Error('Comprovante muito grande (máximo 5MB)');
+  fs.mkdirSync(UPLOADS_GASTOS_DIR, { recursive: true });
+  const nome = `gasto-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
+  fs.writeFileSync(path.join(UPLOADS_GASTOS_DIR, nome), buffer);
+  return `/uploads/gastos/${nome}`;
+}
 
 function agora() {
   return new Date().toLocaleString('sv-SE', {timeZone:'America/Sao_Paulo'}).replace('T', ' ');
@@ -188,9 +208,16 @@ router.get('/relatorio/dia', (req, res) => {
   const vendas = db.prepare('SELECT * FROM pdv_vendas WHERE date(criado_em) = ? ORDER BY criado_em DESC').all(data);
   const validas = vendas.filter(v => !v.cancelado);
 
-  const gastos = db.prepare('SELECT * FROM pdv_gastos WHERE date(criado_em) = ? ORDER BY criado_em DESC').all(data);
+  const gastos = db.prepare(`
+    SELECT g.*, c.nome as categoria_nome, c.emoji as categoria_emoji
+    FROM pdv_gastos g LEFT JOIN pdv_categorias_gasto c ON g.categoria_id = c.id
+    WHERE date(g.criado_em) = ? ORDER BY g.criado_em DESC
+  `).all(data);
   const gastosValidos = gastos.filter(g => !g.cancelado);
   const totalGastos = gastosValidos.reduce((s, g) => s + g.valor, 0);
+  // Só gasto pago em dinheiro sai fisicamente da gaveta — os demais (pix/cartão da empresa)
+  // entram no total de gastos normalmente, mas não afetam a conferência do caixa físico.
+  const totalGastosDinheiro = gastosValidos.filter(g => (g.forma_saida || 'dinheiro') === 'dinheiro').reduce((s, g) => s + g.valor, 0);
 
   const porFormaPagamento = {};
   FORMAS_PAGAMENTO.forEach(f => { porFormaPagamento[f] = { quantidade: 0, total: 0 }; });
@@ -211,7 +238,7 @@ router.get('/relatorio/dia', (req, res) => {
 
   const totalVendido = validas.reduce((s, v) => s + v.valor, 0);
   const caixa = db.prepare('SELECT * FROM pdv_caixa WHERE data = ?').get(data) || null;
-  const saldoEsperadoCaixa = caixa ? caixa.valor_abertura + porFormaPagamento.dinheiro.total - totalGastos : null;
+  const saldoEsperadoCaixa = caixa ? caixa.valor_abertura + porFormaPagamento.dinheiro.total - totalGastosDinheiro : null;
 
   res.json({
     data,
@@ -239,7 +266,11 @@ router.get('/relatorio/periodo', (req, res) => {
   const vendas = db.prepare('SELECT * FROM pdv_vendas WHERE date(criado_em) BETWEEN ? AND ? ORDER BY criado_em ASC').all(ini, fim);
   const validas = vendas.filter(v => !v.cancelado);
 
-  const gastos = db.prepare('SELECT * FROM pdv_gastos WHERE date(criado_em) BETWEEN ? AND ? ORDER BY criado_em ASC').all(ini, fim);
+  const gastos = db.prepare(`
+    SELECT g.*, c.nome as categoria_nome, c.emoji as categoria_emoji
+    FROM pdv_gastos g LEFT JOIN pdv_categorias_gasto c ON g.categoria_id = c.id
+    WHERE date(g.criado_em) BETWEEN ? AND ? ORDER BY g.criado_em ASC
+  `).all(ini, fim);
   const gastosValidos = gastos.filter(g => !g.cancelado);
   const totalGastos = gastosValidos.reduce((s, g) => s + g.valor, 0);
 
@@ -279,13 +310,16 @@ router.get('/relatorio/periodo', (req, res) => {
   });
   const topProdutos = Object.values(produtosMap).sort((a, b) => b.total - a.total).slice(0, 8);
 
+  // Agrupa por categoria (não por descrição livre) pra não fragmentar o relatório
+  // com variações de texto do mesmo tipo de gasto (ex.: "gelo" vs "Compra de gelo").
   const gastosMap = {};
   gastosValidos.forEach(g => {
-    if (!gastosMap[g.descricao]) gastosMap[g.descricao] = { descricao: g.descricao, quantidade: 0, total: 0 };
-    gastosMap[g.descricao].quantidade++;
-    gastosMap[g.descricao].total += g.valor;
+    const chave = g.categoria_id || 'sem-categoria';
+    if (!gastosMap[chave]) gastosMap[chave] = { categoria: g.categoria_nome || 'Sem categoria', emoji: g.categoria_emoji || '📦', quantidade: 0, total: 0 };
+    gastosMap[chave].quantidade++;
+    gastosMap[chave].total += g.valor;
   });
-  const topGastos = Object.values(gastosMap).sort((a, b) => b.total - a.total).slice(0, 8);
+  const topGastos = Object.values(gastosMap).sort((a, b) => b.total - a.total);
 
   res.json({
     ini, fim,
@@ -376,11 +410,44 @@ router.put('/venda/:id/cancelar', exigirNivel('admin', 'dono'), (req, res) => {
   res.json({ sucesso: true });
 });
 
+// Categorias de gasto (gerenciáveis pela tela de categorias em pdv.html, sem precisar mexer em código)
+router.get('/categorias-gasto', (req, res) => {
+  res.json(db.prepare('SELECT * FROM pdv_categorias_gasto WHERE ativo = 1 ORDER BY nome').all());
+});
+
+router.get('/categorias-gasto/todas', exigirNivel('admin', 'dono'), (req, res) => {
+  res.json(db.prepare('SELECT * FROM pdv_categorias_gasto ORDER BY ativo DESC, nome').all());
+});
+
+router.post('/categorias-gasto', exigirNivel('admin', 'dono'), (req, res) => {
+  const { nome, emoji } = req.body;
+  if (!nome || !nome.trim()) return res.status(400).json({ erro: 'Nome obrigatório' });
+  const info = db.prepare('INSERT INTO pdv_categorias_gasto (nome, emoji) VALUES (?, ?)').run(nome.trim(), emoji || '📦');
+  res.json(db.prepare('SELECT * FROM pdv_categorias_gasto WHERE id = ?').get(info.lastInsertRowid));
+});
+
+router.put('/categorias-gasto/:id', exigirNivel('admin', 'dono'), (req, res) => {
+  const categoria = db.prepare('SELECT * FROM pdv_categorias_gasto WHERE id = ?').get(req.params.id);
+  if (!categoria) return res.status(404).json({ erro: 'Categoria não encontrada' });
+  const { nome, emoji, ativo } = req.body;
+  if (!nome || !nome.trim()) return res.status(400).json({ erro: 'Nome obrigatório' });
+  db.prepare('UPDATE pdv_categorias_gasto SET nome = ?, emoji = ?, ativo = ? WHERE id = ?')
+    .run(nome.trim(), emoji || '📦', ativo ? 1 : 0, req.params.id);
+  res.json(db.prepare('SELECT * FROM pdv_categorias_gasto WHERE id = ?').get(req.params.id));
+});
+
+function categoriaValida(categoriaId) {
+  return db.prepare('SELECT id FROM pdv_categorias_gasto WHERE id = ?').get(categoriaId);
+}
+
 router.post('/gasto', (req, res) => {
-  const { descricao, valor, data_hora } = req.body;
+  const { descricao, valor, categoria_id, forma_saida, comprovante, data_hora } = req.body;
   if (!descricao || !descricao.trim()) return res.status(400).json({ erro: 'Descrição obrigatória' });
   const valorNum = Number(valor);
   if (!valorNum || valorNum <= 0) return res.status(400).json({ erro: 'Valor inválido' });
+  if (!categoria_id || !categoriaValida(categoria_id)) return res.status(400).json({ erro: 'Categoria inválida' });
+  const formaSaidaFinal = forma_saida || 'dinheiro';
+  if (!FORMAS_PAGAMENTO.includes(formaSaidaFinal)) return res.status(400).json({ erro: 'Forma de saída inválida' });
 
   let criadoEm = agora();
   if (data_hora) {
@@ -391,31 +458,64 @@ router.post('/gasto', (req, res) => {
     if (!criadoEm) return res.status(400).json({ erro: 'Data/hora retroativa inválida' });
   }
 
-  const info = db.prepare(`INSERT INTO pdv_gastos (descricao, valor, operador, usuario_id, criado_em)
-    VALUES (?, ?, ?, ?, ?)`)
-    .run(descricao.trim(), valorNum, req.usuario.nome, req.usuario.id, criadoEm);
+  let comprovantePath;
+  try {
+    comprovantePath = salvarComprovante(comprovante);
+  } catch (e) {
+    return res.status(400).json({ erro: e.message });
+  }
 
-  res.json(db.prepare('SELECT * FROM pdv_gastos WHERE id = ?').get(info.lastInsertRowid));
+  const info = db.prepare(`INSERT INTO pdv_gastos (descricao, valor, categoria_id, forma_saida, comprovante, operador, usuario_id, criado_em)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(descricao.trim(), valorNum, categoria_id, formaSaidaFinal, comprovantePath, req.usuario.nome, req.usuario.id, criadoEm);
+
+  res.json(db.prepare(`
+    SELECT g.*, c.nome as categoria_nome, c.emoji as categoria_emoji
+    FROM pdv_gastos g LEFT JOIN pdv_categorias_gasto c ON g.categoria_id = c.id
+    WHERE g.id = ?
+  `).get(info.lastInsertRowid));
 });
 
 router.put('/gasto/:id', exigirNivel('admin', 'dono'), (req, res) => {
   const gasto = db.prepare('SELECT * FROM pdv_gastos WHERE id = ?').get(req.params.id);
   if (!gasto) return res.status(404).json({ erro: 'Gasto não encontrado' });
 
-  const { descricao, valor } = req.body;
+  const { descricao, valor, categoria_id, forma_saida, comprovante } = req.body;
   if (!descricao || !descricao.trim()) return res.status(400).json({ erro: 'Descrição obrigatória' });
   const valorNum = Number(valor);
   if (!valorNum || valorNum <= 0) return res.status(400).json({ erro: 'Valor inválido' });
+  const categoriaFinal = categoria_id || gasto.categoria_id;
+  if (!categoriaFinal || !categoriaValida(categoriaFinal)) return res.status(400).json({ erro: 'Categoria inválida' });
+  const formaSaidaFinal = forma_saida || gasto.forma_saida || 'dinheiro';
+  if (!FORMAS_PAGAMENTO.includes(formaSaidaFinal)) return res.status(400).json({ erro: 'Forma de saída inválida' });
 
-  db.prepare('UPDATE pdv_gastos SET descricao = ?, valor = ? WHERE id = ?')
-    .run(descricao.trim(), valorNum, req.params.id);
+  let comprovantePath = gasto.comprovante;
+  if (comprovante) {
+    try {
+      comprovantePath = salvarComprovante(comprovante);
+    } catch (e) {
+      return res.status(400).json({ erro: e.message });
+    }
+  }
 
-  res.json(db.prepare('SELECT * FROM pdv_gastos WHERE id = ?').get(req.params.id));
+  db.prepare('UPDATE pdv_gastos SET descricao = ?, valor = ?, categoria_id = ?, forma_saida = ?, comprovante = ? WHERE id = ?')
+    .run(descricao.trim(), valorNum, categoriaFinal, formaSaidaFinal, comprovantePath, req.params.id);
+
+  res.json(db.prepare(`
+    SELECT g.*, c.nome as categoria_nome, c.emoji as categoria_emoji
+    FROM pdv_gastos g LEFT JOIN pdv_categorias_gasto c ON g.categoria_id = c.id
+    WHERE g.id = ?
+  `).get(req.params.id));
 });
 
 router.get('/gastos', (req, res) => {
   const data = hoje();
-  res.json(db.prepare('SELECT * FROM pdv_gastos WHERE date(criado_em) = ? AND cancelado = 0 ORDER BY criado_em DESC').all(data));
+  res.json(db.prepare(`
+    SELECT g.*, c.nome as categoria_nome, c.emoji as categoria_emoji
+    FROM pdv_gastos g LEFT JOIN pdv_categorias_gasto c ON g.categoria_id = c.id
+    WHERE date(g.criado_em) = ? AND g.cancelado = 0
+    ORDER BY g.criado_em DESC
+  `).all(data));
 });
 
 router.put('/gasto/:id/cancelar', exigirNivel('admin', 'dono'), (req, res) => {
