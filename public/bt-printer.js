@@ -247,6 +247,64 @@ const BTPrinter = (() => {
     return new Uint8Array(bytes);
   }
 
+  // Cupom não fiscal de uma venda do PDV — impresso só quando o operador marca a
+  // opção na hora de finalizar (não é automático em toda venda).
+  function buildCupomPDV(dados) {
+    const LABELS_FORMA = { dinheiro: 'Dinheiro', pix: 'Pix', cartao_credito: 'Cartao Credito', cartao_debito: 'Cartao Debito', misto: 'Pagamento dividido' };
+    const fmtMoeda = v => 'R$ ' + Number(v || 0).toFixed(2).replace('.', ',');
+    const dt = dados.criado_em instanceof Date ? dados.criado_em : new Date(String(dados.criado_em).replace(' ', 'T'));
+    const linha2 = (a, b) => a + ' '.repeat(Math.max(1, 32 - a.length - b.length)) + b;
+
+    const bytes = [];
+    const p = arr => arr.forEach(b => bytes.push(b));
+
+    p(CMD.INIT);
+    p(CMD.CENTER);
+    logoBytes().forEach(b => bytes.push(b));
+    p(ln(''));
+    p(ln('(38) 9912-2660'));
+    p(ln('Av. das Americas, 15 - Dr. Joao Alves'));
+    p(ln('Montes Claros - MG'));
+    p(div());
+    p(CMD.BOLD_ON); p(ln('CUPOM DE VENDA')); p(CMD.BOLD_OFF);
+    p(ln('Documento sem valor fiscal'));
+    p(div());
+
+    p(CMD.LEFT);
+    p(ln('Data: ' + dt.toLocaleDateString('pt-BR') + '  Hora: ' + dt.toLocaleTimeString('pt-BR')));
+    p(ln('Atendente: ' + (dados.operador || '')));
+    p(div());
+
+    dados.itens.forEach(it => {
+      p(ln(it.descricao));
+      p(ln(linha2('', fmtMoeda(it.valor))));
+    });
+    p(div());
+
+    p(CMD.BOLD_ON); p(CMD.FONT_MEDIUM);
+    p(ln(linha2('TOTAL:', fmtMoeda(dados.total))));
+    p(CMD.FONT_NORMAL); p(CMD.BOLD_OFF);
+    p(div());
+
+    if (dados.forma_pagamento === 'misto' && dados.pagamentos_mistos) {
+      p(ln('Pagamento dividido:'));
+      dados.pagamentos_mistos.forEach(pg => p(ln(linha2((LABELS_FORMA[pg.forma_pagamento] || pg.forma_pagamento) + ':', fmtMoeda(pg.valor)))));
+    } else {
+      p(ln(linha2('Forma:', LABELS_FORMA[dados.forma_pagamento] || dados.forma_pagamento)));
+    }
+    if (dados.valor_recebido != null) {
+      p(ln(linha2('Recebido:', fmtMoeda(dados.valor_recebido))));
+      p(ln(linha2('Troco:', fmtMoeda(dados.troco))));
+    }
+
+    p(div());
+    p(CMD.CENTER);
+    p(ln('Obrigado pela preferencia!'));
+    p(CMD.FEED); p(CMD.CUT);
+
+    return new Uint8Array(bytes);
+  }
+
   function buildResumoPDV(resumoPDVAtual, nomeUsuario) {
     const LABELS_FORMA = { dinheiro: 'Dinheiro', pix: 'Pix', cartao_credito: 'Cartao Credito', cartao_debito: 'Cartao Debito' };
     const r = resumoPDVAtual.resumo;
@@ -363,6 +421,12 @@ const BTPrinter = (() => {
     catch(e) { alert('Erro ao imprimir: '+e.message); return false; }
   }
 
+  async function printCupomPDV(dados) {
+    if (!characteristic) { alert('Impressora BT nao conectada.\nClique em "Conectar Impressora BT" primeiro.'); return false; }
+    try { await sendBytes(buildCupomPDV(dados)); return true; }
+    catch(e) { alert('Erro ao imprimir: '+e.message); return false; }
+  }
+
   async function printNotinha(venda) {
     if (!characteristic) { alert('Impressora BT nao conectada.\nClique em "Conectar Impressora BT" primeiro.'); return false; }
     try {
@@ -375,5 +439,5 @@ const BTPrinter = (() => {
   }
 
   function isConnected() { return !!(device && device.gatt.connected && characteristic); }
-  return { connect, disconnect, printComprovante, printComanda, printResumoPDV, printNotinha, isConnected, updateUI };
+  return { connect, disconnect, printComprovante, printComanda, printResumoPDV, printNotinha, printCupomPDV, isConnected, updateUI };
 })();

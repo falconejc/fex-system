@@ -60,12 +60,33 @@ function validarDataRetroativa(dataHora) {
   return formatada;
 }
 
+// Extrai produto_id/unidade/quantidade do corpo da requisição, validando o vínculo
+// com o catálogo quando informado. Quantidade representa peso (kg) ou nº de unidades,
+// conforme a unidade do produto — usado depois pros relatórios de kg/quantidade vendidos.
+function extrairVinculoProduto(body) {
+  const { produto_id, unidade, quantidade } = body;
+  if (!produto_id) return { produto_id: null, unidade: null, quantidade: null };
+  const produto = db.prepare('SELECT * FROM produtos WHERE id = ?').get(produto_id);
+  if (!produto) throw new Error('Produto inválido');
+  const unidadeFinal = unidade === 'kg' ? 'kg' : 'un';
+  const quantidadeNum = Number(quantidade);
+  if (!quantidadeNum || quantidadeNum <= 0) throw new Error('Quantidade/peso inválido para o produto');
+  return { produto_id: produto.id, unidade: unidadeFinal, quantidade: quantidadeNum };
+}
+
 router.post('/venda', (req, res) => {
   const { descricao, valor, forma_pagamento, data_hora } = req.body;
   if (!descricao || !descricao.trim()) return res.status(400).json({ erro: 'Descrição obrigatória' });
   const valorNum = Number(valor);
   if (!valorNum || valorNum <= 0) return res.status(400).json({ erro: 'Valor inválido' });
   if (!FORMAS_PAGAMENTO.includes(forma_pagamento)) return res.status(400).json({ erro: 'Forma de pagamento inválida' });
+
+  let vinculo;
+  try {
+    vinculo = extrairVinculoProduto(req.body);
+  } catch (e) {
+    return res.status(400).json({ erro: e.message });
+  }
 
   let criadoEm = agora();
   if (data_hora) {
@@ -82,9 +103,9 @@ router.post('/venda', (req, res) => {
     if (++tentativas > 10) return res.status(500).json({ erro: 'Erro ao gerar código' });
   } while (db.prepare('SELECT id FROM pdv_vendas WHERE codigo = ?').get(codigo));
 
-  db.prepare(`INSERT INTO pdv_vendas (codigo, descricao, valor, forma_pagamento, operador, usuario_id, criado_em)
-    VALUES (?, ?, ?, ?, ?, ?, ?)`)
-    .run(codigo, descricao.trim(), valorNum, forma_pagamento, req.usuario.nome, req.usuario.id, criadoEm);
+  db.prepare(`INSERT INTO pdv_vendas (codigo, descricao, valor, forma_pagamento, operador, usuario_id, criado_em, produto_id, unidade, quantidade)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(codigo, descricao.trim(), valorNum, forma_pagamento, req.usuario.nome, req.usuario.id, criadoEm, vinculo.produto_id, vinculo.unidade, vinculo.quantidade);
 
   res.json(db.prepare('SELECT * FROM pdv_vendas WHERE codigo = ?').get(codigo));
 });
@@ -109,9 +130,15 @@ router.post('/venda-dividida', (req, res) => {
     if (!FORMAS_PAGAMENTO.includes(p.forma_pagamento)) return res.status(400).json({ erro: 'Forma de pagamento inválida' });
     if (!(Number(p.valor) > 0)) return res.status(400).json({ erro: 'Valor de pagamento inválido' });
   }
+  const vinculosItens = [];
   for (const it of listaItens) {
     if (!it.descricao || !String(it.descricao).trim()) return res.status(400).json({ erro: 'Descrição obrigatória' });
     if (!(Number(it.valor) > 0)) return res.status(400).json({ erro: 'Valor inválido' });
+    try {
+      vinculosItens.push(extrairVinculoProduto(it));
+    } catch (e) {
+      return res.status(400).json({ erro: e.message });
+    }
   }
 
   let criadoEm = agora();
@@ -142,18 +169,19 @@ router.post('/venda-dividida', (req, res) => {
 
   const executar = db.transaction(() => {
     const itensRegistrados = [];
-    for (const it of listaItens) {
+    listaItens.forEach((it, i) => {
       let codigo, tentativas = 0;
       do {
         codigo = gerarCodigo();
         if (++tentativas > 10) throw new Error('Erro ao gerar código');
       } while (db.prepare('SELECT id FROM pdv_vendas WHERE codigo = ?').get(codigo));
 
-      db.prepare(`INSERT INTO pdv_vendas (codigo, descricao, valor, forma_pagamento, operador, usuario_id, criado_em, referencia_pagamento)
-        VALUES (?, ?, ?, 'misto', ?, ?, ?, ?)`)
-        .run(codigo, String(it.descricao).trim(), Number(it.valor), atendente, usuario_id, criadoEm, referencia);
+      const vinculo = vinculosItens[i];
+      db.prepare(`INSERT INTO pdv_vendas (codigo, descricao, valor, forma_pagamento, operador, usuario_id, criado_em, referencia_pagamento, produto_id, unidade, quantidade)
+        VALUES (?, ?, ?, 'misto', ?, ?, ?, ?, ?, ?, ?)`)
+        .run(codigo, String(it.descricao).trim(), Number(it.valor), atendente, usuario_id, criadoEm, referencia, vinculo.produto_id, vinculo.unidade, vinculo.quantidade);
       itensRegistrados.push(db.prepare('SELECT * FROM pdv_vendas WHERE codigo = ?').get(codigo));
-    }
+    });
 
     const frangosRegistrados = [];
     for (const tipo_id of listaFrangos) {
@@ -197,6 +225,42 @@ router.put('/venda-dividida/:referencia/cancelar', exigirNivel('admin', 'dono'),
 
   res.json({ sucesso: true });
 });
+
+// Agrega vendas vinculadas a produtos do catálogo em dois totais: quilos vendidos
+// (produtos por kg) e unidades vendidas (produtos por un) — usado nos relatórios
+// diário e por período pra alimentar o dashboard de kg/quantidade.
+function agregarProdutos(vendasValidas) {
+  const comProduto = vendasValidas.filter(v => v.produto_id && v.unidade && v.quantidade != null);
+  const idsUnicos = [...new Set(comProduto.map(v => v.produto_id))];
+  const nomesMap = {};
+  if (idsUnicos.length) {
+    const placeholders = idsUnicos.map(() => '?').join(',');
+    db.prepare(`SELECT id, nome, emoji FROM produtos WHERE id IN (${placeholders})`).all(...idsUnicos)
+      .forEach(p => { nomesMap[p.id] = p; });
+  }
+
+  const porKg = {}, porQtd = {};
+  comProduto.forEach(v => {
+    const alvo = v.unidade === 'kg' ? porKg : porQtd;
+    const produto = nomesMap[v.produto_id];
+    if (!alvo[v.produto_id]) {
+      alvo[v.produto_id] = {
+        produto_id: v.produto_id,
+        nome: produto ? produto.nome : 'Produto removido',
+        emoji: produto ? produto.emoji : '📦',
+        total_quantidade: 0,
+        total_valor: 0
+      };
+    }
+    alvo[v.produto_id].total_quantidade += v.quantidade;
+    alvo[v.produto_id].total_valor += v.valor;
+  });
+
+  return {
+    produtos_por_kg: Object.values(porKg).sort((a, b) => b.total_quantidade - a.total_quantidade),
+    produtos_por_quantidade: Object.values(porQtd).sort((a, b) => b.total_quantidade - a.total_quantidade)
+  };
+}
 
 router.get('/vendas', (req, res) => {
   const data = hoje();
@@ -254,7 +318,8 @@ router.get('/relatorio/dia', (req, res) => {
     },
     vendas,
     gastos,
-    pagamentos_mistos: pagamentosMistos
+    pagamentos_mistos: pagamentosMistos,
+    ...agregarProdutos(validas)
   });
 });
 
@@ -334,7 +399,8 @@ router.get('/relatorio/periodo', (req, res) => {
     },
     por_dia: Object.values(diasMap),
     top_produtos: topProdutos,
-    top_gastos: topGastos
+    top_gastos: topGastos,
+    ...agregarProdutos(validas)
   });
 });
 
@@ -375,12 +441,21 @@ router.post('/caixa', (req, res) => {
     return res.status(403).json({ erro: 'Caixa já foi aberto hoje. Apenas admin pode alterar.' });
   }
 
+  let criadoEm = agora();
+  if (req.body.data_hora) {
+    if (!['admin', 'dono'].includes(req.usuario.nivel)) {
+      return res.status(403).json({ erro: 'Apenas admin ou dono podem definir horário retroativo da abertura' });
+    }
+    criadoEm = validarDataRetroativa(req.body.data_hora);
+    if (!criadoEm) return res.status(400).json({ erro: 'Data/hora retroativa inválida' });
+  }
+
   if (existente) {
     db.prepare('UPDATE pdv_caixa SET valor_abertura = ?, operador = ?, usuario_id = ?, criado_em = ? WHERE data = ?')
-      .run(valorNum, req.usuario.nome, req.usuario.id, agora(), data);
+      .run(valorNum, req.usuario.nome, req.usuario.id, criadoEm, data);
   } else {
     db.prepare('INSERT INTO pdv_caixa (data, valor_abertura, operador, usuario_id, criado_em) VALUES (?, ?, ?, ?, ?)')
-      .run(data, valorNum, req.usuario.nome, req.usuario.id, agora());
+      .run(data, valorNum, req.usuario.nome, req.usuario.id, criadoEm);
   }
 
   res.json(db.prepare('SELECT * FROM pdv_caixa WHERE data = ?').get(data));

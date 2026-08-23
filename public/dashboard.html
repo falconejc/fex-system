@@ -136,6 +136,14 @@
         <h3>Gastos por categoria</h3>
         <canvas id="grafico-top-gastos"></canvas>
       </div>
+      <div class="grafico-card">
+        <h3>Quilos vendidos por produto</h3>
+        <canvas id="grafico-kg-produtos"></canvas>
+      </div>
+      <div class="grafico-card">
+        <h3>Unidades vendidas por produto</h3>
+        <canvas id="grafico-qtd-produtos"></canvas>
+      </div>
     </div>
   </div>
 
@@ -271,6 +279,8 @@
     renderGraficoBarDia('gastos-dia', pdv.por_dia, 'total_gastos', '#ef4444');
     const gastosPorCategoria = pdv.top_gastos.map(g => ({ descricao: `${g.emoji} ${g.categoria}`, total: g.total }));
     renderGraficoTopItens('top-gastos', gastosPorCategoria, '#ef4444');
+    renderGraficoQuantidade('kg-produtos', pdv.produtos_por_kg, '#10b981', v => `${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kg`);
+    renderGraficoQuantidade('qtd-produtos', pdv.produtos_por_quantidade, '#3b82f6', v => `${Number(v).toLocaleString('pt-BR')} un`);
   }
 
   function renderAtacado() {
@@ -438,6 +448,33 @@
         indexAxis: 'y',
         plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmtR$(ctx.parsed.x) } } },
         scales: { x: { ticks: { callback: v => fmtR$(v) } } }
+      }
+    });
+  }
+
+  function renderGraficoQuantidade(id, itens, cor, formatador) {
+    destruir(id);
+    const el = document.getElementById('grafico-' + id);
+    el.parentElement.querySelector('.vazio')?.remove();
+    if (!itens || !itens.length) {
+      const vazio = document.createElement('div');
+      vazio.className = 'vazio';
+      vazio.textContent = 'Sem dados no período';
+      el.style.display = 'none';
+      el.parentElement.appendChild(vazio);
+      return;
+    }
+    el.style.display = '';
+    charts[id] = new Chart(el, {
+      type: 'bar',
+      data: {
+        labels: itens.map(p => `${p.emoji || '📦'} ${p.nome}`),
+        datasets: [{ label: 'Total', data: itens.map(p => p.total_quantidade), backgroundColor: cor, borderRadius: 6 }]
+      },
+      options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => formatador(ctx.parsed.x) } } },
+        scales: { x: { ticks: { callback: formatador } } }
       }
     });
   }

@@ -59,6 +59,15 @@
   .caixa-status .desc { font-size: 12px; color: #888; margin-top: 2px; }
   .caixa-status .saldo-esperado { font-size: 15px; color: #333; margin-top: 6px; }
   .btn-alterar-caixa { padding: 10px 16px; min-height: 44px; background: #f3f4f6; color: #333; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .produtos-resumo { margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .produtos-resumo h3 { font-size: 13px; color: #555; margin: 0 0 8px; }
+  .produto-linha { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+  .produto-linha:last-child { border-bottom: none; }
+  .produto-linha .produto-nome { color: #333; }
+  .produto-linha .produto-total { font-weight: bold; color: #333; white-space: nowrap; }
+  @media (max-width: 600px) {
+    .produtos-resumo { grid-template-columns: 1fr; }
+  }
   @media (max-width: 600px) {
     .formas-resumo { grid-template-columns: repeat(2, 1fr); }
     .grid4 { grid-template-columns: repeat(2, 1fr); }
@@ -149,10 +158,14 @@
   <div class="card" id="card-resumo-dia">
     <div class="card-header">
       <h2>Resumo do dia</h2>
-      <button class="btn-imprimir-resumo" onclick="imprimirResumo()">🖨️ Imprimir Resumo</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-imprimir-resumo" onclick="imprimirResumo()">🖨️ Imprimir Resumo</button>
+        <button class="btn-imprimir-resumo" onclick="imprimirCompleto()">🖨️ Impressão Completa</button>
+      </div>
     </div>
     <div class="grid4" id="kpis-dia"></div>
     <div class="formas-resumo" id="formas-dia"></div>
+    <div class="produtos-resumo" id="produtos-resumo-dia"></div>
   </div>
 
   <div class="tabs">
@@ -292,7 +305,7 @@
     <label>Descrição</label>
     <input type="text" id="descricao" placeholder="Ex: Água mineral, refrigerante, troco...">
     <label>Valor (R$)</label>
-    <input type="number" id="valor" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal">
+    <input type="number" id="valor" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal" oninput="recalcularPesoDeValor()">
     <button type="button" class="btn btn-add-item" id="btn-add-item" onclick="adicionarItemCarrinho()">➕ Adicionar item</button>
 
     <div id="carrinho-area" style="display:none;">
@@ -370,6 +383,11 @@
 
     <div class="resumo-secao-titulo">Pagamento</div>
     <div id="resumo-wizard-pagamento"></div>
+
+    <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
+      <input type="checkbox" id="chk-imprimir-cupom" style="width:auto;min-height:auto;">
+      🖨️ Imprimir cupom desta venda
+    </label>
 
     <div class="wizard-footer">
       <button type="button" class="btn btn-voltar" onclick="voltarParaPagamento()">← Voltar</button>
@@ -625,6 +643,20 @@
     }
   }
 
+  // Caminho inverso: quando só o valor é lançado (balança não integrada, ou o
+  // operador prefere digitar o total cobrado), calcula o peso equivalente a partir
+  // do preço/kg do produto — assim o kg vendido continua sendo contabilizado
+  // mesmo sem o operador preencher o campo de peso.
+  function recalcularPesoDeValor() {
+    if (!produtoKgAtual || !produtoKgAtual.preco) return;
+    const valor = Number(document.getElementById('valor').value);
+    if (!valor || valor <= 0) return;
+    const peso = valor / produtoKgAtual.preco;
+    const pesoStr = peso.toFixed(3).replace('.', ',');
+    document.getElementById('peso-kg').value = pesoStr;
+    document.getElementById('descricao').value = `${produtoKgAtual.nome} (${pesoStr} kg)`;
+  }
+
   function recalcularValorQuantidade() {
     const atual = produtoUnitAtual || produtoFrangoAtual;
     if (!atual) return;
@@ -705,6 +737,7 @@
   function abrirWizardVenda() {
     document.getElementById('modal-wizard-itens').classList.add('aberto');
     document.getElementById('descricao').focus();
+    document.getElementById('chk-imprimir-cupom').checked = false;
   }
 
   function fecharWizardVenda() {
@@ -929,6 +962,16 @@
       for (let i = 0; i < qtd; i++) {
         carrinho.push({ descricao: produtoFrangoAtual.nome, valor: produtoFrangoAtual.preco, origem: 'frango', tipo_id: produtoFrangoAtual.id });
       }
+    } else if (produtoKgAtual) {
+      // O peso pode ter vindo do campo "Peso (kg)" ou sido calculado automaticamente
+      // a partir do valor digitado (recalcularPesoDeValor) — em ambos os casos, na
+      // hora de adicionar ao carrinho o campo já reflete o peso final.
+      const peso = Number((document.getElementById('peso-kg').value || '').replace(',', '.'));
+      if (!peso || peso <= 0) { alert('Informe o peso (kg), ou um preço/kg cadastrado no produto pra calcular automaticamente pelo valor'); return; }
+      carrinho.push({ descricao, valor: Number(valor), produto_id: produtoKgAtual.id, unidade: 'kg', quantidade: peso });
+    } else if (produtoUnitAtual) {
+      const qtd = Math.max(1, parseInt(document.getElementById('quantidade').value, 10) || 1);
+      carrinho.push({ descricao, valor: Number(valor), produto_id: produtoUnitAtual.id, unidade: 'un', quantidade: qtd });
     } else {
       carrinho.push({ descricao, valor: Number(valor) });
     }
@@ -976,6 +1019,22 @@
       return;
     }
 
+    const imprimirCupom = document.getElementById('chk-imprimir-cupom')?.checked;
+    const dadosCupom = {
+      itens: carrinho.map(i => ({ descricao: i.descricao, valor: i.valor })),
+      total: totalCarrinho(),
+      forma_pagamento: formaSelecionada,
+      operador: nomeUsuario,
+      criado_em: dataHora ? new Date(dataHora) : new Date()
+    };
+    if (formaSelecionada === 'dinheiro') {
+      const recebido = Number((document.getElementById('valor-recebido').value || '').replace(',', '.'));
+      if (recebido) {
+        dadosCupom.valor_recebido = recebido;
+        dadosCupom.troco = recebido - dadosCupom.total;
+      }
+    }
+
     const btn = document.getElementById('btn-registrar');
     btn.disabled = true; btn.textContent = 'Registrando...';
     try {
@@ -997,6 +1056,7 @@
           continue;
         } else {
           const body = { descricao: item.descricao, valor: item.valor, forma_pagamento: formaSelecionada };
+          if (item.produto_id) { body.produto_id = item.produto_id; body.unidade = item.unidade; body.quantidade = item.quantidade; }
           if (dataHora) body.data_hora = dataHora;
           res = await fetch('/api/pdv/venda', {
             method: 'POST',
@@ -1023,6 +1083,7 @@
         toggleRetroativoVenda();
         alert('Venda retroativa registrada com sucesso.');
       }
+      if (imprimirCupom) await imprimirCupomVenda(dadosCupom);
 
       carregarResumo();
       carregarVendas();
@@ -1046,9 +1107,19 @@
       return;
     }
 
-    const itens = carrinho.filter(i => i.origem !== 'frango').map(i => ({ descricao: i.descricao, valor: i.valor }));
+    const itens = carrinho.filter(i => i.origem !== 'frango').map(i => ({ descricao: i.descricao, valor: i.valor, produto_id: i.produto_id, unidade: i.unidade, quantidade: i.quantidade }));
     const frangoTipoIds = carrinho.filter(i => i.origem === 'frango').map(i => i.tipo_id);
     const pagamentos = divisaoPagamentos.map(p => ({ forma_pagamento: p.forma_pagamento, valor: Number(String(p.valor).replace(',', '.')) }));
+
+    const imprimirCupom = document.getElementById('chk-imprimir-cupom')?.checked;
+    const dadosCupom = {
+      itens: carrinho.map(i => ({ descricao: i.descricao, valor: i.valor })),
+      total,
+      forma_pagamento: 'misto',
+      pagamentos_mistos: pagamentos,
+      operador: nomeUsuario,
+      criado_em: dataHora ? new Date(dataHora) : new Date()
+    };
 
     const btn = document.getElementById('btn-registrar');
     btn.disabled = true; btn.textContent = 'Registrando...';
@@ -1085,6 +1156,7 @@
         toggleRetroativoVenda();
         alert('Venda retroativa registrada com sucesso.');
       }
+      if (imprimirCupom) await imprimirCupomVenda(dadosCupom);
 
       carregarResumo();
       carregarVendas();
@@ -1221,6 +1293,83 @@
     w.document.close();
   }
 
+  // Cupom não fiscal da venda — só imprime se o operador marcar a opção no resumo
+  // (por padrão fica desmarcado). Usa a impressora BT se estiver conectada, senão
+  // cai pro mesmo fallback de impressão via navegador usado na ficha do frango.
+  async function imprimirCupomVenda(dados) {
+    if (BTPrinter.isConnected()) {
+      await BTPrinter.printCupomPDV(dados);
+    } else {
+      imprimirCupomPDVBrowser(dados);
+    }
+  }
+
+  function imprimirCupomPDVBrowser(dados) {
+    const LABELS = { dinheiro: 'Dinheiro', pix: 'Pix', cartao_credito: 'Cartão Crédito', cartao_debito: 'Cartão Débito', misto: 'Pagamento dividido' };
+    const data = dados.criado_em.toLocaleDateString('pt-BR');
+    const hora = dados.criado_em.toLocaleTimeString('pt-BR');
+    const itensHtml = dados.itens.map(i => `
+      <div class="item-linha"><span>${i.descricao}</span><span>${fmtMoeda(i.valor)}</span></div>
+    `).join('');
+    const pagamentoHtml = dados.forma_pagamento === 'misto'
+      ? dados.pagamentos_mistos.map(p => `<div class="item-linha"><span>${LABELS[p.forma_pagamento] || p.forma_pagamento}</span><span>${fmtMoeda(p.valor)}</span></div>`).join('')
+      : `<div class="item-linha"><span>Forma de pagamento</span><span>${LABELS[dados.forma_pagamento] || dados.forma_pagamento}</span></div>`;
+    const trocoHtml = dados.valor_recebido != null ? `
+      <div class="item-linha"><span>Recebido</span><span>${fmtMoeda(dados.valor_recebido)}</span></div>
+      <div class="item-linha"><span>Troco</span><span>${fmtMoeda(dados.troco)}</span></div>
+    ` : '';
+
+    const w = window.open('', '_blank', 'width=400,height=650');
+    w.document.write(`
+      <html><head><title>Cupom</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: monospace; font-size: 12px; padding: 4px; width: 72mm; }
+        @media print {
+          @page { margin: 0; size: 72mm auto; }
+          body { width: 72mm; padding: 2mm; }
+        }
+        .cabecalho { text-align: center; margin-bottom: 4px; }
+        .cabecalho img { width: 24mm; }
+        .cabecalho h2 { font-size: 14px; margin: 2px 0; }
+        .cabecalho h3 { font-size: 10px; font-weight: normal; color: #333; margin: 1px 0; }
+        .linha { border-top: 1px dashed #000; margin: 5px 0; }
+        .titulo { text-align: center; font-weight: bold; font-size: 13px; }
+        .subtitulo { text-align: center; font-size: 10px; }
+        .info { margin: 2px 0; font-size: 11px; }
+        .item-linha { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; margin: 2px 0; }
+        .total-linha { display: flex; justify-content: space-between; font-size: 15px; font-weight: bold; margin: 4px 0; }
+        .rodape { text-align: center; font-size: 10px; margin-top: 8px; }
+      </style>
+</head><body>
+      <div class="cabecalho">
+        <img src="/logo.jfif" onerror="this.style.display='none'">
+        <h2>FRANGO EXPRESSO</h2>
+        <h3>(38) 9912-2660</h3>
+        <h3>Av. das Americas, 15 - Dr. Joao Alves</h3>
+        <h3>Montes Claros - MG</h3>
+      </div>
+      <div class="linha"></div>
+      <div class="titulo">CUPOM DE VENDA</div>
+      <div class="subtitulo">Documento sem valor fiscal</div>
+      <div class="linha"></div>
+      <div class="info">Data: ${data}  Hora: ${hora}</div>
+      <div class="info">Atendente: ${dados.operador}</div>
+      <div class="linha"></div>
+      ${itensHtml}
+      <div class="linha"></div>
+      <div class="total-linha"><span>TOTAL</span><span>${fmtMoeda(dados.total)}</span></div>
+      <div class="linha"></div>
+      ${pagamentoHtml}
+      ${trocoHtml}
+      <div class="rodape">Obrigado pela preferência!</div>
+
+      <script>window.onload=()=>{setTimeout(()=>{window.print();setTimeout(()=>{window.close();},3000);},300);}<\/script>
+      </body></html>
+    `);
+    w.document.close();
+  }
+
   async function registrarGasto() {
     const descricao = document.getElementById('gasto-descricao').value.trim();
     const valor = document.getElementById('gasto-valor').value;
@@ -1285,6 +1434,37 @@
         <div class="label">${LABELS_FORMA[f]}</div>
       </div>
     `).join('');
+    renderProdutosResumo(json.produtos_por_kg, json.produtos_por_quantidade);
+  }
+
+  function fmtKg(kg) {
+    return kg.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + ' kg';
+  }
+
+  function renderProdutosResumo(porKg, porQuantidade) {
+    const el = document.getElementById('produtos-resumo-dia');
+    if (!porKg?.length && !porQuantidade?.length) { el.innerHTML = ''; return; }
+    const secaoKg = porKg?.length ? `
+      <div>
+        <h3>⚖️ Vendido por peso</h3>
+        ${porKg.map(p => `
+          <div class="produto-linha">
+            <span class="produto-nome">${p.emoji || '📦'} ${p.nome}</span>
+            <span class="produto-total">${fmtKg(p.total_quantidade)}</span>
+          </div>
+        `).join('')}
+      </div>` : '';
+    const secaoQtd = porQuantidade?.length ? `
+      <div>
+        <h3>🔢 Vendido por quantidade</h3>
+        ${porQuantidade.map(p => `
+          <div class="produto-linha">
+            <span class="produto-nome">${p.emoji || '📦'} ${p.nome}</span>
+            <span class="produto-total">${p.total_quantidade}x</span>
+          </div>
+        `).join('')}
+      </div>` : '';
+    el.innerHTML = secaoKg + secaoQtd;
   }
 
   async function carregarVendas() {
@@ -1371,6 +1551,8 @@
     el.innerHTML = `
       <label>Com quanto o caixa está começando hoje? (R$)</label>
       <input type="number" id="valor-abertura" step="0.01" min="0" value="${caixa.valor_abertura}" inputmode="decimal">
+      <label>Horário da abertura</label>
+      <input type="datetime-local" id="caixa-data-hora" value="${caixa.criado_em.replace(' ', 'T').substring(0, 16)}" max="${nowLocalForInput()}">
       <button class="btn" id="btn-abrir-caixa" onclick="salvarCaixa()">Salvar</button>
     `;
   }
@@ -1379,13 +1561,20 @@
     const valor = document.getElementById('valor-abertura').value;
     if (valor === '' || Number(valor) < 0) { alert('Informe um valor válido'); return; }
 
+    const body = { valor_abertura: Number(valor) };
+    const dataHoraEl = document.getElementById('caixa-data-hora');
+    if (dataHoraEl) {
+      if (!dataHoraEl.value) { alert('Informe o horário da abertura'); return; }
+      body.data_hora = dataHoraEl.value;
+    }
+
     const btn = document.getElementById('btn-abrir-caixa');
     btn.disabled = true; btn.textContent = 'Salvando...';
     try {
       const res = await fetch('/api/pdv/caixa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ valor_abertura: Number(valor) })
+        body: JSON.stringify(body)
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro);
@@ -1460,6 +1649,102 @@
       <div class="linha"></div>
       <div class="titulo">RESUMO DO DIA — PDV</div>
       <div class="info">Data: ${dataFmt}</div>
+      <div class="linha"></div>
+      <div class="totais">
+        <div class="linha-total destaque"><span>Total vendido:</span><span>${fmtMoeda(r.total_vendido)}</span></div>
+        <div class="linha-total"><span>Qtd. de vendas:</span><span>${r.quantidade_vendas}</span></div>
+        <div class="linha-total"><span>Ticket médio:</span><span>${fmtMoeda(r.ticket_medio)}</span></div>
+      </div>
+      <div class="linha"></div>
+      <div class="info" style="font-weight:bold">Por forma de pagamento:</div>
+      ${linhasFormas}
+      ${blocoGastos}
+      ${blocoCaixa}
+      <div class="linha"></div>
+      <div class="rodape">Impresso por ${nomeUsuario}<br>em ${dataFmt} às ${horaImpressao}</div>
+
+      <script>window.onload=()=>{setTimeout(()=>{window.print();setTimeout(()=>{window.close();},3000);},300);}<\/script>
+      </body></html>
+    `);
+    w.document.close();
+  }
+
+  async function imprimirCompleto() {
+    if (!resumoAtual) return;
+    const r = resumoAtual.resumo;
+    const dataFmt = new Date(resumoAtual.data + 'T12:00:00').toLocaleDateString('pt-BR');
+    const agora = new Date();
+    const horaImpressao = agora.toLocaleTimeString('pt-BR');
+
+    const res = await fetch('/api/pdv/vendas');
+    const vendas = (await res.json()).slice().reverse();
+    const linhasVendas = vendas.length ? vendas.map(v => `
+      <div class="linha-forma"><span>${fmtHora(v.criado_em)} ${v.descricao} (${(LABELS_FORMA[v.forma_pagamento] || v.forma_pagamento).replace(/^\S+\s/, '')})</span><span>${fmtMoeda(v.valor)}</span></div>
+    `).join('') : '<div class="info">Nenhuma venda hoje</div>';
+
+    const linhasFormas = Object.keys(LABELS_FORMA).map(f => {
+      const fp = r.por_forma_pagamento[f];
+      return `<div class="linha-forma"><span>${LABELS_FORMA[f]}</span><span>${fp.quantidade}x — ${fmtMoeda(fp.total)}</span></div>`;
+    }).join('');
+
+    const gastosValidos = (resumoAtual.gastos || []).filter(g => !g.cancelado);
+    const linhasGastos = gastosValidos.map(g => `
+      <div class="linha-forma"><span>${fmtHora(g.criado_em)} ${g.descricao}${g.forma_saida && g.forma_saida !== 'dinheiro' ? ' (' + (LABELS_FORMA[g.forma_saida] || g.forma_saida).replace(/^\S+\s/, '') + ')' : ''}</span><span>- ${fmtMoeda(g.valor)}</span></div>
+    `).join('');
+
+    const blocoGastos = gastosValidos.length ? `
+      <div class="linha"></div>
+      <div class="info" style="font-weight:bold">Gastos / Saídas:</div>
+      ${linhasGastos}
+      <div class="totais">
+        <div class="linha-total destaque"><span>Total gastos (${gastosValidos.length}x):</span><span>- ${fmtMoeda(r.total_gastos)}</span></div>
+      </div>
+    ` : '';
+
+    const blocoCaixa = r.abertura_caixa ? `
+      <div class="linha"></div>
+      <div class="totais">
+        <div class="linha-total"><span>Abertura de caixa:</span><span>${fmtMoeda(r.abertura_caixa.valor_abertura)}</span></div>
+        <div class="linha-total destaque"><span>Saldo esperado (dinheiro):</span><span>${fmtMoeda(r.saldo_esperado_caixa)}</span></div>
+      </div>
+    ` : '';
+
+    const w = window.open('', '_blank', 'width=400,height=650');
+    w.document.write(`
+      <html><head><title>Relatório completo do dia</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: monospace; font-size: 12px; padding: 4px; width: 72mm; }
+        @media print {
+          @page { margin: 0; size: 72mm auto; }
+          body { width: 72mm; padding: 2mm; }
+        }
+        .cabecalho { text-align: center; margin-bottom: 4px; }
+        .cabecalho img { width: 24mm; }
+        .cabecalho h2 { font-size: 14px; margin: 2px 0; }
+        .cabecalho h3 { font-size: 10px; font-weight: normal; color: #333; margin: 1px 0; }
+        .linha { border-top: 1px dashed #000; margin: 5px 0; }
+        .titulo { text-align: center; font-size: 15px; font-weight: bold; margin: 4px 0; }
+        .info { margin: 2px 0; font-size: 11px; }
+        .totais .linha-total { display: flex; justify-content: space-between; font-size: 12px; margin: 3px 0; }
+        .totais .destaque { font-size: 15px; font-weight: bold; }
+        .linha-forma { display: flex; justify-content: space-between; gap: 6px; font-size: 11px; margin: 3px 0; }
+        .rodape { text-align: center; font-size: 10px; margin-top: 8px; }
+      </style>
+</head><body>
+      <div class="cabecalho">
+        <img src="/logo.jfif" onerror="this.style.display='none'">
+        <h2>FRANGO EXPRESSO</h2>
+        <h3>(38) 9912-2660</h3>
+        <h3>Av. das Americas, 15 - Dr. Joao Alves</h3>
+        <h3>Montes Claros - MG</h3>
+      </div>
+      <div class="linha"></div>
+      <div class="titulo">RELATÓRIO COMPLETO — PDV</div>
+      <div class="info">Data: ${dataFmt}</div>
+      <div class="linha"></div>
+      <div class="info" style="font-weight:bold">Vendas (${vendas.length}):</div>
+      ${linhasVendas}
       <div class="linha"></div>
       <div class="totais">
         <div class="linha-total destaque"><span>Total vendido:</span><span>${fmtMoeda(r.total_vendido)}</span></div>

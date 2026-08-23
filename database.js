@@ -257,6 +257,9 @@ const migrations = [
   "ALTER TABLE pdv_gastos ADD COLUMN forma_saida TEXT DEFAULT 'dinheiro'",
   "ALTER TABLE pdv_gastos ADD COLUMN comprovante TEXT",
   "ALTER TABLE pdv_gastos ADD COLUMN categoria_id INTEGER",
+  "ALTER TABLE pdv_vendas ADD COLUMN produto_id INTEGER",
+  "ALTER TABLE pdv_vendas ADD COLUMN unidade TEXT",
+  "ALTER TABLE pdv_vendas ADD COLUMN quantidade REAL",
 ];
 migrations.forEach(sql => { try { db.exec(sql); } catch(e) {} });
 
