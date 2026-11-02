@@ -245,7 +245,7 @@
   async function salvarLote() {
     const quantidade = parseInt(document.getElementById('lote-qtd').value);
     const tipo_id = parseInt(document.getElementById('lote-tipo').value);
-    if (!quantidade || quantidade <= 0) { alert('Informe a quantidade'); return; }
+    if (!quantidade || quantidade <= 0) { fexToast('Informe a quantidade'); return; }
     const res = await fetch('/api/lotes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -261,13 +261,13 @@
         });
         const data2 = await res2.json();
         if (data2.sucesso) { fecharModal('modal-lote'); carregarLotes(); carregarEstoqueCrus(); }
-        else alert(data2.erro);
+        else fexToast(data2.erro);
       }
       return;
     }
-    if (!data.sucesso) { alert('❌ ' + data.erro + '\n\n' + (data.detalhe || '')); return; }
+    if (!data.sucesso) { fexToast(data.erro + (data.detalhe ? '\n' + data.detalhe : '')); return; }
     fecharModal('modal-lote');
-    alert('Lote registrado! Previsão: ' + formatarHora(data.horario_previsto));
+    fexToast('Lote registrado! Previsão: ' + formatarHora(data.horario_previsto), 'sucesso');
     carregarLotes();
     carregarEstoqueCrus();
   }
@@ -277,7 +277,7 @@
     const res = await fetch(`/api/lotes/${id}/pronto`, { method: 'PUT' });
     const data = await res.json();
     if (data.sucesso) carregarLotes();
-    else alert(data.erro);
+    else fexToast(data.erro);
   }
 
   function abrirAtraso(id) {
@@ -295,7 +295,7 @@
     });
     const data = await res.json();
     if (data.sucesso) { fecharModal('modal-atraso'); carregarLotes(); }
-    else alert(data.erro);
+    else fexToast(data.erro);
   }
 
   function fecharModal(id) { document.getElementById(id).classList.remove('aberto'); }

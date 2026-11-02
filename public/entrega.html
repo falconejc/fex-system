@@ -201,7 +201,7 @@
       document.getElementById('sucesso-tipo').textContent = tipo || '';
       document.getElementById('modal-sucesso').classList.add('aberto');
       carregarPendentes();
-    } else alert(data.erro);
+    } else fexToast(data.erro);
   }
 
   function abrirScanner() {
@@ -245,10 +245,10 @@
   async function abrirConfirmarQR(codigo) {
     codigoQRLido = codigo;
     const res = await fetch('/api/frango/qrcode/' + codigo);
-    if (!res.ok) { alert('QR code inválido!'); return; }
+    if (!res.ok) { fexToast('QR code inválido!'); return; }
     const venda = await res.json();
-    if (venda.status === 'entregue') { alert('Este frango já foi entregue!'); return; }
-    if (venda.cancelado) { alert('Esta venda foi cancelada!'); return; }
+    if (venda.status === 'entregue') { fexToast('Este frango já foi entregue!', 'aviso'); return; }
+    if (venda.cancelado) { fexToast('Esta venda foi cancelada!', 'aviso'); return; }
     tipoNomeAtual = venda.tipo_nome || venda.tipo || '';
     tipoIdAtual = venda.tipo_id || 0;
     document.getElementById('qr-codigo').textContent = venda.codigo;
@@ -267,7 +267,7 @@
       document.getElementById('sucesso-tipo').textContent = tipoNomeAtual;
       document.getElementById('modal-sucesso').classList.add('aberto');
       carregarPendentes();
-    } else alert(data.erro);
+    } else fexToast(data.erro);
   }
 
   function fecharModal(id) { document.getElementById(id).classList.remove('aberto'); }

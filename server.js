@@ -30,6 +30,32 @@ const TEST_BANNER = IS_TEST
   ? '<div style="position:fixed;bottom:0;left:0;right:0;background:#dc2626;color:white;text-align:center;padding:8px;font-size:13px;font-weight:bold;z-index:9999">⚠️ AMBIENTE DE TESTES — dados não são reais</div>'
   : '';
 
+// Toast padrão do sistema, pra substituir alert() nativo (feio e bloqueante) nas
+// páginas. Fica disponível globalmente como window.fexToast(mensagem, tipo),
+// tipo em 'erro'|'sucesso'|'aviso' (padrão 'erro', igual ao alert() que substitui).
+const TOAST_SCRIPT = `<script>
+window.fexToast = function(mensagem, tipo){
+  tipo = tipo || 'erro';
+  var cores = { erro: '#dc2626', sucesso: '#10b981', aviso: '#f59e0b' };
+  var container = document.getElementById('fex-toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'fex-toast-container';
+    container.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999999;display:flex;flex-direction:column;gap:8px;align-items:center;max-width:90vw;pointer-events:none';
+    document.body.appendChild(container);
+  }
+  var toast = document.createElement('div');
+  toast.style.cssText = 'background:' + (cores[tipo] || cores.erro) + ';color:white;padding:12px 18px;border-radius:8px;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;box-shadow:0 4px 16px rgba(0,0,0,0.25);white-space:pre-line;text-align:center;max-width:100%;opacity:0;transition:opacity 0.2s';
+  toast.textContent = mensagem;
+  container.appendChild(toast);
+  requestAnimationFrame(function(){ toast.style.opacity = '1'; });
+  setTimeout(function(){
+    toast.style.opacity = '0';
+    setTimeout(function(){ toast.remove(); }, 300);
+  }, 4000);
+};
+</script>`;
+
 // Slot compartilhado no header pra agrupar relógio, botão de tela cheia etc.
 // sem sobrepor o título nem quebrar o layout justify-content:space-between
 const HEADER_SLOT_SCRIPT = `<script>
@@ -268,7 +294,7 @@ const ALERTAS_FICHAS_SCRIPT = `<script>
           fetch('/api/frango/entrega/' + f.codigo, { method: 'POST' })
             .then(function(r){ return r.json(); })
             .then(function(j){
-              if (j.erro) { alert(j.erro); btn.disabled = false; btn.textContent = 'Dar baixa'; return; }
+              if (j.erro) { window.fexToast(j.erro); btn.disabled = false; btn.textContent = 'Dar baixa'; return; }
               fichas = fichas.filter(function(x){ return x.codigo !== f.codigo; });
               if (fichas.length === 0) { overlay.remove(); removerBadge(); return; }
               renderLista();
@@ -312,7 +338,7 @@ const ALERTAS_FICHAS_SCRIPT = `<script>
 })();
 </script>`;
 
-const INJECT_HTML = TEST_BANNER + HEADER_SLOT_SCRIPT + USUARIO_LOGADO_SCRIPT + CLOCK_SCRIPT + CONEXAO_SCRIPT + FULLSCREEN_SCRIPT + ALERTAS_FICHAS_SCRIPT;
+const INJECT_HTML = TEST_BANNER + TOAST_SCRIPT + HEADER_SLOT_SCRIPT + USUARIO_LOGADO_SCRIPT + CLOCK_SCRIPT + CONEXAO_SCRIPT + FULLSCREEN_SCRIPT + ALERTAS_FICHAS_SCRIPT;
 
 function injetarBanner(filePath) {
   let html = fs.readFileSync(filePath, 'utf8');

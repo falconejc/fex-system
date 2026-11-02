@@ -317,8 +317,8 @@
   }
 
   async function registrarVenda() {
-    if (!tipoSelecionado) { alert('Selecione o tipo de frango'); return; }
-    if (!formaPagamentoSelecionada) { alert('Selecione a forma de pagamento'); return; }
+    if (!tipoSelecionado) { fexToast('Selecione o tipo de frango'); return; }
+    if (!formaPagamentoSelecionada) { fexToast('Selecione a forma de pagamento'); return; }
     const btn = document.getElementById('btn-vender');
     btn.disabled = true; btn.textContent = 'Registrando...';
     try {
@@ -367,9 +367,9 @@
       // Mostra alerta se algum insumo zerou
       if (data.alertas_insumos && data.alertas_insumos.length > 0) {
         const nomes = data.alertas_insumos.map(a => a.nome + ' (' + a.quantidade_atual + ')').join(', ');
-        setTimeout(() => alert('⚠️ Atenção! Estoque zerado ou negativo: ' + nomes), 500);
+        setTimeout(() => fexToast('Estoque zerado ou negativo: ' + nomes, 'aviso'), 500);
       }
-    } catch(e) { alert(e.message); }
+    } catch(e) { fexToast(e.message); }
     btn.disabled = false; btn.textContent = 'Registrar Venda e Imprimir';
   }
 
@@ -389,7 +389,7 @@
       btn.textContent = '✅ Enviado!';
       setTimeout(() => { btn.textContent = '📱 Enviar WhatsApp'; btn.disabled = false; }, 3000);
     } catch(e) {
-      alert('Erro ao enviar: ' + e.message);
+      fexToast('Erro ao enviar: ' + e.message);
       btn.textContent = '📱 Enviar WhatsApp';
       btn.disabled = false;
     }
@@ -491,7 +491,7 @@
 
   async function reimprimirFicha(codigo) {
     const res = await fetch('/api/frango/qrcode/' + codigo);
-    if (!res.ok) { alert('Venda não encontrada'); return; }
+    if (!res.ok) { fexToast('Venda não encontrada'); return; }
     const venda = await res.json();
     vendaAtual = venda;
 
@@ -526,7 +526,7 @@
     const res = await fetch('/api/frango/entrega/' + codigo, { method: 'POST' });
     const data = await res.json();
     if (data.sucesso) { carregarPendentes(); carregarEstoque(); }
-    else alert(data.erro);
+    else fexToast(data.erro);
   }
 
   function abrirEstoque() {
@@ -552,7 +552,7 @@
     });
     const data = await res.json();
     if (data.sucesso) { fecharModal('modal-estoque'); carregarEstoque(); }
-    else alert(data.erro);
+    else fexToast(data.erro);
   }
 
   function abrirScanner() {
@@ -591,10 +591,10 @@
   async function abrirConfirmarQR(codigo) {
     codigoQRLido = codigo;
     const res = await fetch('/api/frango/qrcode/' + codigo);
-    if (!res.ok) { alert('QR code inválido!'); return; }
+    if (!res.ok) { fexToast('QR code inválido!'); return; }
     const venda = await res.json();
-    if (venda.status === 'entregue') { alert('Este frango já foi entregue!'); return; }
-    if (venda.cancelado) { alert('Esta venda foi cancelada!'); return; }
+    if (venda.status === 'entregue') { fexToast('Este frango já foi entregue!', 'aviso'); return; }
+    if (venda.cancelado) { fexToast('Esta venda foi cancelada!', 'aviso'); return; }
     document.getElementById('qr-codigo').textContent = venda.codigo;
     document.getElementById('qr-info').textContent = '🍗 ' + (venda.tipo_nome || venda.tipo) + (venda.observacao ? ' • ' + venda.observacao : '');
     document.getElementById('modal-confirmar-qr').classList.add('aberto');
@@ -605,7 +605,7 @@
     const data = await res.json();
     fecharModal('modal-confirmar-qr');
     if (data.sucesso) { carregarPendentes(); carregarEstoque(); }
-    else alert(data.erro);
+    else fexToast(data.erro);
   }
 
   function fecharModal(id) { document.getElementById(id).classList.remove('aberto'); }
