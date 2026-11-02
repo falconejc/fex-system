@@ -3,3 +3,4 @@ frango.db
 *.db
 .env
 public/uploads/
+backups/
