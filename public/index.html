@@ -61,6 +61,7 @@
     document.getElementById('header-nivel').textContent = niveis[user.nivel] || user.nivel;
 
     const todos = [
+      { href: '/pdv.html',      cor: 'amarelo',  icon: '🧾', titulo: 'PDV',             desc: 'Ponto de venda',            niveis: ['admin','caixa','dono'] },
       { href: '/frango.html',    cor: 'amarelo',  icon: '🍗', titulo: 'Frango Assado', desc: 'Registrar vendas',          niveis: ['admin','caixa'] },
       { href: '/forno.html',     cor: 'vermelho', icon: '🔥', titulo: 'Forno',         desc: 'Lotes e controle',          niveis: ['admin','caixa','assador'] },
       { href: '/entrega.html',   cor: 'verde',    icon: '✅', titulo: 'Entrega',        desc: 'Dar baixa nas retiradas',   niveis: ['admin','caixa','assador'] },
@@ -71,7 +72,6 @@
       { href: '/usuarios.html',  cor: 'roxo',     icon: '👥', titulo: 'Usuarios',       desc: 'Gerenciar acessos',         niveis: ['admin'] },
       { href: '/tipos.html',     cor: 'amarelo',  icon: '🍗', titulo: 'Tipos',          desc: 'Tipos de frango',           niveis: ['admin'] },
       { href: '/precos.html',   cor: 'verde',    icon: '💰', titulo: 'Preços',          desc: 'Tabela de produtos',        niveis: ['admin','caixa','assador','dono'] },
-      { href: '/pdv.html',      cor: 'amarelo',  icon: '🧾', titulo: 'PDV',             desc: 'Ponto de venda',            niveis: ['admin','caixa','dono'] },
       { href: '/atacado.html',  cor: 'vermelho', icon: '🚚', titulo: 'Atacado',         desc: 'Vendas e entregas',         niveis: ['admin','caixa','dono'] },
     ];
 
