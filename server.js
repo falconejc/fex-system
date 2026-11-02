@@ -59,6 +59,35 @@ window.__fexHeaderSlot = function(){
 };
 </script>`;
 
+// Mostra quem está logado (nome + nível) no header, de forma consistente em toda
+// página pós-login — antes só index.html mostrava isso, o resto só usava o nível
+// internamente (ex. pra desabilitar botão) sem exibir nada pro usuário.
+// Escondido em telas bem estreitas (maquininha/celular) pra não disputar espaço
+// com relógio/botão de tela cheia/badge de fichas atrasadas.
+const USUARIO_LOGADO_SCRIPT = `<style>
+  @media (max-width: 480px) { #fex-usuario-logado { display: none !important; } }
+</style>
+<script>
+(function(){
+  var path = window.location.pathname;
+  if (path === '/login.html' || path === '/teste-qr.html' || path === '/' || path === '/index.html') return;
+  var NIVEIS = { admin: 'Admin', dono: 'Dono', caixa: 'Caixa', assador: 'Assador' };
+  fetch('/api/auth/me')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(user){
+      if (!user) return;
+      var slot = window.__fexHeaderSlot && window.__fexHeaderSlot();
+      if (!slot || document.getElementById('fex-usuario-logado')) return;
+      var label = document.createElement('div');
+      label.id = 'fex-usuario-logado';
+      label.style.cssText = 'font-size:12px;color:white;opacity:0.9;white-space:nowrap;line-height:1.2;text-align:right';
+      label.textContent = user.nome + ' · ' + (NIVEIS[user.nivel] || user.nivel);
+      slot.insertBefore(label, slot.firstChild);
+    })
+    .catch(function(){});
+})();
+</script>`;
+
 const CLOCK_SCRIPT = `<script>
 (function(){
   function tick(){
@@ -283,7 +312,7 @@ const ALERTAS_FICHAS_SCRIPT = `<script>
 })();
 </script>`;
 
-const INJECT_HTML = TEST_BANNER + HEADER_SLOT_SCRIPT + CLOCK_SCRIPT + CONEXAO_SCRIPT + FULLSCREEN_SCRIPT + ALERTAS_FICHAS_SCRIPT;
+const INJECT_HTML = TEST_BANNER + HEADER_SLOT_SCRIPT + USUARIO_LOGADO_SCRIPT + CLOCK_SCRIPT + CONEXAO_SCRIPT + FULLSCREEN_SCRIPT + ALERTAS_FICHAS_SCRIPT;
 
 function injetarBanner(filePath) {
   let html = fs.readFileSync(filePath, 'utf8');
