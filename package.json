@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test tests/",
+    "test": "node --test",
     "start:test": "PORT=3001 APP_ENV=test DB_FILE=frango-test.db node server.js",
     "pm2:start": "pm2 start ecosystem.config.js --only frango-system",
     "pm2:start:test": "pm2 start ecosystem.config.js --only frango-system-test",
