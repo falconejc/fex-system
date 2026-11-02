@@ -103,6 +103,17 @@ router.get('/pendentes', (req, res) => {
   `).all());
 });
 
+// Fichas pendentes de dias anteriores (sem baixa de um dia pro outro) — usado no alerta global.
+router.get('/pendentes-atrasadas', (req, res) => {
+  res.json(db.prepare(`
+    SELECT v.*, t.nome as tipo_nome, t.icone as tipo_icone
+    FROM vendas v
+    LEFT JOIN tipos_frango t ON v.tipo_id = t.id
+    WHERE v.status='pendente' AND v.cancelado=0 AND DATE(v.horario_compra) < ?
+    ORDER BY v.horario_compra ASC
+  `).all(hoje()));
+});
+
 router.get('/qrcode/:codigo', (req, res) => {
   const venda = db.prepare(`
     SELECT v.*, t.nome as tipo_nome FROM vendas v

@@ -156,7 +156,96 @@ const FULLSCREEN_SCRIPT = `<script>
 })();
 </script>`;
 
-const INJECT_HTML = TEST_BANNER + HEADER_SLOT_SCRIPT + CLOCK_SCRIPT + CONEXAO_SCRIPT + FULLSCREEN_SCRIPT;
+// Alerta bloqueante de fichas de frango vendidas e não baixadas até o dia seguinte.
+// Roda em toda página pós-login (exceto login/teste-qr); checa uma vez ao carregar.
+const ALERTAS_FICHAS_SCRIPT = `<script>
+(function(){
+  var path = window.location.pathname;
+  if (path === '/login.html' || path === '/teste-qr.html') return;
+
+  function formatarHorario(dt){
+    if (!dt) return '';
+    var partes = dt.split(' ');
+    return partes.length > 1 ? partes[1].slice(0,5) + ' (' + partes[0].split('-').reverse().join('/') + ')' : dt;
+  }
+
+  function montarModal(fichas){
+    if (document.getElementById('fex-alerta-fichas')) return;
+    var overlay = document.createElement('div');
+    overlay.id = 'fex-alerta-fichas';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;font-family:Arial,sans-serif';
+
+    var box = document.createElement('div');
+    box.style.cssText = 'background:white;border-radius:12px;max-width:480px;width:100%;max-height:80vh;overflow:auto;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,0.3)';
+
+    var titulo = document.createElement('div');
+    titulo.style.cssText = 'font-size:17px;font-weight:bold;color:#dc2626;margin-bottom:6px';
+    titulo.textContent = '⚠️ Fichas sem baixa de dias anteriores';
+    box.appendChild(titulo);
+
+    var sub = document.createElement('div');
+    sub.style.cssText = 'font-size:13px;color:#555;margin-bottom:14px';
+    sub.textContent = 'Essas fichas de frango ficaram pendentes e não foram baixadas no dia da venda. Confira se o frango foi retirado e dê baixa.';
+    box.appendChild(sub);
+
+    var lista = document.createElement('div');
+    lista.style.cssText = 'display:flex;flex-direction:column;gap:8px';
+    box.appendChild(lista);
+
+    function renderLista(){
+      lista.innerHTML = '';
+      fichas.forEach(function(f){
+        var item = document.createElement('div');
+        item.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #eee;border-radius:8px;padding:8px 10px';
+        var info = document.createElement('div');
+        info.innerHTML = '<div style="font-weight:bold">' + (f.tipo_icone || '') + ' ' + f.tipo_nome + ' <span style="color:#888;font-weight:normal">#' + f.codigo + '</span></div>' +
+          '<div style="font-size:12px;color:#777">' + formatarHorario(f.horario_compra) + ' · ' + (f.atendente || '') + '</div>';
+        item.appendChild(info);
+        var btn = document.createElement('button');
+        btn.textContent = 'Dar baixa';
+        btn.style.cssText = 'background:#10b981;color:white;border:none;border-radius:6px;padding:7px 12px;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap';
+        btn.onclick = function(){
+          btn.disabled = true;
+          btn.textContent = '...';
+          fetch('/api/frango/entrega/' + f.codigo, { method: 'POST' })
+            .then(function(r){ return r.json(); })
+            .then(function(j){
+              if (j.erro) { alert(j.erro); btn.disabled = false; btn.textContent = 'Dar baixa'; return; }
+              fichas = fichas.filter(function(x){ return x.codigo !== f.codigo; });
+              if (fichas.length === 0) { overlay.remove(); return; }
+              renderLista();
+            })
+            .catch(function(){ btn.disabled = false; btn.textContent = 'Dar baixa'; });
+        };
+        item.appendChild(btn);
+        lista.appendChild(item);
+      });
+    }
+    renderLista();
+
+    var fechar = document.createElement('button');
+    fechar.textContent = 'Fechar';
+    fechar.style.cssText = 'margin-top:16px;width:100%;background:#eee;color:#333;border:none;border-radius:8px;padding:10px;font-size:13px;cursor:pointer';
+    fechar.onclick = function(){ overlay.remove(); };
+    box.appendChild(fechar);
+
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+  }
+
+  function checar(){
+    fetch('/api/frango/pendentes-atrasadas', { cache: 'no-store' })
+      .then(function(r){ if (!r.ok) throw 0; return r.json(); })
+      .then(function(fichas){ if (fichas && fichas.length) montarModal(fichas); })
+      .catch(function(){});
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', checar);
+  else checar();
+})();
+</script>`;
+
+const INJECT_HTML = TEST_BANNER + HEADER_SLOT_SCRIPT + CLOCK_SCRIPT + CONEXAO_SCRIPT + FULLSCREEN_SCRIPT + ALERTAS_FICHAS_SCRIPT;
 
 function injetarBanner(filePath) {
   let html = fs.readFileSync(filePath, 'utf8');
