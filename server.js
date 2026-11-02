@@ -5,10 +5,12 @@
  * e serve os arquivos estáticos do frontend.
  *
  * Variáveis de ambiente:
- *   PORT     — porta do servidor (padrão: 3000)
- *   APP_ENV  — ambiente: 'production' ou 'test' (padrão: 'production')
+ *   PORT       — porta do servidor (padrão: 3000)
+ *   APP_ENV    — ambiente: 'production' ou 'test' (padrão: 'production')
+ *   JWT_SECRET — segredo de assinatura dos tokens (obrigatório, ver .env)
  */
 
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');

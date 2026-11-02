@@ -6,7 +6,8 @@
  */
 
 const jwt = require('jsonwebtoken');
-const SECRET = 'fex-system-secret-2024';
+const SECRET = process.env.JWT_SECRET;
+if (!SECRET) throw new Error('JWT_SECRET não definido (ver .env)');
 
 function gerarToken(usuario) {
   return jwt.sign(
