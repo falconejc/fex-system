@@ -30,6 +30,23 @@ const TEST_BANNER = IS_TEST
   ? '<div style="position:fixed;bottom:0;left:0;right:0;background:#dc2626;color:white;text-align:center;padding:8px;font-size:13px;font-weight:bold;z-index:9999">⚠️ AMBIENTE DE TESTES — dados não são reais</div>'
   : '';
 
+// Protege o header contra overflow em telas estreitas (maquininha/celular, ~320-360px).
+// O slot de ações (relógio, botão de tela cheia, badge de fichas atrasadas, usuário
+// logado, "Sair") soma facilmente >150px; sem isso o <h1> do título empurra tudo pra
+// fora da tela. Generaliza um padrão que já existia só em precos.html (truncar com
+// ellipsis) pra todas as páginas, sem precisar editar o CSS de cada uma.
+const HEADER_RESPONSIVO_STYLE = `<style>
+  body { overflow-x: hidden; }
+  header { flex-wrap: nowrap; }
+  header .header-left { min-width: 0; overflow: hidden; }
+  header h1 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 1; }
+  header > a { flex-shrink: 0; }
+  @media (max-width: 480px) {
+    #fex-clock { display: none; }
+    #fex-fichas-badge .fex-extra { display: none; }
+  }
+</style>`;
+
 // Toast padrão do sistema, pra substituir alert() nativo (feio e bloqueante) nas
 // páginas. Fica disponível globalmente como window.fexToast(mensagem, tipo),
 // tipo em 'erro'|'sucesso'|'aviso' (padrão 'erro', igual ao alert() que substitui).
@@ -248,7 +265,8 @@ const ALERTAS_FICHAS_SCRIPT = `<script>
       badge.onclick = function(){ checar(true); };
       slot.appendChild(badge);
     }
-    badge.textContent = '⚠️ ' + quantidade + (quantidade === 1 ? ' ficha atrasada' : ' fichas atrasadas');
+    badge.title = quantidade + (quantidade === 1 ? ' ficha atrasada' : ' fichas atrasadas');
+    badge.innerHTML = '⚠️ ' + quantidade + '<span class="fex-extra">' + (quantidade === 1 ? ' ficha atrasada' : ' fichas atrasadas') + '</span>';
   }
 
   function montarModal(fichas){
@@ -338,7 +356,22 @@ const ALERTAS_FICHAS_SCRIPT = `<script>
 })();
 </script>`;
 
-const INJECT_HTML = TEST_BANNER + TOAST_SCRIPT + HEADER_SLOT_SCRIPT + USUARIO_LOGADO_SCRIPT + CLOCK_SCRIPT + CONEXAO_SCRIPT + FULLSCREEN_SCRIPT + ALERTAS_FICHAS_SCRIPT;
+// Registra o service worker e o manifest em toda página — antes só index.html fazia
+// isso, então o cache offline não tinha efeito em quem fica o dia inteiro direto em
+// pdv.html/frango.html (o caso comum na maquininha/tablet fixo no caixa).
+const PWA_SCRIPT = `<script>
+(function(){
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function(){});
+  if (!document.querySelector('link[rel="manifest"]')) {
+    var link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = '/manifest.json';
+    document.head.appendChild(link);
+  }
+})();
+</script>`;
+
+const INJECT_HTML = TEST_BANNER + HEADER_RESPONSIVO_STYLE + TOAST_SCRIPT + HEADER_SLOT_SCRIPT + USUARIO_LOGADO_SCRIPT + CLOCK_SCRIPT + CONEXAO_SCRIPT + FULLSCREEN_SCRIPT + ALERTAS_FICHAS_SCRIPT + PWA_SCRIPT;
 
 function injetarBanner(filePath) {
   let html = fs.readFileSync(filePath, 'utf8');
@@ -423,5 +456,12 @@ app.get('/', (req, res) => {
   } catch { res.redirect('/login.html'); }
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  // .jfif é servido por padrão como image/pjpeg (mime legado) — o manifest.json
+  // declara o ícone como image/jpeg, e Chrome/Android rejeita o ícone do PWA
+  // quando o Content-Type real não bate com o declarado no manifest.
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.jfif')) res.setHeader('Content-Type', 'image/jpeg');
+  }
+}));
 app.listen(PORT, '0.0.0.0', () => console.log(`Sistema rodando em http://0.0.0.0:${PORT} [${APP_ENV}]`));
