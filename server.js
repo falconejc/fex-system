@@ -158,12 +158,17 @@ const FULLSCREEN_SCRIPT = `<script>
 })();
 </script>`;
 
-// Alerta bloqueante de fichas de frango vendidas e não baixadas até o dia seguinte.
+// Alerta de fichas de frango vendidas e não baixadas até o dia seguinte.
 // Roda em toda página pós-login (exceto login/teste-qr); checa uma vez ao carregar.
+// Pra não cansar quem navega entre várias telas no mesmo turno, o modal bloqueante
+// só aparece uma vez por sessão de login — nas próximas checagens vira um badge
+// discreto no header, que reabre o modal completo se clicado.
 const ALERTAS_FICHAS_SCRIPT = `<script>
 (function(){
   var path = window.location.pathname;
   if (path === '/login.html' || path === '/teste-qr.html') return;
+
+  var FLAG_SESSAO = 'fexFichasAtrasadasModalMostrado';
 
   function formatarHorario(dt){
     if (!dt) return '';
@@ -171,8 +176,30 @@ const ALERTAS_FICHAS_SCRIPT = `<script>
     return partes.length > 1 ? partes[1].slice(0,5) + ' (' + partes[0].split('-').reverse().join('/') + ')' : dt;
   }
 
+  function removerBadge(){
+    var badge = document.getElementById('fex-fichas-badge');
+    if (badge) badge.remove();
+  }
+
+  function montarBadge(quantidade){
+    var badge = document.getElementById('fex-fichas-badge');
+    if (!badge) {
+      var slot = window.__fexHeaderSlot && window.__fexHeaderSlot();
+      if (!slot) return;
+      badge = document.createElement('button');
+      badge.id = 'fex-fichas-badge';
+      badge.title = 'Fichas de frango sem baixa de dias anteriores';
+      badge.style.cssText = 'background:#dc2626;color:white;border:none;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:bold;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px';
+      badge.onclick = function(){ checar(true); };
+      slot.appendChild(badge);
+    }
+    badge.textContent = '⚠️ ' + quantidade + (quantidade === 1 ? ' ficha atrasada' : ' fichas atrasadas');
+  }
+
   function montarModal(fichas){
     if (document.getElementById('fex-alerta-fichas')) return;
+    try { sessionStorage.setItem(FLAG_SESSAO, '1'); } catch(e) {}
+    removerBadge();
     var overlay = document.createElement('div');
     overlay.id = 'fex-alerta-fichas';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;font-family:Arial,sans-serif';
@@ -214,7 +241,7 @@ const ALERTAS_FICHAS_SCRIPT = `<script>
             .then(function(j){
               if (j.erro) { alert(j.erro); btn.disabled = false; btn.textContent = 'Dar baixa'; return; }
               fichas = fichas.filter(function(x){ return x.codigo !== f.codigo; });
-              if (fichas.length === 0) { overlay.remove(); return; }
+              if (fichas.length === 0) { overlay.remove(); removerBadge(); return; }
               renderLista();
             })
             .catch(function(){ btn.disabled = false; btn.textContent = 'Dar baixa'; });
@@ -228,17 +255,26 @@ const ALERTAS_FICHAS_SCRIPT = `<script>
     var fechar = document.createElement('button');
     fechar.textContent = 'Fechar';
     fechar.style.cssText = 'margin-top:16px;width:100%;background:#eee;color:#333;border:none;border-radius:8px;padding:10px;font-size:13px;cursor:pointer';
-    fechar.onclick = function(){ overlay.remove(); };
+    fechar.onclick = function(){
+      overlay.remove();
+      if (fichas.length > 0) montarBadge(fichas.length);
+    };
     box.appendChild(fechar);
 
     overlay.appendChild(box);
     document.body.appendChild(overlay);
   }
 
-  function checar(){
+  function checar(forcarModal){
     fetch('/api/frango/pendentes-atrasadas', { cache: 'no-store' })
       .then(function(r){ if (!r.ok) throw 0; return r.json(); })
-      .then(function(fichas){ if (fichas && fichas.length) montarModal(fichas); })
+      .then(function(fichas){
+        if (!fichas || !fichas.length) { removerBadge(); return; }
+        var jaMostrouNaSessao = false;
+        try { jaMostrouNaSessao = sessionStorage.getItem(FLAG_SESSAO) === '1'; } catch(e) {}
+        if (forcarModal || !jaMostrouNaSessao) montarModal(fichas);
+        else montarBadge(fichas.length);
+      })
       .catch(function(){});
   }
 
