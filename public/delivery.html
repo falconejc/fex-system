@@ -10,27 +10,48 @@
   header { background: #3b82f6; color: white; padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
   header a { color: white; text-decoration: none; font-size: 20px; }
   header h1 { font-size: 20px; }
-  .container { max-width: 600px; margin: 30px auto; padding: 0 20px; }
-  .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .container { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+  .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
   .card h2 { font-size: 16px; color: #555; margin-bottom: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-  label { display: block; font-size: 14px; color: #555; margin-bottom: 8px; margin-top: 18px; }
+  label { display: block; font-size: 14px; color: #555; margin-bottom: 8px; margin-top: 16px; }
   input, select, textarea { width: 100%; padding: 14px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; font-family: Arial, sans-serif; min-height: 48px; }
-  textarea { resize: vertical; min-height: 80px; }
+  textarea { resize: vertical; min-height: 70px; }
   .tipos { display: flex; gap: 14px; margin-top: 6px; }
   .tipo-btn { flex: 1; padding: 14px; min-height: 48px; border: 2px solid #ddd; border-radius: 10px; background: white; cursor: pointer; font-size: 15px; text-align: center; transition: all 0.2s; }
   .tipo-btn.ativo { border-color: #3b82f6; background: #eff6ff; color: #1e40af; font-weight: bold; }
-  .pagamentos { display: flex; gap: 14px; margin-top: 6px; flex-wrap: wrap; }
-  .pag-btn { flex: 1; min-width: 80px; padding: 12px; min-height: 48px; border: 2px solid #ddd; border-radius: 10px; background: white; cursor: pointer; font-size: 14px; text-align: center; transition: all 0.2s; }
-  .pag-btn.ativo { border-color: #3b82f6; background: #eff6ff; color: #1e40af; font-weight: bold; }
+  .pagamentos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 6px; }
+  .pag-btn { padding: 14px 10px; min-height: 48px; border: 2px solid #ddd; border-radius: 10px; background: white; cursor: pointer; font-size: 14px; text-align: center; transition: all 0.2s; font-weight: bold; }
+  .pag-btn.ativo { border-color: #3b82f6; background: #eff6ff; color: #1e40af; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .btn { width: 100%; padding: 16px; min-height: 52px; background: #3b82f6; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
   .btn:hover { background: #2563eb; }
   .btn:disabled { background: #ccc; cursor: not-allowed; }
+  .btn-add-item { background: #10b981; margin-top: 10px; }
+  .btn-add-item:hover { background: #059669; }
+
+  .busca-produto-wrap { position: relative; }
+  .sugestoes-produto { display: none; position: absolute; left: 0; right: 0; top: calc(100% + 2px); background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 260px; overflow-y: auto; z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+  .sugestoes-produto.aberta { display: block; }
+  .sugestao-produto { padding: 12px; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+  .sugestao-produto:last-child { border-bottom: none; }
+  .sugestao-produto:hover, .sugestao-produto:active { background: #eff6ff; }
+  .sugestao-produto .sug-preco { color: #10b981; font-weight: bold; white-space: nowrap; }
+  .sugestao-esgotada { opacity: 0.55; }
+  .sug-esgotado { color: #ef4444; font-weight: bold; white-space: nowrap; font-size: 12px; }
+  .sugestao-vazia { padding: 12px; color: #aaa; font-size: 13px; text-align: center; }
+
+  #carrinho-area { margin-top: 10px; }
+  #carrinho-lista { border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
+  .carrinho-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #f0f0f0; gap: 8px; }
+  .carrinho-item:last-child { border-bottom: none; }
+  .carrinho-item .ci-desc { font-size: 14px; color: #333; flex: 1; }
+  .carrinho-item .ci-valor { font-size: 14px; font-weight: bold; color: #10b981; white-space: nowrap; }
+  .carrinho-item .ci-remover { background: #fee2e2; color: #991b1b; border: none; border-radius: 6px; padding: 8px 10px; min-height: 36px; cursor: pointer; font-size: 12px; }
+  #carrinho-total { text-align: right; font-size: 17px; font-weight: bold; padding: 10px 2px 0; }
+
   .item { display: flex; justify-content: space-between; align-items: center; padding: 14px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 12px; }
   .item .info .nome { font-weight: bold; font-size: 15px; color: #333; }
   .item .info .detalhe { font-size: 12px; color: #888; margin-top: 2px; }
-  .btn-entrega { padding: 10px 16px; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
-  .btn-entrega:hover { background: #059669; }
   .btn-reimprimir { padding: 10px 14px; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
   .vazio { text-align: center; color: #aaa; padding: 20px; font-size: 14px; }
   .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
@@ -44,6 +65,34 @@
   .tag-entrega { background: #dbeafe; color: #1e40af; }
   .tag-retirada { background: #fef3c7; color: #92400e; }
 
+  .tabs-kanban { display: flex; gap: 4px; margin-bottom: 16px; background: #f3f4f6; padding: 6px; border-radius: 12px; }
+  .tab-kanban { flex: 1; padding: 12px; min-height: 44px; border: none; background: transparent; cursor: pointer; border-radius: 8px; font-size: 14px; font-weight: bold; color: #666; font-family: Arial; }
+  .tab-kanban.ativo { background: #3b82f6; color: white; }
+  .painel-kanban-aba { display: none; }
+  .painel-kanban-aba.ativo { display: block; }
+
+  .kanban-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .kanban-coluna { background: #f9fafb; border-radius: 10px; padding: 10px; min-height: 120px; }
+  .kanban-coluna-titulo { font-size: 13px; font-weight: bold; color: #555; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .kanban-count { background: #e5e7eb; color: #555; border-radius: 10px; padding: 1px 8px; font-size: 11px; }
+  .kanban-cards { display: flex; flex-direction: column; gap: 10px; min-height: 60px; }
+  .kanban-cards.drag-over { background: #eff6ff; border-radius: 8px; }
+  .kanban-card { background: white; border-radius: 8px; padding: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); cursor: grab; }
+  .kanban-card.arrastando { opacity: 0.4; }
+  .kc-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
+  .kc-nome { font-weight: bold; font-size: 13px; color: #333; }
+  .kc-detalhe { font-size: 11px; color: #888; margin-top: 4px; }
+  .kc-resumo { font-size: 12px; color: #555; margin-top: 6px; }
+  .kc-rodape { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+  .kc-valor { font-size: 13px; font-weight: bold; color: #10b981; }
+  .kc-acoes { display: flex; gap: 6px; }
+  .kc-acoes button { border: none; background: #f3f4f6; border-radius: 6px; padding: 6px 9px; min-height: 32px; cursor: pointer; font-size: 13px; }
+  .kc-acoes button.kc-avancar { background: #dbeafe; color: #1e40af; }
+  .kc-acoes button.kc-cancelar { background: #fee2e2; color: #991b1b; }
+
+  @media (max-width: 900px) {
+    .kanban-board { grid-template-columns: repeat(2, 1fr); }
+  }
   @media (max-width: 768px) {
     .modal-box {
       max-width: 100%;
@@ -57,17 +106,7 @@
       overflow-y: auto;
       padding: 24px 20px;
     }
-    .container { padding-bottom: 96px; }
-    #btn-registrar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      margin: 0;
-      border-radius: 0;
-      z-index: 60;
-      box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
-    }
+    .container { padding-bottom: 20px; }
   }
 </style>
 <script src="/bt-printer.js"></script>
@@ -105,21 +144,73 @@
       <label>Referência</label>
       <input type="text" id="referencia" placeholder="Ponto de referência">
     </div>
+
+    <label>Produto (buscar no catálogo)</label>
+    <div class="busca-produto-wrap">
+      <input type="text" id="produto-busca" placeholder="Digite pra buscar..." autocomplete="off"
+        oninput="filtrarProdutos()" onfocus="filtrarProdutos()" onblur="fecharSugestoesComAtraso()">
+      <div class="sugestoes-produto" id="produto-sugestoes"></div>
+    </div>
+    <div id="peso-kg-area" style="display:none;">
+      <label>Peso (kg)</label>
+      <input type="text" id="peso-kg" placeholder="0,000" inputmode="decimal" oninput="recalcularValorKg()">
+    </div>
+    <div id="quantidade-area" style="display:none;">
+      <label>Quantidade</label>
+      <input type="number" id="quantidade" step="1" min="1" placeholder="1" inputmode="numeric" oninput="recalcularValorQuantidade()">
+      <div id="quantidade-hint" style="font-size:12px;color:#888;margin-top:6px;"></div>
+    </div>
+    <label>Descrição do item</label>
+    <input type="text" id="item-descricao" placeholder="Ex: Refrigerante Lata">
+    <label>Valor (R$)</label>
+    <input type="number" id="item-valor" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal" oninput="recalcularPesoDeValor()">
+    <button type="button" class="btn btn-add-item" onclick="adicionarItemCarrinho()">➕ Adicionar item</button>
+
+    <div id="carrinho-area" style="display:none;">
+      <label>Itens do pedido</label>
+      <div id="carrinho-lista"></div>
+      <div id="carrinho-total"></div>
+    </div>
+
     <label>Pagamento</label>
     <div class="pagamentos">
-      <button class="pag-btn ativo" onclick="selecionarPag('pix', this)">💠 Pix</button>
-      <button class="pag-btn" onclick="selecionarPag('cartao', this)">💳 Cartão</button>
       <button class="pag-btn" onclick="selecionarPag('dinheiro', this)">💵 Dinheiro</button>
+      <button class="pag-btn ativo" onclick="selecionarPag('pix', this)">📱 Pix</button>
+      <button class="pag-btn" onclick="selecionarPag('cartao_credito', this)">💳 Cartão Crédito</button>
+      <button class="pag-btn" onclick="selecionarPag('cartao_debito', this)">💳 Cartão Débito</button>
     </div>
-    <label>Descrição do pedido</label>
-    <textarea id="descricao" placeholder="Ex: 1 frango assado com bacon, sem sal..."></textarea>
+    <label>Observações (opcional)</label>
+    <textarea id="observacao" placeholder="Ex: sem sal, troco para R$50..."></textarea>
     <button class="btn" id="btn-registrar" onclick="registrarPedido()">Registrar e Imprimir Comanda</button>
   </div>
 
   <div class="card">
-    <h2>Pedidos Pendentes</h2>
-    <div class="pendentes" id="pendentes">
-      <div class="vazio">Carregando...</div>
+    <div class="tabs-kanban">
+      <button class="tab-kanban ativo" onclick="mudarAbaKanban('kanban', this)">📋 Pedidos</button>
+      <button class="tab-kanban" onclick="mudarAbaKanban('cancelados', this)">🗑️ Cancelados</button>
+    </div>
+    <div id="painel-kanban" class="painel-kanban-aba ativo">
+      <div class="kanban-board">
+        <div class="kanban-coluna">
+          <div class="kanban-coluna-titulo"><span>Pendente</span><span class="kanban-count" id="count-pendente">0</span></div>
+          <div class="kanban-cards" id="cards-pendente" ondragover="permitirDrop(event)" ondragleave="saiuDrop(event)" ondrop="soltarCard(event,'pendente')"></div>
+        </div>
+        <div class="kanban-coluna">
+          <div class="kanban-coluna-titulo"><span>Em Preparo</span><span class="kanban-count" id="count-preparando">0</span></div>
+          <div class="kanban-cards" id="cards-preparando" ondragover="permitirDrop(event)" ondragleave="saiuDrop(event)" ondrop="soltarCard(event,'preparando')"></div>
+        </div>
+        <div class="kanban-coluna">
+          <div class="kanban-coluna-titulo"><span>Saiu p/ Entrega</span><span class="kanban-count" id="count-saiu_entrega">0</span></div>
+          <div class="kanban-cards" id="cards-saiu_entrega" ondragover="permitirDrop(event)" ondragleave="saiuDrop(event)" ondrop="soltarCard(event,'saiu_entrega')"></div>
+        </div>
+        <div class="kanban-coluna">
+          <div class="kanban-coluna-titulo"><span>Entregue</span><span class="kanban-count" id="count-entregue">0</span></div>
+          <div class="kanban-cards" id="cards-entregue" ondragover="permitirDrop(event)" ondragleave="saiuDrop(event)" ondrop="soltarCard(event,'entregue')"></div>
+        </div>
+      </div>
+    </div>
+    <div id="painel-cancelados" class="painel-kanban-aba">
+      <div id="lista-cancelados"><div class="vazio">Carregando...</div></div>
     </div>
   </div>
 </div>
@@ -130,6 +221,7 @@
     <div class="modal-codigo" id="modal-codigo"></div>
     <div class="modal-info" id="modal-info"></div>
     <button class="btn-imprimir" onclick="imprimir()">🖨️ Imprimir Comanda</button>
+    <button class="btn-imprimir" id="btn-ficha-frango" onclick="imprimirFichasFrango()" style="background:#f59e0b;display:none">🍗 Imprimir Ficha do Frango</button>
     <button class="btn-imprimir" id="btn-bt-connect" onclick="conectarBT()" style="background:#6b7280">🔌 Conectar Impressora BT</button>
     <button class="btn-imprimir" id="btn-bt-print" onclick="imprimirBT()" style="background:#1d4ed8;display:none">🖨️ Imprimir via BT</button>
     <button class="btn-fechar" onclick="fecharModal()">Fechar</button>
@@ -137,6 +229,10 @@
 </div>
 
 <script>
+  const LABELS_PAG = { dinheiro: '💵 Dinheiro', pix: '📱 Pix', cartao_credito: '💳 Cartão Crédito', cartao_debito: '💳 Cartão Débito' };
+  const PROXIMO_STATUS = { pendente: 'preparando', preparando: 'saiu_entrega', saiu_entrega: 'entregue' };
+  const LABEL_STATUS = { pendente: 'Pendente', preparando: 'Em Preparo', saiu_entrega: 'Saiu p/ Entrega', entregue: 'Entregue' };
+
   function fmtHora(str) {
     if (!str) return '-';
     const p = str.replace('T', ' ').split(/[- :]/);
@@ -151,10 +247,234 @@
     return [hora, data];
   }
 
+  function fmtMoeda(v) {
+    return 'R$ ' + Number(v || 0).toFixed(2).replace('.', ',');
+  }
+
+  function normalizarBusca(txt) {
+    return txt.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  }
+
   let tipoSelecionado = 'entrega';
   let pagSelecionado = 'pix';
   let pedidoAtual = null;
+  let nivelUsuario = '';
+  let catalogoCombinado = [];
+  let produtoKgAtual = null;
+  let produtoUnitAtual = null;
+  let produtoFrangoAtual = null;
+  let carrinho = [];
+  let codigoArrastando = null;
+  let abaAtual = 'kanban';
 
+  async function init() {
+    const res = await fetch('/api/auth/me');
+    const user = await res.json();
+    nivelUsuario = user.nivel;
+    await carregarProdutos();
+    await carregarKanban();
+  }
+
+  function podeGerenciar() {
+    return nivelUsuario === 'admin' || nivelUsuario === 'dono';
+  }
+
+  async function carregarProdutos() {
+    try {
+      const [resProdutos, resTipos, resEstoque] = await Promise.all([
+        fetch('/api/precos'), fetch('/api/tipos'), fetch('/api/estoque/hoje')
+      ]);
+      const produtos = await resProdutos.json();
+      const tipos = await resTipos.json();
+      const estoque = await resEstoque.json();
+      const estoquePorTipo = {};
+      estoque.forEach(e => { estoquePorTipo[e.tipo_id] = e; });
+
+      catalogoCombinado = [
+        ...produtos.map(p => ({ uid: 'produto-' + p.id, id: p.id, nome: p.nome, preco: p.preco, emoji: p.emoji || '📦', unidade: p.unidade, origem: 'produto' })),
+        ...tipos.map(t => {
+          const est = estoquePorTipo[t.id];
+          const esgotado = !!(est && est.total > 0 && est.restantes <= 0);
+          return { uid: 'frango-' + t.id, id: t.id, nome: t.nome, preco: t.preco, emoji: t.icone || '🍗', unidade: 'un', origem: 'frango', esgotado, restantes: est ? est.restantes : null };
+        })
+      ];
+    } catch (e) {
+      catalogoCombinado = [];
+    }
+  }
+
+  function filtrarProdutos() {
+    const termo = normalizarBusca(document.getElementById('produto-busca').value.trim());
+    const caixa = document.getElementById('produto-sugestoes');
+    if (!termo) { caixa.classList.remove('aberta'); caixa.innerHTML = ''; return; }
+
+    const comecaComTermo = p => normalizarBusca(p.nome).startsWith(termo);
+    const comecaPalavraComTermo = p => normalizarBusca(p.nome).split(/\s+/).some(palavra => palavra.startsWith(termo));
+
+    const porNome = catalogoCombinado.filter(comecaComTermo).sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
+    const porPalavra = catalogoCombinado.filter(p => !comecaComTermo(p) && comecaPalavraComTermo(p)).sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
+
+    const encontrados = [...porNome, ...porPalavra].slice(0, 8);
+    if (!encontrados.length) {
+      caixa.innerHTML = '<div class="sugestao-vazia">Nenhum produto encontrado</div>';
+    } else {
+      caixa.innerHTML = encontrados.map(p => `
+        <div class="sugestao-produto${p.esgotado ? ' sugestao-esgotada' : ''}" onmousedown="selecionarProduto('${p.uid}')">
+          <span>${p.emoji || '📦'} ${p.nome}${p.origem === 'frango' ? ' <small style="color:#f59e0b;">· assado</small>' : ''}</span>
+          <span class="sug-preco">${p.esgotado ? '<span class="sug-esgotado">Esgotado</span>' : (p.preco ? fmtMoeda(p.preco) : '—')}</span>
+        </div>
+      `).join('');
+    }
+    caixa.classList.add('aberta');
+  }
+
+  function fecharSugestoesComAtraso() {
+    setTimeout(() => {
+      document.getElementById('produto-sugestoes').classList.remove('aberta');
+    }, 150);
+  }
+
+  function selecionarProduto(uid) {
+    const produto = catalogoCombinado.find(p => p.uid === uid);
+    if (!produto) return;
+    if (produto.esgotado) { alert(`${produto.nome} está esgotado hoje.`); return; }
+    document.getElementById('produto-busca').value = '';
+    document.getElementById('produto-sugestoes').classList.remove('aberta');
+    document.getElementById('produto-sugestoes').innerHTML = '';
+    document.getElementById('item-descricao').value = produto.nome;
+
+    if (produto.origem === 'frango') {
+      produtoKgAtual = null;
+      produtoUnitAtual = null;
+      produtoFrangoAtual = produto;
+      document.getElementById('peso-kg-area').style.display = 'none';
+      document.getElementById('quantidade-area').style.display = 'block';
+      document.getElementById('peso-kg').value = '';
+      document.getElementById('quantidade').value = 1;
+      if (produto.restantes != null) document.getElementById('quantidade').max = produto.restantes;
+      document.getElementById('quantidade-hint').textContent = produto.restantes != null ? `Disponível hoje: ${produto.restantes}` : '';
+      document.getElementById('item-valor').value = produto.preco ? produto.preco.toFixed(2) : '';
+    } else if (produto.unidade === 'kg') {
+      produtoKgAtual = produto;
+      produtoUnitAtual = null;
+      produtoFrangoAtual = null;
+      document.getElementById('peso-kg-area').style.display = 'block';
+      document.getElementById('quantidade-area').style.display = 'none';
+      document.getElementById('quantidade').removeAttribute('max');
+      document.getElementById('quantidade-hint').textContent = '';
+      document.getElementById('peso-kg').value = '';
+      document.getElementById('quantidade').value = '';
+      document.getElementById('item-valor').value = '';
+      document.getElementById('peso-kg').focus();
+    } else {
+      produtoKgAtual = null;
+      produtoUnitAtual = produto;
+      produtoFrangoAtual = null;
+      document.getElementById('peso-kg-area').style.display = 'none';
+      document.getElementById('peso-kg').value = '';
+      document.getElementById('quantidade-area').style.display = 'block';
+      document.getElementById('quantidade').removeAttribute('max');
+      document.getElementById('quantidade-hint').textContent = '';
+      document.getElementById('quantidade').value = 1;
+      document.getElementById('item-valor').value = produto.preco ? produto.preco.toFixed(2) : '';
+    }
+  }
+
+  function recalcularValorKg() {
+    if (!produtoKgAtual) return;
+    const pesoStr = document.getElementById('peso-kg').value;
+    const peso = Number(pesoStr.replace(',', '.'));
+    if (!peso || peso <= 0) {
+      document.getElementById('item-descricao').value = produtoKgAtual.nome;
+      return;
+    }
+    document.getElementById('item-descricao').value = `${produtoKgAtual.nome} (${pesoStr} kg)`;
+    if (produtoKgAtual.preco) {
+      document.getElementById('item-valor').value = (peso * produtoKgAtual.preco).toFixed(2);
+    }
+  }
+
+  function recalcularPesoDeValor() {
+    if (!produtoKgAtual || !produtoKgAtual.preco) return;
+    const valor = Number(document.getElementById('item-valor').value);
+    if (!valor || valor <= 0) return;
+    const peso = valor / produtoKgAtual.preco;
+    const pesoStr = peso.toFixed(3).replace('.', ',');
+    document.getElementById('peso-kg').value = pesoStr;
+    document.getElementById('item-descricao').value = `${produtoKgAtual.nome} (${pesoStr} kg)`;
+  }
+
+  function recalcularValorQuantidade() {
+    const atual = produtoUnitAtual || produtoFrangoAtual;
+    if (!atual) return;
+    const qtd = Math.max(1, parseInt(document.getElementById('quantidade').value, 10) || 1);
+    document.getElementById('item-descricao').value = qtd > 1 ? `${atual.nome} (x${qtd})` : atual.nome;
+    if (atual.preco) {
+      document.getElementById('item-valor').value = (atual.preco * qtd).toFixed(2);
+    }
+  }
+
+  function totalCarrinho() {
+    return carrinho.reduce((s, item) => s + item.valor, 0);
+  }
+
+  function renderCarrinho() {
+    const area = document.getElementById('carrinho-area');
+    if (!carrinho.length) { area.style.display = 'none'; return; }
+    area.style.display = 'block';
+    document.getElementById('carrinho-lista').innerHTML = carrinho.map((item, i) => `
+      <div class="carrinho-item">
+        <span class="ci-desc">${item.descricao}${item.origem === 'frango' ? ' <small style="color:#f59e0b;">· assado</small>' : ''}</span>
+        <span class="ci-valor">${fmtMoeda(item.valor)}</span>
+        <button type="button" class="ci-remover" onclick="removerItemCarrinho(${i})">✕</button>
+      </div>
+    `).join('');
+    document.getElementById('carrinho-total').textContent = `Total: ${fmtMoeda(totalCarrinho())}`;
+  }
+
+  function adicionarItemCarrinho() {
+    const descricao = document.getElementById('item-descricao').value.trim();
+    const valor = document.getElementById('item-valor').value;
+    if (!descricao) { alert('Informe a descrição do item'); return; }
+    if (!valor || Number(valor) <= 0) { alert('Informe um valor válido'); return; }
+
+    if (produtoFrangoAtual) {
+      const qtd = Math.max(1, parseInt(document.getElementById('quantidade').value, 10) || 1);
+      for (let i = 0; i < qtd; i++) {
+        carrinho.push({ descricao: produtoFrangoAtual.nome, valor: produtoFrangoAtual.preco, origem: 'frango', tipo_id: produtoFrangoAtual.id });
+      }
+    } else if (produtoKgAtual) {
+      const peso = Number((document.getElementById('peso-kg').value || '').replace(',', '.'));
+      if (!peso || peso <= 0) { alert('Informe o peso (kg), ou um preço/kg cadastrado no produto pra calcular automaticamente pelo valor'); return; }
+      carrinho.push({ descricao, valor: Number(valor), produto_id: produtoKgAtual.id, unidade: 'kg', quantidade: peso });
+    } else if (produtoUnitAtual) {
+      const qtd = Math.max(1, parseInt(document.getElementById('quantidade').value, 10) || 1);
+      carrinho.push({ descricao, valor: Number(valor), produto_id: produtoUnitAtual.id, unidade: 'un', quantidade: qtd });
+    } else {
+      carrinho.push({ descricao, valor: Number(valor) });
+    }
+
+    document.getElementById('item-descricao').value = '';
+    document.getElementById('item-valor').value = '';
+    document.getElementById('produto-busca').value = '';
+    document.getElementById('peso-kg-area').style.display = 'none';
+    document.getElementById('peso-kg').value = '';
+    produtoKgAtual = null;
+    document.getElementById('quantidade-area').style.display = 'none';
+    document.getElementById('quantidade').removeAttribute('max');
+    document.getElementById('quantidade-hint').textContent = '';
+    document.getElementById('quantidade').value = '';
+    produtoUnitAtual = null;
+    produtoFrangoAtual = null;
+
+    renderCarrinho();
+    document.getElementById('item-descricao').focus();
+  }
+
+  function removerItemCarrinho(i) {
+    carrinho.splice(i, 1);
+    renderCarrinho();
+  }
 
   function conectarBT() { BTPrinter.connect(); }
 
@@ -181,7 +501,8 @@
     const nome_cliente = document.getElementById('nome_cliente').value.trim();
     if (!atendente) { alert('Informe o nome do atendente'); return; }
     if (!nome_cliente) { alert('Informe o nome do cliente'); return; }
-    const btn = document.querySelector('.btn');
+    if (!carrinho.length) { alert('Adicione ao menos um item ao pedido'); return; }
+    const btn = document.getElementById('btn-registrar');
     btn.disabled = true;
     btn.textContent = 'Registrando...';
     try {
@@ -194,7 +515,9 @@
         bairro: document.getElementById('bairro')?.value.trim() || '',
         referencia: document.getElementById('referencia')?.value.trim() || '',
         pagamento: pagSelecionado,
-        descricao: document.getElementById('descricao').value.trim()
+        observacao: document.getElementById('observacao').value.trim(),
+        itens: carrinho.filter(i => i.origem !== 'frango').map(i => ({ descricao: i.descricao, valor: i.valor, produto_id: i.produto_id, unidade: i.unidade, quantidade: i.quantidade })),
+        frango_tipo_ids: carrinho.filter(i => i.origem === 'frango').map(i => i.tipo_id)
       };
       const res = await fetch('/api/delivery/pedido', {
         method: 'POST',
@@ -206,9 +529,10 @@
       pedidoAtual = data;
       document.getElementById('modal-titulo').textContent = 'Pedido registrado!';
       document.getElementById('modal-codigo').textContent = data.codigo;
-      document.getElementById('modal-info').textContent = data.nome_cliente + ' • ' + (data.tipo === 'entrega' ? '🛵 Entrega' : '🏪 Retirada');
+      document.getElementById('modal-info').textContent = data.nome_cliente + ' • ' + (data.tipo === 'entrega' ? '🛵 Entrega' : '🏪 Retirada') + ' • ' + fmtMoeda(data.valor_total);
       document.getElementById('modal').classList.add('aberto');
-      carregarPendentes();
+      atualizarBotaoFichaFrango();
+      carregarKanban();
       limparFormulario();
     } catch(e) { alert('Erro: ' + e.message); }
     btn.disabled = false;
@@ -216,10 +540,12 @@
   }
 
   function limparFormulario() {
-    ['atendente','nome_cliente','endereco','numero','bairro','referencia','descricao'].forEach(id => {
+    ['atendente','nome_cliente','endereco','numero','bairro','referencia','observacao'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
+    carrinho = [];
+    renderCarrinho();
   }
 
   function imprimir() {
@@ -227,12 +553,14 @@
     const p = pedidoAtual;
     const w = window.open('', '_blank', 'width=400,height=600');
     const [hora, data] = fmtDataHora(p.horario_pedido);
-    const pagLabels = { pix: 'Pix', cartao: 'Cartão', dinheiro: 'Dinheiro' };
     const endereco = p.tipo === 'entrega'
       ? `<div class="info">End: ${p.endereco}, ${p.numero}</div>
          <div class="info">Bairro: ${p.bairro}</div>
          ${p.referencia ? `<div class="info">Ref: ${p.referencia}</div>` : ''}`
       : '<div class="info">** RETIRADA NO LOCAL **</div>';
+    const itensHtml = (p.itens && p.itens.length)
+      ? p.itens.map(it => `<div class="info item-linha"><span>${it.descricao}</span><span>${fmtMoeda(it.valor)}</span></div>`).join('')
+      : `<div class="descricao">${p.descricao || ''}</div>`;
     w.document.write(`
       <html><head><title>Comanda</title>
       <style>
@@ -251,6 +579,8 @@
         .linha { border-top: 1px dashed #000; margin: 5px 0; }
         .codigo { text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 3px; margin: 5px 0; }
         .info { margin: 2px 0; font-size: 11px; }
+        .item-linha { display: flex; justify-content: space-between; }
+        .total-linha { display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; margin-top: 4px; }
         .descricao { border: 1px solid #000; padding: 5px; margin-top: 5px; font-size: 11px; }
         .rodape { text-align: center; font-size: 10px; margin-top: 8px; }
       </style>
@@ -272,10 +602,11 @@
       <div class="info">Atendente: ${p.atendente}</div>
       <div class="info">Cliente: ${p.nome_cliente}</div>
       ${endereco}
-      <div class="info">Pagamento: ${pagLabels[p.pagamento] || p.pagamento}</div>
+      <div class="info">Pagamento: ${LABELS_PAG[p.pagamento] || p.pagamento}</div>
       <div class="linha"></div>
-      <div class="info"><strong>Descrição:</strong></div>
-      <div class="descricao">${p.descricao || ''}</div>
+      <div class="info"><strong>Itens:</strong></div>
+      ${itensHtml}
+      <div class="total-linha"><span>TOTAL</span><span>${fmtMoeda(p.valor_total)}</span></div>
       <div class="rodape">Sistema de Vendas</div>
       <script>window.onload=()=>{setTimeout(()=>{window.print();setTimeout(()=>{window.close();},3000);},300);}<\/script>
       </body></html>
@@ -290,8 +621,9 @@
     pedidoAtual = data;
     document.getElementById('modal-titulo').textContent = 'Reimprimir comanda';
     document.getElementById('modal-codigo').textContent = data.codigo;
-    document.getElementById('modal-info').textContent = data.nome_cliente + ' • ' + (data.tipo === 'entrega' ? '🛵 Entrega' : '🏪 Retirada');
+    document.getElementById('modal-info').textContent = data.nome_cliente + ' • ' + (data.tipo === 'entrega' ? '🛵 Entrega' : '🏪 Retirada') + ' • ' + fmtMoeda(data.valor_total);
     document.getElementById('modal').classList.add('aberto');
+    atualizarBotaoFichaFrango();
   }
 
   function fecharModal() {
@@ -299,41 +631,230 @@
     pedidoAtual = null;
   }
 
-  async function darBaixa(codigo) {
-    if (!confirm('Confirmar entrega do pedido ' + codigo + '?')) return;
-    const res = await fetch('/api/delivery/entrega/' + codigo, { method: 'POST' });
+  function atualizarBotaoFichaFrango() {
+    const temFrango = !!(pedidoAtual && pedidoAtual.itens && pedidoAtual.itens.some(it => it.frango_tipo_id));
+    document.getElementById('btn-ficha-frango').style.display = temFrango ? 'block' : 'none';
+  }
+
+  // Ficha de retirada do(s) item(ns) de frango assado do pedido — mesmo layout usado no PDV.
+  // Um pedido pode ter mais de um frango no carrinho (quantidade > 1), cada um com seu
+  // próprio código de retirada; imprime uma ficha por unidade.
+  async function imprimirFichasFrango() {
+    if (!pedidoAtual || !pedidoAtual.itens) return;
+    await imprimirFichasFrangoDeItens(pedidoAtual.itens);
+  }
+
+  // Reimpressão direta a partir do card do Kanban/Cancelados, sem precisar abrir o modal.
+  async function reimprimirFichaFrango(codigo) {
+    const res = await fetch('/api/delivery/pedido/' + codigo);
+    if (!res.ok) { alert('Pedido não encontrado'); return; }
     const data = await res.json();
-    if (data.sucesso) carregarPendentes();
+    await imprimirFichasFrangoDeItens(data.itens);
+  }
+
+  async function imprimirFichasFrangoDeItens(itens) {
+    const itensFrango = (itens || []).filter(it => it.frango_tipo_id);
+    if (!itensFrango.length) return;
+
+    const lotesPorTipo = {};
+    for (const it of itensFrango) {
+      if (!(it.frango_tipo_id in lotesPorTipo)) {
+        try {
+          const r = await fetch('/api/lotes/proximo/' + it.frango_tipo_id);
+          lotesPorTipo[it.frango_tipo_id] = await r.json();
+        } catch (e) {
+          lotesPorTipo[it.frango_tipo_id] = null;
+        }
+      }
+      const venda = { codigo: it.codigo, tipo_nome: it.descricao, atendente: it.operador, horario_compra: it.criado_em };
+      const lote = lotesPorTipo[it.frango_tipo_id];
+      if (BTPrinter.isConnected()) {
+        await BTPrinter.printComprovante(venda, lote);
+      } else {
+        imprimirFichaFrangoItem(venda, lote);
+      }
+    }
+  }
+
+  function imprimirFichaFrangoItem(venda, loteInfo) {
+    const qrDataUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(venda.codigo);
+    const w = window.open('', '_blank', 'width=400,height=650');
+    const [hora, data] = fmtDataHora(venda.horario_compra);
+    const diaSemana = new Date(new Date().toLocaleString('en-US', {timeZone:'America/Sao_Paulo'})).getDay();
+    const isDomingo = diaSemana === 0;
+    const horarioLimite = isDomingo ? '13:45' : '18:30';
+    const diaTexto = isDomingo ? 'Domingo' : 'Dia de semana';
+    const loteHtml = loteInfo && loteInfo.status === 'assando'
+      ? `<div class="aviso" style="background:#fff8e1">
+          <strong>PREVISÃO DE RETIRADA</strong><br>
+          Às <strong>${loteInfo.hora_formatada}</strong> (~${loteInfo.minutos_restantes} min)
+         </div>`
+      : `<div class="aviso" style="background:#f0fff4"><strong>Frango pronto para retirada!</strong></div>`;
+
+    w.document.write(`
+      <html><head><title>Ficha do Frango</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: monospace; font-size: 12px; padding: 4px; width: 72mm; }
+        @media print {
+          @page { margin: 0; size: 72mm auto; }
+          body { width: 72mm; padding: 2mm; }
+        }
+        .cabecalho { text-align: center; margin-bottom: 4px; }
+        .cabecalho img { width: 24mm; }
+        .cabecalho h2 { font-size: 14px; margin: 2px 0; }
+        .cabecalho h3 { font-size: 10px; font-weight: normal; color: #333; margin: 1px 0; }
+        .linha { border-top: 1px dashed #000; margin: 5px 0; }
+        .codigo { text-align: center; font-size: 26px; font-weight: bold; letter-spacing: 3px; margin: 5px 0; }
+        .info { margin: 2px 0; font-size: 11px; }
+        .qr { text-align: center; margin: 5px 0; }
+        .aviso { border: 1px solid #000; padding: 5px; margin: 5px 0; text-align: center; font-size: 10px; line-height: 1.5; }
+        .rodape { text-align: center; font-size: 10px; margin-top: 5px; }
+      </style>
+</head><body>
+      <div class="cabecalho">
+        <img src="/logo.jfif" onerror="this.style.display='none'">
+        <h2>FRANGO EXPRESSO</h2>
+        <h3>(38) 9912-2660</h3>
+        <h3>Av. das Americas, 15 - Dr. Joao Alves</h3>
+        <h3>Montes Claros - MG</h3>
+      </div>
+      <div class="linha"></div>
+      <div class="info">Data: ${data}  Hora: ${hora}</div>
+      <div class="info">Atendente: ${venda.atendente}</div>
+      <div class="info" style="font-size:16px;font-weight:bold">Produto: ${venda.tipo_nome}</div>
+      <div class="linha"></div>
+      <div style="text-align:center;font-size:13px">Seu código:</div>
+      <div class="codigo">${venda.codigo}</div>
+      <div class="qr"><img src="${qrDataUrl}" width="120"></div>
+      <div class="linha"></div>
+      ${loteHtml}
+      <div class="aviso">
+        <strong>ATENÇÃO</strong><br>
+        Retire seu frango <strong>hoje</strong>.<br>
+        ${diaTexto}: retire até as <strong>${horarioLimite}</strong>.<br>
+        Não nos responsabilizamos<br>por retiradas fora do prazo.
+      </div>
+      <div class="rodape">Guarde este comprovante<br>Apresente na retirada</div>
+
+      <script>window.onload=()=>{setTimeout(()=>{window.print();setTimeout(()=>{window.close();},3000);},300);}<\/script>
+      </body></html>
+    `);
+    w.document.close();
+  }
+
+  function mudarAbaKanban(aba, btn) {
+    abaAtual = aba;
+    document.querySelectorAll('.tab-kanban').forEach(t => t.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    document.querySelectorAll('.painel-kanban-aba').forEach(p => p.classList.remove('ativo'));
+    document.getElementById('painel-' + aba).classList.add('ativo');
+    if (aba === 'cancelados') carregarCancelados();
+  }
+
+  async function avancarStatus(codigo, novoStatus) {
+    const res = await fetch('/api/delivery/pedido/' + codigo + '/status', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: novoStatus })
+    });
+    const data = await res.json();
+    if (data.sucesso) carregarKanban();
     else alert(data.erro);
   }
 
-  async function carregarPendentes() {
-    const res = await fetch('/api/delivery/pendentes');
+  async function cancelarPedidoKanban(id, codigo) {
+    if (!confirm('Cancelar o pedido ' + codigo + '? Isso também remove o lançamento do caixa do PDV.')) return;
+    const res = await fetch('/api/delivery/' + id, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.sucesso) carregarKanban();
+    else alert(data.erro || 'Erro ao cancelar');
+  }
+
+  function iniciarDrag(ev, codigo) {
+    codigoArrastando = codigo;
+    ev.target.classList.add('arrastando');
+    ev.dataTransfer.setData('text/plain', codigo);
+  }
+
+  function finalizarDrag(ev) {
+    ev.target.classList.remove('arrastando');
+  }
+
+  function permitirDrop(ev) {
+    ev.preventDefault();
+    ev.currentTarget.classList.add('drag-over');
+  }
+
+  function saiuDrop(ev) {
+    ev.currentTarget.classList.remove('drag-over');
+  }
+
+  function soltarCard(ev, novoStatus) {
+    ev.preventDefault();
+    ev.currentTarget.classList.remove('drag-over');
+    const codigo = ev.dataTransfer.getData('text/plain') || codigoArrastando;
+    if (codigo) avancarStatus(codigo, novoStatus);
+    codigoArrastando = null;
+  }
+
+  function renderCard(p) {
+    const tagClass = p.tipo === 'entrega' ? 'tag-entrega' : 'tag-retirada';
+    const tagLabel = p.tipo === 'entrega' ? '🛵 Entrega' : '🏪 Retirada';
+    const proximo = PROXIMO_STATUS[p.status];
+    return `<div class="kanban-card" draggable="true" ondragstart="iniciarDrag(event,'${p.codigo}')" ondragend="finalizarDrag(event)">
+      <div class="kc-topo">
+        <span class="kc-nome">${p.nome_cliente}</span>
+        <span class="tag ${tagClass}">${tagLabel}</span>
+      </div>
+      <div class="kc-detalhe">${p.codigo} • ${p.atendente} • ${fmtHora(p.horario_pedido)}</div>
+      <div class="kc-resumo">${p.descricao || ''}</div>
+      <div class="kc-rodape">
+        <span class="kc-valor">${fmtMoeda(p.valor_total)}</span>
+        <div class="kc-acoes">
+          <button onclick="reimprimirPedido('${p.codigo}')" title="Reimprimir comanda">🖨️</button>
+          ${p.tem_frango ? `<button onclick="reimprimirFichaFrango('${p.codigo}')" title="Reimprimir ficha do frango" style="background:#fef3c7">🍗</button>` : ''}
+          ${proximo ? `<button class="kc-avancar" onclick="avancarStatus('${p.codigo}','${proximo}')" title="Avançar para ${LABEL_STATUS[proximo]}">→</button>` : ''}
+          ${podeGerenciar() ? `<button class="kc-cancelar" onclick="cancelarPedidoKanban(${p.id},'${p.codigo}')" title="Cancelar">✕</button>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  async function carregarKanban() {
+    const res = await fetch('/api/delivery/kanban');
+    const colunas = await res.json();
+    ['pendente','preparando','saiu_entrega','entregue'].forEach(status => {
+      const lista = colunas[status] || [];
+      document.getElementById('count-' + status).textContent = lista.length;
+      const el = document.getElementById('cards-' + status);
+      el.innerHTML = lista.length ? lista.map(renderCard).join('') : '<div class="vazio">Nenhum pedido</div>';
+    });
+  }
+
+  async function carregarCancelados() {
+    const res = await fetch('/api/delivery/cancelados');
     const lista = await res.json();
-    const el = document.getElementById('pendentes');
-    if (!lista.length) { el.innerHTML = '<div class="vazio">Nenhum pedido pendente</div>'; return; }
+    const el = document.getElementById('lista-cancelados');
+    if (!lista.length) { el.innerHTML = '<div class="vazio">Nenhum pedido cancelado hoje</div>'; return; }
     el.innerHTML = lista.map(p => {
-      const hora = fmtHora(p.horario_pedido);
       const tagClass = p.tipo === 'entrega' ? 'tag-entrega' : 'tag-retirada';
       const tagLabel = p.tipo === 'entrega' ? '🛵 Entrega' : '🏪 Retirada';
       return `<div class="item">
         <div class="info">
           <div class="nome">${p.nome_cliente} <span class="tag ${tagClass}">${tagLabel}</span></div>
-          <div class="detalhe">${p.codigo} • ${p.atendente} • ${hora}</div>
-          <div class="detalhe">${p.bairro ? p.bairro + ' • ' : ''}${p.pagamento}</div>
+          <div class="detalhe">${p.codigo} • ${p.atendente} • ${fmtHora(p.horario_pedido)} • ${fmtMoeda(p.valor_total)}</div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end">
-          <button class="btn-entrega" onclick="darBaixa('${p.codigo}')">Entregar</button>
-          <button class="btn-reimprimir" onclick="reimprimirPedido('${p.codigo}')">🖨️ Reimprimir</button>
-        </div>
+        <button class="btn-reimprimir" onclick="reimprimirPedido('${p.codigo}')">🖨️ Reimprimir</button>
+        ${p.tem_frango ? `<button class="btn-reimprimir" onclick="reimprimirFichaFrango('${p.codigo}')" style="background:#f59e0b">🍗 Ficha Frango</button>` : ''}
       </div>`;
     }).join('');
   }
 
-  carregarPendentes();
-  setInterval(carregarPendentes, 30000);
+  init();
+  setInterval(() => { carregarKanban(); if (abaAtual === 'cancelados') carregarCancelados(); }, 30000);
   const sse = new EventSource('/api/eventos');
-  sse.onmessage = () => carregarPendentes();
+  sse.onmessage = () => { carregarKanban(); if (abaAtual === 'cancelados') carregarCancelados(); };
 </script>
 </body>
 </html>
